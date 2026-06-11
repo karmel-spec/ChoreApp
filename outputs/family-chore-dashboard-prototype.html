@@ -1755,6 +1755,7 @@
               <button class="ghost-btn" type="button" id="awardBonusBtn">Award Eligible Bonus</button>
               <div class="admin-status" id="bonusStatus"></div>
             </div>
+            <div class="notice-card" id="bonusLedgerSummary">Bonus totals loading...</div>
             <div class="ledger" id="bonusLedger"></div>
           </div>
         </section>
@@ -3433,6 +3434,10 @@
       document.getElementById("fineRateStatus").textContent = `${child.name}'s missed-day fine is $${child.fineRate} unless ${familySettings.extensionApprover} approves an extension.`;
     }
 
+    function moneyAmount(value) {
+      return Number(String(value).replace(/[^0-9.]/g, "")) || 0;
+    }
+
     function ensureCurrentMonthlyStreakPeriod(child) {
       const period = currentBonusPeriod();
       if (!child.monthlyStreakPeriod) {
@@ -3456,7 +3461,15 @@
       document.getElementById("bonus7").value = bonusRules.monthly.find(rule => rule.days === 7)?.amount ?? 10;
       document.getElementById("bonus30").value = bonusRules.monthly.find(rule => rule.days === 30)?.amount ?? 50;
       document.getElementById("super100").value = bonusRules.super.find(rule => rule.days === 100)?.amount ?? 100;
-      document.getElementById("bonusLedger").innerHTML = bonusLedger[child.id].map(item => `
+      const bonusRows = bonusLedger[child.id] || [];
+      const creditedBonusTotal = bonusRows
+        .filter(item => item.paid)
+        .reduce((sum, item) => sum + moneyAmount(item.amount), 0);
+      const pendingBonusTotal = bonusRows
+        .filter(item => !item.paid)
+        .reduce((sum, item) => sum + moneyAmount(item.amount), 0);
+      document.getElementById("bonusLedgerSummary").textContent = `${child.name}'s chore account balance is $${child.accountBalance}. $${creditedBonusTotal} credited bonuses and $${pendingBonusTotal} pending bonus records.`;
+      document.getElementById("bonusLedger").innerHTML = bonusRows.map(item => `
         <div class="ledger-row">
           <div>
             <strong>${escapeHtml(item.title)}</strong>
@@ -3704,7 +3717,7 @@
       const item = ledger[child.id][fineIndex];
       if (!item || item.paid) return;
       item.paid = true;
-      const amount = Number(String(item.amount).replace(/[^0-9.]/g, "")) || 0;
+      const amount = moneyAmount(item.amount);
       child.openFines = Math.max(0, Number((child.openFines - amount).toFixed(2)));
       child.paidFines = Number((child.paidFines + amount).toFixed(2));
       persistBetaData();
