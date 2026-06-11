@@ -158,6 +158,8 @@ const requiredMarkers = [
   "choreAdminForm",
   "Only Brigham or Karmel can add chores to the master rotation",
   "Only Brigham or Karmel can change the master chore rotation",
+  "already in the master chore list",
+  "replace(/\\s+/g, \" \")",
   "helperBoardTasks",
   "saveHelperBoardOrder",
   "dragBound",

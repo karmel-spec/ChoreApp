@@ -4110,7 +4110,7 @@
         document.getElementById("adminStatus").textContent = "Only Brigham or Karmel can add chores to the master rotation.";
         return;
       }
-      const name = document.getElementById("adminChoreName").value.trim();
+      const name = document.getElementById("adminChoreName").value.trim().replace(/\s+/g, " ");
       const frequency = document.getElementById("adminFrequency").value;
       const minutes = Math.max(1, Number(document.getElementById("adminMinutes").value) || 1);
       const difficulty = Math.min(10, Math.max(1, Number(document.getElementById("adminDifficulty").value) || 1));
@@ -4120,9 +4120,15 @@
         document.getElementById("adminStatus").textContent = "Add a chore name first.";
         return;
       }
+      const duplicate = choreLibrary.find(chore => chore.name.trim().toLowerCase() === name.toLowerCase());
+      if (duplicate) {
+        document.getElementById("adminStatus").textContent = `${name} is already in the master chore list. Toggle it on or edit the existing chore before adding a duplicate.`;
+        return;
+      }
       choreLibrary.unshift({ name, minutes, difficulty, fit, frequency, notice, active: true, createdAt: new Date().toISOString() });
       shuffleOffset += 3;
       persistBetaData();
+      document.getElementById("adminChoreName").value = "";
       document.getElementById("adminStatus").textContent = `${name} added as ${frequency.toLowerCase()} and set to ${notice.toLowerCase()}.`;
       render();
     }
