@@ -8,7 +8,7 @@ Core web app features:
 - Family dashboards for Thayne, Brig Jr., Josh, JoJo, Louis, and Brielle
 - Login profiles for Brigham, Karmel, Vanessa, and each child, with role-based access
 - Gmail-linked login for every family member, upgraded to Google Identity Services sign-in for production
-- Daily view and rolling 7-day view
+- Daily view, rolling 7-day view, and 30-day forecast preview
 - Daily priority chores due before rotating fined chores
 - Randomized rotating chore assignments
 - Chore difficulty ratings and estimated minutes

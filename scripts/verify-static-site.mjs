@@ -35,7 +35,9 @@ const requiredMarkers = [
   "Import Backup",
   "Finalize Selected Child",
   "Finalize All Children",
-  "fineAssessments"
+  "fineAssessments",
+  "30-Day Forecast",
+  "forecastList"
 ];
 
 for (const marker of requiredMarkers) {

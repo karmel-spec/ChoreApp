@@ -665,6 +665,49 @@
       padding-bottom: 4px;
     }
 
+    .forecast-list {
+      display: grid;
+      gap: 7px;
+      max-height: 420px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .forecast-row {
+      display: grid;
+      grid-template-columns: 74px minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: start;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 8px;
+    }
+
+    .forecast-date {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      line-height: 1.25;
+    }
+
+    .forecast-chores {
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .forecast-minutes {
+      border-radius: 6px;
+      background: #edf4ff;
+      color: #2053a9;
+      padding: 5px 6px;
+      font-size: 11px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
     .day-card {
       min-height: 176px;
       border: 1px solid var(--line);
@@ -1348,7 +1391,7 @@
   <header>
     <div>
       <h1>Teamwork Chores</h1>
-      <p class="intro">A Design 2 prototype with streak routines first, randomized rotating chores second, noon fines, extension petitions, child dashboards, seven-day planning, and an admin-maintained chore library.</p>
+      <p class="intro">A Design 2 prototype with priority routines first, randomized rotating chores second, noon fines, extension petitions, child dashboards, seven-day planning, 30-day forecasts, and an admin-maintained chore library.</p>
     </div>
     <div class="admin-chip" id="currentUserChip">Not signed in</div>
   </header>
@@ -1579,6 +1622,17 @@
               </thead>
               <tbody id="choreTable"></tbody>
             </table>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h3>30-Day Forecast</h3>
+            <span id="forecastName">Child</span>
+          </div>
+          <div class="side-body">
+            <div class="notice-card">A month-out planning preview for the selected child. It uses the current chore library, active toggles, difficulty limits, and random rotation seed.</div>
+            <div class="forecast-list" id="forecastList"></div>
           </div>
         </section>
 
@@ -2748,6 +2802,22 @@
       }).join("");
     }
 
+    function renderForecast(child) {
+      document.getElementById("forecastName").textContent = child.name;
+      document.getElementById("forecastList").innerHTML = Array.from({ length: 30 }).map((_, day) => {
+        const rotating = getRotatingChores(child, day);
+        const minutes = rotating.reduce((sum, chore) => sum + chore.minutes, 0);
+        const chores = rotating.map(chore => `${chore.name} (${chore.minutes}m, D${chore.difficulty})`).join("; ");
+        return `
+          <div class="forecast-row">
+            <div class="forecast-date">${formatDate(day)}</div>
+            <div class="forecast-chores">${chores}</div>
+            <div class="forecast-minutes">${minutes} min</div>
+          </div>
+        `;
+      }).join("");
+    }
+
     function renderLedger(child) {
       document.getElementById("ledgerName").textContent = child.name;
       document.getElementById("fineLedger").innerHTML = ledger[child.id].map((item, index) => `
@@ -3198,6 +3268,7 @@
       renderStreakPodium();
       renderDaily(child);
       renderWeekly(child);
+      renderForecast(child);
       renderLedger(child);
       renderBonusPanel(child);
       renderProfilePanel(child);
