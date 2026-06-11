@@ -1,0 +1,70 @@
+# Family Chore App Phase Plan
+
+## Phase 1: Web App
+
+Build this first as a responsive web app that works well on phones, tablets, and a shared family computer.
+
+Core web app features:
+- Family dashboards for Thayne, Brig Jr., Josh, JoJo, Louis, and Brielle
+- Daily view and rolling 7-day view
+- Streak chores due before rotating fined chores
+- Randomized rotating chore assignments
+- Chore difficulty ratings and estimated minutes
+- Under-30-minute daily rotating workload per child
+- Admin chore library with on/off rotation toggles
+- Admin chore intake for daily, Monday-only, weekly, monthly, and one-off chores
+- 24-hour notice before new chores enter rotation
+- Completion checkbox plus optional photo proof
+- Noon text reminder for Mom to physically inspect chores
+- Fine ledger with paid/unpaid tracking
+- Editable per-child daily fine rates for missed 12:00 PM deadlines
+- Extension petition flow where only Brigham-dad can approve deadline changes by text
+
+Recommended web stack:
+- Responsive PWA-style web app
+- Shared database for family data
+- Admin role for Mom
+- Child role for each family member
+- Scheduled jobs for noon reminders, fines, and rotation generation
+- Photo upload storage for completion proof
+
+Phase 1 should be installable to the phone home screen as a web app before investing in native app-store packaging.
+
+## Phase 2: App Store Preparation
+
+Package the web app for iOS and Android once the family workflow feels right.
+
+Best path:
+- Keep one shared web codebase
+- Wrap it with a mobile shell using Capacitor or React Native WebView-style packaging
+- Add push notifications for reminders, extensions, and review prompts
+- Add camera/photo upload permissions
+- Add app icons, splash screens, screenshots, and store descriptions
+- Add privacy policy and support URL
+- Add demo account or demo mode for app review
+
+App review readiness:
+- Test for crashes and bugs
+- Make app metadata accurate
+- Keep backend services live during review
+- Provide reviewer access to account-based features
+- Avoid collecting unnecessary child data
+- Treat photos as private family content
+- Keep text/photo submissions limited to the family group
+- Include parent/admin controls and support contact info
+
+Important app-store notes:
+- Apple states apps should be tested for crashes and bugs, metadata should be complete and accurate, backend services should be live, and reviewers need full access to account-based features.
+- Apple also notes that if the app is only for family and friends, App Store distribution may not be the best path; TestFlight, Ad Hoc, or a web app may be better depending on the audience.
+- Google Play setup requires app details, contact email, declarations, store listing information, app bundles, testing/release tracks, and review/rollout steps.
+
+## Suggested Build Order
+
+1. Turn the prototype into a real web app with saved data.
+2. Add user accounts, roles, and permissions.
+3. Add the scheduling engine for rotations and 7-day previews.
+4. Add photo proof upload and inspection approval.
+5. Add SMS/push notification reminders.
+6. Add fines and payment tracking.
+7. Run the family on the web app for 2-4 weeks.
+8. Package for iOS/Android only after the workflow is stable.

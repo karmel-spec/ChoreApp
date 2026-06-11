@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Family Chore Dashboard</title>
+  <style>
+    :root {
+      --ink: #202124;
+      --muted: #667085;
+      --line: #d8dee8;
+      --blue: #2f6edb;
+      --paper: #f5f7fb;
+      --white: #ffffff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: linear-gradient(180deg, #fbfcfe 0%, #eef3f8 100%);
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    main {
+      width: min(760px, 100%);
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 18px 52px rgba(24, 49, 63, .13);
+      padding: clamp(22px, 5vw, 44px);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(34px, 6vw, 58px);
+      line-height: 1.02;
+      letter-spacing: 0;
+    }
+
+    p {
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 16px;
+      margin: 14px 0 0;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    a {
+      display: inline-grid;
+      place-items: center;
+      min-height: 42px;
+      padding: 0 14px;
+      border-radius: 7px;
+      font-weight: 900;
+      text-decoration: none;
+      border: 1px solid var(--line);
+      color: var(--ink);
+      background: #fff;
+    }
+
+    a.primary {
+      color: #fff;
+      border-color: var(--blue);
+      background: var(--blue);
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Family Chore Dashboard</h1>
+    <p>Prototype home for the family chore app, including child dashboards, rotating chores, fines, extension requests, Mom review, Vanessa's helper workspace, and the build roadmap.</p>
+    <div class="actions">
+      <a class="primary" href="/family-chore-dashboard-prototype.html">Open Prototype</a>
+      <a href="/chore-app-designs.html">View Design Options</a>
+      <a href="/chore-app-phase-plan.md">Read Phase Plan</a>
+    </div>
+  </main>
+</body>
+</html>

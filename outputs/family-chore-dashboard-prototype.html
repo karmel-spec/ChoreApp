@@ -1,0 +1,1725 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Family Chore Dashboard Prototype</title>
+  <style>
+    :root {
+      --ink: #202124;
+      --muted: #667085;
+      --line: #d8dee8;
+      --paper: #f5f7fb;
+      --white: #ffffff;
+      --blue: #2f6edb;
+      --teal: #147c8a;
+      --mint: #0f9f7a;
+      --coral: #e35b4f;
+      --gold: #d69c21;
+      --violet: #7250c7;
+      --navy: #18313f;
+      --shadow: 0 18px 52px rgba(24, 49, 63, .13);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: linear-gradient(180deg, #fbfcfe 0%, #eef3f8 100%);
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 24px;
+      align-items: end;
+      padding: 28px clamp(18px, 4vw, 48px) 18px;
+      border-bottom: 1px solid rgba(32, 33, 36, .08);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(30px, 4vw, 50px);
+      line-height: 1.02;
+      letter-spacing: 0;
+    }
+
+    .intro {
+      max-width: 860px;
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    .admin-chip {
+      justify-self: end;
+      border: 1px solid var(--line);
+      background: var(--white);
+      box-shadow: 0 8px 26px rgba(24, 49, 63, .08);
+      border-radius: 8px;
+      padding: 11px 14px;
+      font-weight: 800;
+      color: var(--blue);
+      white-space: nowrap;
+    }
+
+    main {
+      padding: 26px clamp(18px, 4vw, 48px) 46px;
+    }
+
+    .app-shell {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 240px minmax(0, 1fr) 340px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      background: rgba(255, 255, 255, .9);
+      border: 1px solid rgba(32, 33, 36, .1);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-head {
+      padding: 16px;
+      border-bottom: 1px solid var(--line);
+      background: var(--white);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .panel-head h2,
+    .panel-head h3 {
+      margin: 0;
+      font-size: 16px;
+      letter-spacing: 0;
+    }
+
+    .panel-head span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 16px;
+    }
+
+    .family-list {
+      padding: 10px;
+      display: grid;
+      gap: 7px;
+    }
+
+    .child-button {
+      width: 100%;
+      border: 1px solid transparent;
+      background: transparent;
+      border-radius: 8px;
+      padding: 9px;
+      display: grid;
+      grid-template-columns: 36px 1fr auto;
+      gap: 9px;
+      align-items: center;
+      text-align: left;
+      color: var(--ink);
+      cursor: pointer;
+    }
+
+    .child-button.active {
+      border-color: #bfd2fb;
+      background: #edf4ff;
+    }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-weight: 900;
+      font-size: 13px;
+    }
+
+    .avatar.thayne { background: var(--blue); }
+    .avatar.brig { background: var(--teal); }
+    .avatar.josh { background: var(--violet); }
+    .avatar.jojo { background: var(--gold); color: #2d2100; }
+    .avatar.louis { background: var(--coral); }
+    .avatar.brielle { background: var(--mint); }
+
+    .child-button strong {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 2px;
+    }
+
+    .child-button small {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.25;
+    }
+
+    .fine-pill {
+      color: var(--coral);
+      background: #ffecea;
+      border: 1px solid #ffd0cc;
+      border-radius: 6px;
+      padding: 5px 7px;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .rule-box {
+      margin: 0 10px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 11px;
+      background: #fbfcff;
+    }
+
+    .rule-box strong {
+      display: block;
+      font-size: 12px;
+      margin-bottom: 5px;
+    }
+
+    .rule-box p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .dashboard {
+      min-width: 0;
+    }
+
+    .top-strip {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 16px;
+      align-items: center;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--navy), var(--teal));
+      color: #fff;
+    }
+
+    .top-strip h2 {
+      margin: 0 0 6px;
+      font-size: 24px;
+      letter-spacing: 0;
+    }
+
+    .top-strip p {
+      margin: 0;
+      opacity: .84;
+      line-height: 1.45;
+    }
+
+    .timer {
+      min-width: 160px;
+      border: 1px solid rgba(255,255,255,.35);
+      border-radius: 8px;
+      padding: 12px;
+      text-align: right;
+    }
+
+    .timer span {
+      display: block;
+      opacity: .82;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .timer strong {
+      display: block;
+      font-size: 30px;
+      line-height: 1.05;
+      margin-top: 3px;
+    }
+
+    .toolbar {
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .segmented {
+      display: inline-grid;
+      grid-auto-flow: column;
+      gap: 5px;
+      padding: 5px;
+      border-radius: 8px;
+      background: #e9edf4;
+    }
+
+    .segmented button,
+    .ghost-btn,
+    .primary-btn {
+      border: 0;
+      border-radius: 6px;
+      min-height: 34px;
+      padding: 0 12px;
+      font-weight: 900;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .segmented button {
+      color: var(--muted);
+      background: transparent;
+    }
+
+    .segmented button.active {
+      background: #fff;
+      color: var(--ink);
+      box-shadow: 0 3px 10px rgba(16, 24, 40, .08);
+    }
+
+    .ghost-btn {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+    }
+
+    .primary-btn {
+      background: var(--blue);
+      color: #fff;
+    }
+
+    .content {
+      padding: 16px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 11px;
+    }
+
+    .metric span {
+      color: var(--muted);
+      display: block;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 3px;
+      font-size: 20px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 4px;
+    }
+
+    .section-title h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .section-title span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .task-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .task {
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .task-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      background: #e8f2ff;
+      color: var(--blue);
+    }
+
+    .task.streak .task-icon {
+      background: #fff2cf;
+      color: #7e5900;
+    }
+
+    .task.overdue {
+      border-color: #ffc7c0;
+      background: #fff8f7;
+    }
+
+    .task strong {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .task span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .task-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .status {
+      border-radius: 6px;
+      border: 1px solid #bfd2fb;
+      background: #edf4ff;
+      color: #2053a9;
+      padding: 5px 7px;
+      font-size: 11px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .proof-btn,
+    .check-btn {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      border-radius: 6px;
+      min-height: 28px;
+      padding: 0 8px;
+      font-size: 11px;
+      font-weight: 900;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .proof-btn {
+      color: #2053a9;
+      background: #edf4ff;
+      border-color: #bfd2fb;
+    }
+
+    .check-btn {
+      color: #08705a;
+      background: #dff5ef;
+      border-color: #b7e8db;
+    }
+
+    .status.done {
+      color: #08705a;
+      background: #dff5ef;
+      border-color: #b7e8db;
+    }
+
+    .status.warn {
+      color: #b43b33;
+      background: #ffecea;
+      border-color: #ffd0cc;
+    }
+
+    .week-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(112px, 1fr));
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .day-card {
+      min-height: 176px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 10px;
+    }
+
+    .day-card.today {
+      border-color: var(--teal);
+      box-shadow: inset 0 0 0 1px var(--teal);
+    }
+
+    .day-card h4 {
+      margin: 0 0 6px;
+      font-size: 13px;
+    }
+
+    .day-card p {
+      margin: 0 0 6px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .mini-task {
+      display: block;
+      border-radius: 5px;
+      padding: 5px 6px;
+      margin-top: 5px;
+      background: #edf4ff;
+      color: #2053a9;
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
+    .mini-task.streak {
+      color: #7e5900;
+      background: #fff2cf;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .side-stack {
+      display: grid;
+      gap: 18px;
+    }
+
+    .side-body {
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .request-card {
+      border: 1px solid #bfd2fb;
+      background: #edf4ff;
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .request-card label {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      margin-bottom: 5px;
+    }
+
+    textarea,
+    input,
+    select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fff;
+      min-height: 36px;
+      padding: 8px;
+      font: inherit;
+      font-size: 12px;
+    }
+
+    textarea {
+      min-height: 72px;
+      resize: vertical;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 8px 0;
+    }
+
+    .form-row.three {
+      grid-template-columns: 1.2fr .8fr .8fr;
+    }
+
+    .notice-card {
+      border: 1px solid #b7e8db;
+      background: #e8f7f2;
+      border-radius: 8px;
+      padding: 10px;
+      color: #096d58;
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.4;
+    }
+
+    .notice-card.warn {
+      border-color: #ffd0cc;
+      background: #fff8f7;
+      color: #b43b33;
+    }
+
+    .admin-form {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fbfcff;
+    }
+
+    .admin-form label {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      margin-bottom: 5px;
+    }
+
+    .admin-status {
+      min-height: 18px;
+      color: #08705a;
+      font-size: 12px;
+      font-weight: 900;
+      margin-top: 8px;
+    }
+
+    .ledger {
+      display: grid;
+      gap: 7px;
+    }
+
+    .ledger-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px;
+      background: #fff;
+      align-items: center;
+    }
+
+    .ledger-row strong {
+      display: block;
+      font-size: 12px;
+      margin-bottom: 2px;
+    }
+
+    .ledger-row span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .review-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .review-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 9px;
+    }
+
+    .review-row strong {
+      display: block;
+      font-size: 12px;
+      margin-bottom: 3px;
+    }
+
+    .review-row span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .paid {
+      color: #08705a;
+      background: #dff5ef;
+      border: 1px solid #b7e8db;
+      border-radius: 6px;
+      padding: 5px 7px;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .unpaid {
+      color: #b43b33;
+      background: #ffecea;
+      border: 1px solid #ffd0cc;
+      border-radius: 6px;
+      padding: 5px 7px;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .chore-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .chore-table th,
+    .chore-table td {
+      border-bottom: 1px solid #edf0f4;
+      padding: 8px 7px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .chore-table th {
+      color: var(--muted);
+      background: #fafbfc;
+      font-size: 10px;
+      text-transform: uppercase;
+    }
+
+    .chore-table tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .chore-table tr.inactive {
+      opacity: .58;
+    }
+
+    .difficulty {
+      display: inline-block;
+      min-width: 28px;
+      text-align: center;
+      border-radius: 6px;
+      padding: 4px 5px;
+      background: #f0f2f6;
+      font-weight: 900;
+    }
+
+    .toggle-btn {
+      border: 1px solid #b7e8db;
+      border-radius: 6px;
+      background: #dff5ef;
+      color: #08705a;
+      min-height: 28px;
+      padding: 0 8px;
+      font-size: 11px;
+      font-weight: 900;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .toggle-btn.off {
+      border-color: #ffd0cc;
+      background: #ffecea;
+      color: #b43b33;
+    }
+
+    .helper-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .helper-metric {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 10px;
+    }
+
+    .helper-metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    .helper-metric strong {
+      display: block;
+      margin-top: 3px;
+      font-size: 20px;
+    }
+
+    .priority-board {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .priority-column {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcff;
+      padding: 9px;
+      min-height: 160px;
+    }
+
+    .priority-column h4 {
+      margin: 0 0 8px;
+      font-size: 12px;
+    }
+
+    .helper-task {
+      border: 1px solid #d8dee8;
+      border-radius: 7px;
+      background: #fff;
+      padding: 8px;
+      margin-bottom: 7px;
+      cursor: grab;
+    }
+
+    .helper-task:active {
+      cursor: grabbing;
+    }
+
+    .helper-task strong {
+      display: block;
+      font-size: 12px;
+      margin-bottom: 2px;
+    }
+
+    .helper-task span {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.3;
+    }
+
+    .ingredient-list {
+      display: grid;
+      gap: 7px;
+    }
+
+    .ingredient-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fff;
+      padding: 8px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    @media (max-width: 780px) {
+      .helper-grid,
+      .priority-board {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .idea-list {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 13px;
+    }
+
+    .idea-list li {
+      margin-bottom: 8px;
+    }
+
+    @media (max-width: 1120px) {
+      .app-shell {
+        grid-template-columns: 220px minmax(0, 1fr);
+      }
+      .side-stack {
+        grid-column: 1 / -1;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 780px) {
+      header {
+        grid-template-columns: 1fr;
+        align-items: start;
+      }
+      .admin-chip {
+        justify-self: start;
+      }
+      .app-shell,
+      .side-stack {
+        grid-template-columns: 1fr;
+      }
+      .sidebar {
+        position: static;
+      }
+      .metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .toolbar,
+      .top-strip {
+        grid-template-columns: 1fr;
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .timer {
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Family Chore Dashboard</h1>
+      <p class="intro">A Design 2 prototype with streak routines first, randomized rotating chores second, noon fines, extension petitions, child dashboards, seven-day planning, and an admin-maintained chore library.</p>
+    </div>
+    <div class="admin-chip">Mom Admin: edit routines, chores, fines, approvals</div>
+  </header>
+
+  <main>
+    <div class="app-shell">
+      <aside class="panel sidebar">
+        <div class="panel-head">
+          <h2>Family</h2>
+          <span>Dashboards</span>
+        </div>
+        <div class="family-list" id="familyList"></div>
+        <div class="rule-box">
+          <strong>Assignment Rule</strong>
+          <p>Daily streak chores are due first. Rotating fined chores stay under 30 minutes per child and are chosen randomly within each child’s approved difficulty range.</p>
+        </div>
+      </aside>
+
+      <section class="panel dashboard">
+        <div class="top-strip">
+          <div>
+            <h2 id="childHeading">Today</h2>
+            <p id="childSubhead">Routine streak chores are due before rotating chores. Rotating chores are fined if incomplete after the approved deadline.</p>
+          </div>
+          <div class="timer">
+            <span id="deadlineLabel">Rotating chores due</span>
+            <strong id="deadlineTime">12:00 PM</strong>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <div class="segmented" aria-label="View">
+            <button class="active" id="dailyBtn" type="button">Daily</button>
+            <button id="weeklyBtn" type="button">7-Day</button>
+          </div>
+          <button class="ghost-btn" type="button" id="shuffleBtn">Shuffle Preview</button>
+        </div>
+
+        <div class="content" id="dailyView">
+          <div class="metrics">
+            <div class="metric"><span>TODAY MINUTES</span><strong id="minutesMetric">0</strong></div>
+            <div class="metric"><span>STREAK</span><strong id="streakMetric">0 days</strong></div>
+            <div class="metric"><span>OPEN FINES</span><strong id="openFineMetric">$0</strong></div>
+            <div class="metric"><span>DAILY FINE RATE</span><strong id="fineRateMetric">$0</strong></div>
+          </div>
+
+          <div class="section-title">
+            <h3>Streak Chores</h3>
+            <span>Due before rotating chores</span>
+          </div>
+          <div class="task-list" id="streakTasks"></div>
+
+          <div class="section-title">
+            <h3>Rotating Fined Chores</h3>
+            <span id="rotatingNote">Has until 12:00 PM</span>
+          </div>
+          <div class="task-list" id="rotatingTasks"></div>
+        </div>
+
+        <div class="content hidden" id="weeklyView">
+          <div class="section-title">
+            <h3>Next 7 Days</h3>
+            <span>Always rolling forward</span>
+          </div>
+          <div class="week-grid" id="weekGrid"></div>
+        </div>
+      </section>
+
+      <aside class="side-stack">
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Extension Petition</h3>
+            <span>Text Dad</span>
+          </div>
+          <div class="side-body">
+            <div class="request-card">
+              <label for="reason">Reason</label>
+              <textarea id="reason">Practice ran late. Can I have until 1:15 PM?</textarea>
+              <div class="form-row">
+                <div>
+                  <label for="newTime">Requested Time</label>
+                  <input id="newTime" value="1:15 PM">
+                </div>
+                <div>
+                  <label for="approval">Admin Action</label>
+                  <select id="approval">
+                    <option>Approved by Brigham-dad</option>
+                    <option>Deny</option>
+                    <option>Approved with warning</option>
+                  </select>
+                </div>
+              </div>
+              <button class="primary-btn" type="button" id="approveBtn">Grant Dad-Approved Extension</button>
+            </div>
+            <div class="rule-box" style="margin:0;">
+              <strong>How it works</strong>
+              <p>The child sends a text-style petition to Brigham-dad at 801-830-0011. Only Dad can approve an extension; if approved, the deadline moves from 12:00 PM to the approved time for that child only.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Noon Review</h3>
+            <span>Text Mom</span>
+          </div>
+          <div class="side-body">
+            <div class="notice-card warn">At 12:00 PM, send Mom a text reminder to physically inspect today’s completed chores before fines are finalized.</div>
+            <div class="review-list" id="reviewList"></div>
+            <button class="primary-btn" type="button" id="sendReviewBtn">Send Noon Review Text</button>
+            <div class="admin-status" id="reviewStatus"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Fine Ledger</h3>
+            <span id="ledgerName">Child</span>
+          </div>
+          <div class="side-body">
+            <div class="admin-form">
+              <label for="fineRateInput">Editable Daily Fine Rate</label>
+              <div class="form-row">
+                <input id="fineRateInput" value="5" inputmode="decimal">
+                <button class="primary-btn" type="button" id="saveFineRateBtn">Save Rate</button>
+              </div>
+              <div class="admin-status" id="fineRateStatus"></div>
+            </div>
+            <div class="ledger" id="fineLedger"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Master Chore List</h3>
+            <span id="choreCountLabel">Editable</span>
+          </div>
+          <div class="side-body">
+            <table class="chore-table">
+              <thead>
+                <tr>
+                  <th>Chore</th>
+                  <th>Min</th>
+                  <th>Diff</th>
+                  <th>When</th>
+                  <th>Best Fit</th>
+                  <th>Rotation</th>
+                </tr>
+              </thead>
+              <tbody id="choreTable"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Admin Chore Intake</h3>
+            <span>24-hour notice</span>
+          </div>
+          <div class="side-body">
+            <div class="notice-card">New chores can be added as daily, Monday-only, weekly, monthly, or one-off. By default, they enter the random rotation after 24 hours so kids get notice before assignments switch.</div>
+            <div class="admin-form">
+              <label for="adminChoreName">Chore Name</label>
+              <input id="adminChoreName" value="Clean backyard cushions">
+              <div class="form-row three">
+                <div>
+                  <label for="adminFrequency">Schedule</label>
+                  <select id="adminFrequency">
+                    <option>Daily</option>
+                    <option>Monday only</option>
+                    <option>Weekly</option>
+                    <option>Monthly</option>
+                    <option>One-off</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="adminMinutes">Minutes</label>
+                  <input id="adminMinutes" value="12" inputmode="numeric">
+                </div>
+                <div>
+                  <label for="adminDifficulty">Difficulty</label>
+                  <input id="adminDifficulty" value="4" inputmode="numeric">
+                </div>
+              </div>
+              <div class="form-row">
+                <div>
+                  <label for="adminFit">Approved For</label>
+                  <select id="adminFit">
+                    <option>Anyone</option>
+                    <option>Boys</option>
+                    <option>Older kids</option>
+                    <option>Louis and Brielle</option>
+                    <option>Brielle only</option>
+                    <option>Vanessa</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="adminNotice">Notice</label>
+                  <select id="adminNotice">
+                    <option>Starts after 24 hours</option>
+                    <option>Start today</option>
+                    <option>Start next week</option>
+                  </select>
+                </div>
+              </div>
+              <button class="primary-btn" type="button" id="addChoreBtn">Add to Rotation</button>
+              <div class="admin-status" id="adminStatus"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Mom's Helper</h3>
+            <span>Vanessa</span>
+          </div>
+          <div class="side-body">
+            <div class="notice-card">Vanessa has her own workspace. She can see assigned chores and priorities, but she is not part of the children’s random fine rotation.</div>
+
+            <div class="helper-grid">
+              <div class="helper-metric"><span>WEEK HOURS</span><strong id="helperHours">0.0</strong></div>
+              <div class="helper-metric"><span>RATE</span><strong id="helperRateLabel">$17/hr</strong></div>
+              <div class="helper-metric"><span>PAYCHECK</span><strong id="helperPay">$0.00</strong></div>
+            </div>
+
+            <div class="admin-form">
+              <div class="form-row three">
+                <div>
+                  <label for="helperArrival">Arrival</label>
+                  <input id="helperArrival" value="8:30 AM">
+                </div>
+                <div>
+                  <label for="helperExit">Exit</label>
+                  <input id="helperExit" value="1:15 PM">
+                </div>
+                <div>
+                  <label for="helperRate">Rate</label>
+                  <input id="helperRate" value="17" inputmode="decimal">
+                </div>
+              </div>
+              <button class="primary-btn" type="button" id="saveTimeCardBtn">Save Time Card</button>
+              <div class="admin-status" id="timeCardStatus"></div>
+            </div>
+
+            <div class="priority-board" id="helperBoard">
+              <div class="priority-column" data-helper-column="daily">
+                <h4>Daily Recurring</h4>
+                <div class="helper-task" draggable="true"><strong>Kitchen reset</strong><span>Counters, dishes, table, quick floor check.</span></div>
+                <div class="helper-task" draggable="true"><strong>Laundry flow</strong><span>Move loads, fold towels, flag special items.</span></div>
+                <div class="helper-task" draggable="true"><strong>Main living areas</strong><span>Reset pillows, blankets, clutter baskets.</span></div>
+              </div>
+              <div class="priority-column" data-helper-column="projects">
+                <h4>Projects</h4>
+                <div class="helper-task" draggable="true"><strong>Pantry organization</strong><span>Group snacks and note low staples.</span></div>
+                <div class="helper-task" draggable="true"><strong>Mudroom deep reset</strong><span>Shoes, hooks, bins, floor.</span></div>
+                <div class="helper-task" draggable="true"><strong>Bathroom cabinet sort</strong><span>Expired items, restock, wipe shelves.</span></div>
+              </div>
+              <div class="priority-column" data-helper-column="oneoff">
+                <h4>Time Permitting</h4>
+                <div class="helper-task" draggable="true"><strong>Wash patio cushions</strong><span>Only if weather allows drying.</span></div>
+                <div class="helper-task" draggable="true"><strong>Car snack cleanup</strong><span>Remove wrappers and wipe cupholders.</span></div>
+                <div class="helper-task" draggable="true"><strong>Holiday bin labels</strong><span>Make labels clearer for storage.</span></div>
+              </div>
+            </div>
+
+            <div class="admin-form">
+              <label for="ingredientRequest">Ingredient Request</label>
+              <input id="ingredientRequest" value="Chicken broth, tortillas, cilantro">
+              <div class="form-row">
+                <button class="primary-btn" type="button" id="addIngredientBtn">Add Ingredients</button>
+                <a class="ghost-btn" href="https://www.walmart.com/account/login" target="_blank" rel="noreferrer" style="display:grid;place-items:center;text-decoration:none;">Open Walmart</a>
+              </div>
+              <div class="ingredient-list" id="ingredientList"></div>
+              <div class="rule-box" style="margin:0;">
+                <strong>Shopping integration note</strong>
+                <p>Phase 1 can store Vanessa’s ingredient requests for Mom to approve. A direct Walmart cart integration would need a secure, approved login/API approach so the app does not store shopping passwords.</p>
+              </div>
+            </div>
+
+            <div class="ledger" id="payLedger"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Build Roadmap</h3>
+            <span>Web first</span>
+          </div>
+          <div class="side-body">
+            <div class="notice-card">Phase 1 is a responsive web app your family can use from phone browsers or a shared device. Phase 2 packages the stable app for iOS and Android app-store submission.</div>
+            <div class="review-list">
+              <div class="review-row">
+                <div>
+                  <strong>Phase 1: Web App</strong>
+                  <span>Accounts, admin settings, schedule generation, photo proof, inspection review, fines, and reminders.</span>
+                </div>
+                <span class="status done">Build first</span>
+              </div>
+              <div class="review-row">
+                <div>
+                  <strong>Phase 2: App Stores</strong>
+                  <span>Mobile packaging, push notifications, camera permissions, privacy policy, screenshots, demo mode, and review submission.</span>
+                </div>
+                <span class="status">Later</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Extra Ideas</h3>
+            <span>Next features</span>
+          </div>
+          <div class="side-body">
+            <ul class="idea-list">
+              <li>Photo proof for chores that are easy to claim but hard to verify.</li>
+              <li>A parent approval queue for completed hard chores before they count.</li>
+              <li>Quiet hours and reminder settings by child.</li>
+              <li>Swap requests so kids can trade chores with admin approval.</li>
+              <li>Fairness reports showing minutes, difficulty, and fines over time.</li>
+              <li>Bonus rewards for clean streak weeks with no fines.</li>
+            </ul>
+          </div>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <script>
+    const children = [
+      { id: "thayne", name: "Thayne", initials: "TH", maxDifficulty: 10, targetHard: true, streak: 11, openFines: 0, paidFines: 15, fineRate: 5 },
+      { id: "brig", name: "Brig Jr.", initials: "BJ", maxDifficulty: 10, targetHard: true, streak: 8, openFines: 5, paidFines: 10, fineRate: 5 },
+      { id: "josh", name: "Josh", initials: "J", maxDifficulty: 10, targetHard: true, streak: 14, openFines: 0, paidFines: 5, fineRate: 5 },
+      { id: "jojo", name: "JoJo", initials: "JJ", maxDifficulty: 10, targetHard: true, streak: 5, openFines: 10, paidFines: 0, fineRate: 5 },
+      { id: "louis", name: "Louis", initials: "L", maxDifficulty: 6, targetHard: false, streak: 6, openFines: 0, paidFines: 5, fineRate: 3 },
+      { id: "brielle", name: "Brielle", initials: "B", maxDifficulty: 4, targetHard: false, streak: 9, openFines: 0, paidFines: 0, fineRate: 2 }
+    ];
+
+    const routineChores = [
+      { name: "Make bed", minutes: 3 },
+      { name: "Clean room", minutes: 8 },
+      { name: "Tidy bathroom personal items and drawer", minutes: 5 }
+    ];
+
+    const youngerRoutine = [
+      { name: "Brush teeth and hair", minutes: 4 }
+    ];
+
+    const choreLibrary = [
+      { name: "Take out trash", minutes: 2, difficulty: 2, fit: "Anyone", frequency: "Daily", active: true },
+      { name: "Unload dishwasher", minutes: 8, difficulty: 3, fit: "Anyone", frequency: "Daily", active: true },
+      { name: "Load breakfast dishes", minutes: 6, difficulty: 2, fit: "Anyone", frequency: "Daily", active: true },
+      { name: "Wipe kitchen counters", minutes: 8, difficulty: 3, fit: "Anyone", frequency: "Daily", active: true },
+      { name: "Sweep kitchen", minutes: 10, difficulty: 4, fit: "Anyone", frequency: "Daily", active: true },
+      { name: "Wipe kitchen table and chairs", minutes: 7, difficulty: 3, fit: "Anyone", frequency: "Daily", active: true },
+      { name: "Check pantry floor for crumbs", minutes: 5, difficulty: 2, fit: "Anyone", frequency: "Daily", active: true },
+      { name: "Empty small bathroom trash cans", minutes: 6, difficulty: 2, fit: "Anyone", frequency: "Weekly", active: true },
+      { name: "Feed pets and refill water", minutes: 6, difficulty: 2, fit: "Anyone", frequency: "Daily", active: true },
+      { name: "Clean pet bowls", minutes: 8, difficulty: 3, fit: "Anyone", frequency: "Weekly", active: true },
+      { name: "Pick up pet toys", minutes: 5, difficulty: 2, fit: "Louis and Brielle", frequency: "Daily", active: true },
+      { name: "Fold towels", minutes: 12, difficulty: 4, fit: "Anyone", frequency: "Weekly", active: true },
+      { name: "Match socks", minutes: 10, difficulty: 3, fit: "Anyone", frequency: "Weekly", active: true },
+      { name: "Put away personal laundry", minutes: 15, difficulty: 4, fit: "Anyone", frequency: "Weekly", active: true },
+      { name: "Start towel load", minutes: 5, difficulty: 5, fit: "Older kids", frequency: "Weekly", active: true },
+      { name: "Move laundry to dryer", minutes: 4, difficulty: 4, fit: "Older kids", frequency: "Weekly", active: true },
+      { name: "Vacuum living room", minutes: 15, difficulty: 5, fit: "Older kids", frequency: "Weekly", active: true },
+      { name: "Vacuum stairs", minutes: 18, difficulty: 6, fit: "Older kids", frequency: "Weekly", active: true },
+      { name: "Vacuum bedroom hallway", minutes: 12, difficulty: 4, fit: "Anyone", frequency: "Weekly", active: true },
+      { name: "Dust living room surfaces", minutes: 12, difficulty: 4, fit: "Anyone", frequency: "Weekly", active: true },
+      { name: "Wipe fingerprints from doors", minutes: 10, difficulty: 3, fit: "Anyone", frequency: "Weekly", active: true },
+      { name: "Straighten couch pillows and blankets", minutes: 6, difficulty: 2, fit: "Louis and Brielle", frequency: "Daily", active: true },
+      { name: "Wipe bathroom counter", minutes: 7, difficulty: 3, fit: "Anyone", frequency: "Weekly", active: true },
+      { name: "Clean bathroom mirror", minutes: 7, difficulty: 3, fit: "Anyone", frequency: "Weekly", active: true },
+      { name: "Restock toilet paper", minutes: 5, difficulty: 2, fit: "Anyone", frequency: "Weekly", active: true },
+      { name: "Scrub bathroom sink", minutes: 10, difficulty: 5, fit: "Older kids", frequency: "Weekly", active: true },
+      { name: "Wipe bathroom baseboards", minutes: 15, difficulty: 5, fit: "Older kids", frequency: "Monthly", active: true },
+      { name: "Organize shoe area", minutes: 12, difficulty: 4, fit: "Anyone", frequency: "Weekly", active: true },
+      { name: "Reset backpack station", minutes: 8, difficulty: 3, fit: "Anyone", frequency: "Daily", active: true },
+      { name: "Clean garage entry", minutes: 20, difficulty: 6, fit: "Boys", frequency: "Weekly", active: true },
+      { name: "Sweep garage entry", minutes: 12, difficulty: 4, fit: "Anyone", frequency: "Weekly", active: true },
+      { name: "Break down cardboard boxes", minutes: 15, difficulty: 5, fit: "Older kids", frequency: "Weekly", active: true },
+      { name: "Move garbage cans to curb", minutes: 5, difficulty: 3, fit: "Anyone", frequency: "Monday only", active: true },
+      { name: "Bring garbage cans back", minutes: 5, difficulty: 3, fit: "Anyone", frequency: "Weekly", active: true },
+      { name: "Water front plants", minutes: 10, difficulty: 3, fit: "Anyone", frequency: "Daily", active: true },
+      { name: "Water backyard plants", minutes: 12, difficulty: 4, fit: "Anyone", frequency: "Daily", active: true },
+      { name: "Pull weeds from front bed", minutes: 20, difficulty: 6, fit: "Older kids", frequency: "Weekly", active: true },
+      { name: "Pick up sticks in yard", minutes: 15, difficulty: 5, fit: "Boys", frequency: "Weekly", active: true },
+      { name: "Mow front strip", minutes: 25, difficulty: 7, fit: "Boys", frequency: "Monday only", active: true },
+      { name: "Sweep porch", minutes: 10, difficulty: 3, fit: "Anyone", frequency: "Weekly", active: true },
+      { name: "Shake out entry rugs", minutes: 8, difficulty: 4, fit: "Anyone", frequency: "Weekly", active: true },
+      { name: "Clean backyard cushions", minutes: 12, difficulty: 4, fit: "Anyone", frequency: "Weekly", active: true },
+      { name: "Wash outdoor table", minutes: 12, difficulty: 4, fit: "Anyone", frequency: "Weekly", active: true },
+      { name: "Deep clean mudroom", minutes: 22, difficulty: 7, fit: "Boys", frequency: "Monthly", active: true },
+      { name: "Clean out fridge leftovers", minutes: 15, difficulty: 5, fit: "Older kids", frequency: "Weekly", active: true },
+      { name: "Wipe fridge shelves", minutes: 20, difficulty: 6, fit: "Older kids", frequency: "Monthly", active: true },
+      { name: "Organize snack bin", minutes: 10, difficulty: 3, fit: "Anyone", frequency: "Weekly", active: true },
+      { name: "Refill napkins and paper towels", minutes: 5, difficulty: 2, fit: "Anyone", frequency: "Weekly", active: true },
+      { name: "Clean microwave", minutes: 10, difficulty: 4, fit: "Anyone", frequency: "Weekly", active: true },
+      { name: "Wipe appliance fronts", minutes: 12, difficulty: 4, fit: "Anyone", frequency: "Weekly", active: true },
+      { name: "Organize game shelf", minutes: 15, difficulty: 4, fit: "Anyone", frequency: "Monthly", active: true },
+      { name: "Organize craft supplies", minutes: 18, difficulty: 5, fit: "Older kids", frequency: "Monthly", active: true },
+      { name: "Clean car interior trash", minutes: 12, difficulty: 4, fit: "Anyone", frequency: "Weekly", active: true },
+      { name: "Vacuum car floor mats", minutes: 20, difficulty: 6, fit: "Boys", frequency: "Monthly", active: true },
+      { name: "Wash car windows", minutes: 15, difficulty: 5, fit: "Older kids", frequency: "Monthly", active: true },
+      { name: "Clean out gutters", minutes: 30, difficulty: 9, fit: "Boys only", frequency: "Monthly", active: false },
+      { name: "Shovel front walk", minutes: 20, difficulty: 7, fit: "Boys", frequency: "One-off", active: false },
+      { name: "Rake leaves into bags", minutes: 30, difficulty: 8, fit: "Boys", frequency: "One-off", active: false },
+      { name: "Holiday decoration bins reset", minutes: 25, difficulty: 6, fit: "Older kids", frequency: "One-off", active: false },
+      { name: "Guest room reset", minutes: 20, difficulty: 5, fit: "Older kids", frequency: "One-off", active: false }
+    ];
+
+    const ledger = {
+      thayne: [
+        { title: "No open fines", date: "All paid", amount: "$0", paid: true }
+      ],
+      brig: [
+        { title: "Trash missed", date: "Jun 8", amount: "$5", paid: false },
+        { title: "Bathroom paid", date: "Jun 2", amount: "$5", paid: true }
+      ],
+      josh: [
+        { title: "Dog cleanup paid", date: "Jun 1", amount: "$5", paid: true }
+      ],
+      jojo: [
+        { title: "Dishes missed", date: "Jun 7", amount: "$5", paid: false },
+        { title: "Room reset missed", date: "Jun 5", amount: "$5", paid: false }
+      ],
+      louis: [
+        { title: "Hair routine paid", date: "Jun 3", amount: "$5", paid: true }
+      ],
+      brielle: [
+        { title: "No open fines", date: "All paid", amount: "$0", paid: true }
+      ]
+    };
+
+    let selectedChildId = "thayne";
+    let activeView = "daily";
+    let shuffleOffset = 0;
+    let approvedDeadline = "12:00 PM";
+    let helperWeeklyHours = 14.25;
+    let helperPayRecords = [
+      { week: "Jun 1-7", hours: 16.5, rate: 17, paid: true },
+      { week: "Jun 8-14", hours: 14.25, rate: 17, paid: false }
+    ];
+    let ingredientRequests = [
+      "Chicken broth",
+      "Tortillas",
+      "Cilantro"
+    ];
+
+    function seededIndex(seed, max) {
+      const x = Math.sin(seed * 999) * 10000;
+      return Math.floor((x - Math.floor(x)) * max);
+    }
+
+    function getRoutines(child) {
+      const chores = [...routineChores];
+      if (child.id === "louis" || child.id === "brielle") chores.push(...youngerRoutine);
+      return chores;
+    }
+
+    function getRotatingChores(child, dayOffset) {
+      const eligible = choreLibrary
+        .filter(chore => chore.active !== false)
+        .filter(chore => chore.difficulty <= child.maxDifficulty)
+        .filter(chore => child.targetHard || chore.difficulty <= 4)
+        .sort((a, b) => child.targetHard ? b.difficulty - a.difficulty : a.difficulty - b.difficulty);
+
+      const selected = [];
+      let total = 0;
+      let attempts = 0;
+      while (total < 22 && attempts < 12) {
+        const index = seededIndex(dayOffset + shuffleOffset + attempts + child.name.length, eligible.length);
+        const chore = eligible[index];
+        if (!selected.some(item => item.name === chore.name) && total + chore.minutes <= 30) {
+          selected.push(chore);
+          total += chore.minutes;
+        }
+        attempts += 1;
+      }
+      return selected.length ? selected : [eligible[0]];
+    }
+
+    function formatDate(offset) {
+      const base = new Date(2026, 5, 10);
+      base.setDate(base.getDate() + offset);
+      return base.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+    }
+
+    function renderFamilyList() {
+      const list = document.getElementById("familyList");
+      list.innerHTML = children.map(child => `
+        <button class="child-button ${child.id === selectedChildId ? "active" : ""}" type="button" data-child="${child.id}">
+          <div class="avatar ${child.id}">${child.initials}</div>
+          <div>
+            <strong>${child.name}</strong>
+            <small>Fine rate $${child.fineRate}/day · difficulty 1-${child.maxDifficulty}</small>
+          </div>
+          <div class="fine-pill">$${child.openFines}</div>
+        </button>
+      `).join("");
+      list.querySelectorAll("button").forEach(button => {
+        button.addEventListener("click", () => {
+          selectedChildId = button.dataset.child;
+          approvedDeadline = "12:00 PM";
+          render();
+        });
+      });
+    }
+
+    function renderDaily(child) {
+      const routines = getRoutines(child);
+      const rotating = getRotatingChores(child, 0);
+      const rotatingMinutes = rotating.reduce((sum, chore) => sum + chore.minutes, 0);
+      const routineMinutes = routines.reduce((sum, chore) => sum + chore.minutes, 0);
+
+      document.getElementById("childHeading").textContent = `${child.name}'s Dashboard`;
+      document.getElementById("childSubhead").textContent = `${child.name} has ${routineMinutes} minutes of streak chores, then ${rotatingMinutes} minutes of rotating chores.`;
+      document.getElementById("deadlineTime").textContent = approvedDeadline;
+      document.getElementById("rotatingNote").textContent = `Has until ${approvedDeadline}`;
+      document.getElementById("minutesMetric").textContent = `${rotatingMinutes} min`;
+      document.getElementById("streakMetric").textContent = `${child.streak} days`;
+      document.getElementById("openFineMetric").textContent = `$${child.openFines}`;
+      document.getElementById("fineRateMetric").textContent = `$${child.fineRate}/day`;
+      document.getElementById("fineRateInput").value = child.fineRate;
+
+      document.getElementById("streakTasks").innerHTML = routines.map((chore, index) => `
+        <div class="task streak">
+          <div class="task-icon">${index + 1}</div>
+          <div>
+            <strong>${chore.name}</strong>
+            <span>Estimated ${chore.minutes} minutes. Complete these before rotating fined chores. Mom still reviews at noon.</span>
+          </div>
+          <div class="task-actions">
+            <button class="check-btn" type="button">Complete</button>
+            <button class="proof-btn" type="button">Photo</button>
+            <span class="status done">Needs review</span>
+          </div>
+        </div>
+      `).join("");
+
+      document.getElementById("rotatingTasks").innerHTML = rotating.map((chore, index) => `
+        <div class="task ${index === 0 && child.openFines ? "overdue" : ""}">
+          <div class="task-icon">${chore.difficulty}</div>
+          <div>
+            <strong>${chore.name}</strong>
+            <span>Difficulty ${chore.difficulty}/10. Estimated ${chore.minutes} minutes. Has until ${approvedDeadline}. If incomplete by the deadline without Dad’s extension, charge $${child.fineRate}.</span>
+          </div>
+          <div class="task-actions">
+            <button class="check-btn" type="button">Complete</button>
+            <button class="proof-btn" type="button">Photo</button>
+            <span class="status ${index === 0 && child.openFines ? "warn" : ""}">${index === 0 && child.openFines ? `$${child.fineRate} risk` : "Due"}</span>
+          </div>
+        </div>
+      `).join("");
+
+      renderReviewList(child, routines, rotating);
+    }
+
+    function renderReviewList(child, routines, rotating) {
+      const reviewItems = [
+        ...routines.slice(0, 2).map(chore => ({ ...chore, type: "Streak" })),
+        ...rotating.map(chore => ({ ...chore, type: "Rotating" }))
+      ];
+      document.getElementById("reviewList").innerHTML = reviewItems.map((chore, index) => `
+        <div class="review-row">
+          <div>
+            <strong>${child.name}: ${chore.name}</strong>
+            <span>${chore.type} chore · ${index % 2 === 0 ? "photo submitted" : "checkbox clicked"} · waiting for physical inspection</span>
+          </div>
+          <span class="status ${index % 3 === 0 ? "done" : ""}">${index % 3 === 0 ? "Approve" : "Inspect"}</span>
+        </div>
+      `).join("");
+    }
+
+    function renderWeekly(child) {
+      const grid = document.getElementById("weekGrid");
+      grid.innerHTML = Array.from({ length: 7 }).map((_, day) => {
+        const routines = getRoutines(child).slice(0, 2);
+        const rotating = getRotatingChores(child, day);
+        const minutes = rotating.reduce((sum, chore) => sum + chore.minutes, 0);
+        return `
+          <div class="day-card ${day === 0 ? "today" : ""}">
+            <h4>${formatDate(day)}</h4>
+            <p>${minutes} rotating min, due ${day === 0 ? approvedDeadline : "12:00 PM"}</p>
+            ${routines.map(chore => `<span class="mini-task streak">${chore.name}</span>`).join("")}
+            ${rotating.map(chore => `<span class="mini-task">${chore.name} · ${chore.minutes}m · D${chore.difficulty}</span>`).join("")}
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderLedger(child) {
+      document.getElementById("ledgerName").textContent = child.name;
+      document.getElementById("fineLedger").innerHTML = ledger[child.id].map(item => `
+        <div class="ledger-row">
+          <div>
+            <strong>${item.title}</strong>
+            <span>${item.date} · ${item.amount}</span>
+          </div>
+          <div class="${item.paid ? "paid" : "unpaid"}">${item.paid ? "Paid" : "Unpaid"}</div>
+        </div>
+      `).join("");
+      document.getElementById("fineRateStatus").textContent = `${child.name}'s missed-day fine is $${child.fineRate} unless Dad approves an extension.`;
+    }
+
+    function saveFineRate() {
+      const child = children.find(item => item.id === selectedChildId);
+      const newRate = Math.max(0, Number(document.getElementById("fineRateInput").value) || 0);
+      child.fineRate = Number(newRate.toFixed(2));
+      render();
+      document.getElementById("fineRateStatus").textContent = `${child.name}'s daily fine rate is now $${child.fineRate}.`;
+    }
+
+    function renderChoreTable() {
+      const activeCount = choreLibrary.filter(chore => chore.active !== false).length;
+      document.getElementById("choreCountLabel").textContent = `${activeCount} on / ${choreLibrary.length} saved`;
+      document.getElementById("choreTable").innerHTML = choreLibrary.map((chore, index) => `
+        <tr class="${chore.active === false ? "inactive" : ""}">
+          <td>${chore.name}</td>
+          <td>${chore.minutes}</td>
+          <td><span class="difficulty">${chore.difficulty}</span></td>
+          <td>${chore.frequency || "Daily"}</td>
+          <td>${chore.fit}</td>
+          <td><button class="toggle-btn ${chore.active === false ? "off" : ""}" type="button" data-chore-index="${index}">${chore.active === false ? "Off" : "On"}</button></td>
+        </tr>
+      `).join("");
+      document.querySelectorAll("[data-chore-index]").forEach(button => {
+        button.addEventListener("click", () => {
+          const chore = choreLibrary[Number(button.dataset.choreIndex)];
+          chore.active = chore.active === false;
+          shuffleOffset += 5;
+          document.getElementById("adminStatus").textContent = `${chore.name} is now ${chore.active === false ? "out of" : "back in"} the rotation. ${activeCount} chores were active before this change.`;
+          render();
+        });
+      });
+    }
+
+    function parseTimeToMinutes(value) {
+      const match = value.trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)$/i);
+      if (!match) return null;
+      let hours = Number(match[1]);
+      const minutes = Number(match[2] || 0);
+      const period = match[3].toUpperCase();
+      if (period === "PM" && hours !== 12) hours += 12;
+      if (period === "AM" && hours === 12) hours = 0;
+      return hours * 60 + minutes;
+    }
+
+    function calculateHelperShiftHours() {
+      const start = parseTimeToMinutes(document.getElementById("helperArrival").value);
+      const end = parseTimeToMinutes(document.getElementById("helperExit").value);
+      if (start === null || end === null || end <= start) return null;
+      return (end - start) / 60;
+    }
+
+    function renderHelperPay() {
+      const rate = Number(document.getElementById("helperRate")?.value || 17);
+      const pay = helperWeeklyHours * rate;
+      document.getElementById("helperHours").textContent = helperWeeklyHours.toFixed(2);
+      document.getElementById("helperRateLabel").textContent = `$${rate.toFixed(2)}/hr`;
+      document.getElementById("helperPay").textContent = `$${pay.toFixed(2)}`;
+      document.getElementById("payLedger").innerHTML = helperPayRecords.map(record => `
+        <div class="ledger-row">
+          <div>
+            <strong>${record.week}</strong>
+            <span>${record.hours.toFixed(2)} hours x $${record.rate.toFixed(2)}/hr = $${(record.hours * record.rate).toFixed(2)}</span>
+          </div>
+          <div class="${record.paid ? "paid" : "unpaid"}">${record.paid ? "Paid" : "Due"}</div>
+        </div>
+      `).join("");
+    }
+
+    function saveHelperTimeCard() {
+      const hours = calculateHelperShiftHours();
+      const rate = Number(document.getElementById("helperRate").value || 17);
+      if (hours === null) {
+        document.getElementById("timeCardStatus").textContent = "Use times like 8:30 AM and 1:15 PM.";
+        return;
+      }
+      helperWeeklyHours += hours;
+      helperPayRecords[helperPayRecords.length - 1] = {
+        week: "Jun 8-14",
+        hours: helperWeeklyHours,
+        rate,
+        paid: false
+      };
+      document.getElementById("timeCardStatus").textContent = `Saved ${hours.toFixed(2)} hours for Vanessa today.`;
+      renderHelperPay();
+    }
+
+    function renderIngredients() {
+      document.getElementById("ingredientList").innerHTML = ingredientRequests.map(item => `
+        <div class="ingredient-item">
+          <span>${item}</span>
+          <span>Requested</span>
+        </div>
+      `).join("");
+    }
+
+    function addIngredientRequest() {
+      const raw = document.getElementById("ingredientRequest").value.trim();
+      if (!raw) return;
+      raw.split(",").map(item => item.trim()).filter(Boolean).forEach(item => {
+        if (!ingredientRequests.includes(item)) ingredientRequests.push(item);
+      });
+      document.getElementById("ingredientRequest").value = "";
+      renderIngredients();
+    }
+
+    function setupHelperDragDrop() {
+      let dragged = null;
+      document.querySelectorAll(".helper-task").forEach(task => {
+        task.addEventListener("dragstart", () => {
+          dragged = task;
+        });
+      });
+      document.querySelectorAll(".priority-column").forEach(column => {
+        column.addEventListener("dragover", event => {
+          event.preventDefault();
+        });
+        column.addEventListener("drop", event => {
+          event.preventDefault();
+          if (!dragged) return;
+          const target = event.target.closest(".helper-task");
+          if (target && target !== dragged && target.parentElement === column) {
+            column.insertBefore(dragged, target);
+          } else {
+            column.appendChild(dragged);
+          }
+          dragged = null;
+        });
+      });
+    }
+
+    function addAdminChore() {
+      const name = document.getElementById("adminChoreName").value.trim();
+      const frequency = document.getElementById("adminFrequency").value;
+      const minutes = Math.max(1, Number(document.getElementById("adminMinutes").value) || 1);
+      const difficulty = Math.min(10, Math.max(1, Number(document.getElementById("adminDifficulty").value) || 1));
+      const fit = document.getElementById("adminFit").value;
+      const notice = document.getElementById("adminNotice").value;
+      if (!name) {
+        document.getElementById("adminStatus").textContent = "Add a chore name first.";
+        return;
+      }
+      choreLibrary.unshift({ name, minutes, difficulty, fit, frequency, notice, active: true });
+      shuffleOffset += 3;
+      document.getElementById("adminStatus").textContent = `${name} added as ${frequency.toLowerCase()} and set to ${notice.toLowerCase()}.`;
+      render();
+    }
+
+    function renderView() {
+      document.getElementById("dailyView").classList.toggle("hidden", activeView !== "daily");
+      document.getElementById("weeklyView").classList.toggle("hidden", activeView !== "weekly");
+      document.getElementById("dailyBtn").classList.toggle("active", activeView === "daily");
+      document.getElementById("weeklyBtn").classList.toggle("active", activeView === "weekly");
+    }
+
+    function render() {
+      const child = children.find(item => item.id === selectedChildId);
+      renderFamilyList();
+      renderDaily(child);
+      renderWeekly(child);
+      renderLedger(child);
+      renderChoreTable();
+      renderHelperPay();
+      renderIngredients();
+      renderView();
+    }
+
+    document.getElementById("dailyBtn").addEventListener("click", () => {
+      activeView = "daily";
+      renderView();
+    });
+
+    document.getElementById("weeklyBtn").addEventListener("click", () => {
+      activeView = "weekly";
+      renderView();
+    });
+
+    document.getElementById("shuffleBtn").addEventListener("click", () => {
+      shuffleOffset += 7;
+      render();
+    });
+
+    document.getElementById("approveBtn").addEventListener("click", () => {
+      if (document.getElementById("approval").value === "Deny") {
+        approvedDeadline = "12:00 PM";
+        document.getElementById("reviewStatus").textContent = "Extension denied. Fine deadline stays 12:00 PM.";
+        render();
+        return;
+      }
+      const child = children.find(item => item.id === selectedChildId);
+      approvedDeadline = document.getElementById("newTime").value || "12:00 PM";
+      document.getElementById("reviewStatus").textContent = `Dad-approved extension saved for ${child.name}: deadline moved to ${approvedDeadline}.`;
+      render();
+    });
+
+    document.getElementById("addChoreBtn").addEventListener("click", addAdminChore);
+
+    document.getElementById("saveFineRateBtn").addEventListener("click", saveFineRate);
+
+    document.getElementById("saveTimeCardBtn").addEventListener("click", saveHelperTimeCard);
+
+    document.getElementById("addIngredientBtn").addEventListener("click", addIngredientRequest);
+
+    document.getElementById("sendReviewBtn").addEventListener("click", () => {
+      const child = children.find(item => item.id === selectedChildId);
+      document.getElementById("reviewStatus").textContent = `Noon review text queued for Mom: inspect ${child.name}'s chores before fines are finalized.`;
+    });
+
+    render();
+    setupHelperDragDrop();
+  </script>
+</body>
+</html>
