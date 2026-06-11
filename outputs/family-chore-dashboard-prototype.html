@@ -3777,9 +3777,24 @@
       return `${start.toLocaleDateString("en-US", options)}-${end.toLocaleDateString("en-US", options)}`;
     }
 
+    function syncCurrentHelperWeek() {
+      const week = currentWeekLabel();
+      let record = helperPayRecords.find(item => item.week === week);
+      if (!record) {
+        record = { week, hours: 0, rate: helperRate, paid: false };
+        helperPayRecords.push(record);
+      }
+      helperWeeklyHours = Number(record.hours) || 0;
+      helperRate = Number(record.rate) || helperRate || 17;
+      return record;
+    }
+
     function renderHelperPay() {
-      const rate = Number(document.getElementById("helperRate")?.value || helperRate || 17);
+      const currentRecord = syncCurrentHelperWeek();
+      const rate = Number(document.getElementById("helperRate")?.value || currentRecord.rate || helperRate || 17);
       helperRate = rate;
+      currentRecord.rate = rate;
+      currentRecord.hours = helperWeeklyHours;
       if (document.getElementById("helperRate")) document.getElementById("helperRate").value = rate;
       const pay = helperWeeklyHours * rate;
       document.getElementById("helperHours").textContent = helperWeeklyHours.toFixed(2);
@@ -3807,14 +3822,12 @@
         document.getElementById("timeCardStatus").textContent = "Use times like 8:30 AM and 1:15 PM.";
         return;
       }
+      const currentRecord = syncCurrentHelperWeek();
       helperWeeklyHours += hours;
       helperRate = rate;
-      helperPayRecords[helperPayRecords.length - 1] = {
-        week: currentWeekLabel(),
-        hours: helperWeeklyHours,
-        rate,
-        paid: false
-      };
+      currentRecord.hours = helperWeeklyHours;
+      currentRecord.rate = rate;
+      currentRecord.paid = false;
       persistBetaData();
       document.getElementById("timeCardStatus").textContent = `Saved ${hours.toFixed(2)} hours for Vanessa today.`;
       renderHelperPay();
