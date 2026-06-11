@@ -1700,6 +1700,7 @@
           </div>
           <div class="side-body">
             <div class="notice-card">Monthly bonus streaks restart on the first of each month. Overall streaks keep growing and can unlock long-term super bonuses.</div>
+            <div class="notice-card" id="bonusPeriodNote">Current monthly bonus period loading...</div>
             <div class="helper-grid">
               <div class="helper-metric"><span>MONTH STREAK</span><strong id="monthlyStreakMetric">0</strong></div>
               <div class="helper-metric"><span>OVERALL STREAK</span><strong id="overallStreakMetric">0</strong></div>
@@ -2870,6 +2871,23 @@
       return base.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
     }
 
+    function currentBonusPeriod() {
+      const date = new Date();
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    }
+
+    function currentBonusMonthLabel() {
+      return new Date().toLocaleDateString("en-US", { month: "short", year: "numeric" });
+    }
+
+    function nextBonusResetLabel() {
+      const date = new Date();
+      return new Date(date.getFullYear(), date.getMonth() + 1, 1).toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric"
+      });
+    }
+
     function renderFamilyList() {
       const list = document.getElementById("familyList");
       const visibleChildren = currentUser?.role === "child"
@@ -3179,6 +3197,7 @@
       document.getElementById("monthlyStreakMetric").textContent = `${child.monthlyStreak} days`;
       document.getElementById("overallStreakMetric").textContent = `${child.streak} days`;
       document.getElementById("bonusBalanceMetric").textContent = `$${child.accountBalance}`;
+      document.getElementById("bonusPeriodNote").textContent = `Current monthly bonus period: ${currentBonusMonthLabel()}. Next monthly bonus reset: ${nextBonusResetLabel()}.`;
       document.getElementById("bonus5").value = bonusRules.monthly.find(rule => rule.days === 5)?.amount ?? 5;
       document.getElementById("bonus7").value = bonusRules.monthly.find(rule => rule.days === 7)?.amount ?? 10;
       document.getElementById("bonus30").value = bonusRules.monthly.find(rule => rule.days === 30)?.amount ?? 50;
@@ -3187,12 +3206,12 @@
         <div class="ledger-row">
           <div>
             <strong>${escapeHtml(item.title)}</strong>
-            <span>${escapeHtml(item.date)} · ${escapeHtml(item.amount)}</span>
+            <span>${escapeHtml(item.date)}${item.period ? ` · ${escapeHtml(item.period)}` : ""} · ${escapeHtml(item.amount)}</span>
           </div>
           <div class="${item.paid ? "paid" : "unpaid"}">${item.paid ? "Paid" : "Pending"}</div>
         </div>
       `).join("");
-      document.getElementById("bonusStatus").textContent = `Monthly streak resets July 1. Overall streak continues from ${child.streak} days.`;
+      document.getElementById("bonusStatus").textContent = `Monthly bonus streak resets ${nextBonusResetLabel()}. Overall streak continues from ${child.streak} days.`;
     }
 
     function renderProfilePanel(child) {
@@ -3247,9 +3266,11 @@
         return;
       }
       const title = bonus.type === "super" ? `${bonus.days}-day super bonus` : `${bonus.days}-day monthly streak`;
+      const bonusPeriod = currentBonusPeriod();
+      const bonusMonthLabel = currentBonusMonthLabel();
       const alreadyAwarded = bonusLedger[child.id].some(item => {
         if (item.title !== title) return false;
-        return bonus.type === "super" || item.date.includes("Jun");
+        return bonus.type === "super" || item.period === bonusPeriod || item.date === bonusMonthLabel;
       });
       if (alreadyAwarded) {
         document.getElementById("bonusStatus").textContent = `${child.name} already received the ${title} for this bonus period.`;
@@ -3258,7 +3279,8 @@
       child.accountBalance += bonus.amount;
       bonusLedger[child.id].unshift({
         title,
-        date: bonus.type === "super" ? "Lifetime" : "Jun 2026",
+        date: bonus.type === "super" ? "Lifetime" : bonusMonthLabel,
+        period: bonus.type === "super" ? "all-time" : bonusPeriod,
         amount: `$${bonus.amount}`,
         paid: true
       });
