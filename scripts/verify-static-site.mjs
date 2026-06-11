@@ -73,6 +73,8 @@ const requiredMarkers = [
   "Best overall lead for lifetime streaks",
   "renderStreakPodium",
   "data-podium-child",
+  "escapeHtml",
+  "No eligible rotating chores are active",
   "teamworkChoresChoreState",
   "teamworkChoresBetaData",
   "Charge Missed Deadline Fine",

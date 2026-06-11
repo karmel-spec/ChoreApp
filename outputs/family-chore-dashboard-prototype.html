@@ -2295,6 +2295,16 @@
       return `${year}-${month}-${day}`;
     }
 
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, character => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#039;"
+      })[character]);
+    }
+
     function getStoredChoreState() {
       try {
         return JSON.parse(localStorage.getItem(choreStateStoreKey)) || {};
@@ -2581,9 +2591,9 @@
     function renderLoginGrid() {
       document.getElementById("loginGrid").innerHTML = accounts.map(account => `
         <button class="login-user ${account.id === selectedLoginId ? "active" : ""}" type="button" data-login-id="${account.id}">
-          <span class="login-avatar ${account.childId || account.id}">${account.initials}</span>
-          <strong>${account.name}</strong>
-          <span>${account.label}</span>
+          <span class="login-avatar ${escapeHtml(account.childId || account.id)}">${escapeHtml(account.initials)}</span>
+          <strong>${escapeHtml(account.name)}</strong>
+          <span>${escapeHtml(account.label)}</span>
           <span class="gmail-status">${gmailForAccount(account) ? "Gmail linked" : "Add Gmail"}</span>
         </button>
       `).join("");
@@ -2675,8 +2685,10 @@
     }
 
     function renderChildPhoto(child, className = "avatar") {
-      const image = child.profileImage ? `<img src="${child.profileImage}" alt="${child.name} profile photo">` : child.initials;
-      return `<div class="${className} ${child.id}">${image}</div>`;
+      const image = child.profileImage
+        ? `<img src="${escapeHtml(child.profileImage)}" alt="${escapeHtml(child.name)} profile photo">`
+        : escapeHtml(child.initials);
+      return `<div class="${escapeHtml(className)} ${escapeHtml(child.id)}">${image}</div>`;
     }
 
     function renderAdminLocks() {
@@ -2834,6 +2846,8 @@
         .filter(chore => child.targetHard || chore.difficulty <= 4)
         .sort((a, b) => child.targetHard ? b.difficulty - a.difficulty : a.difficulty - b.difficulty);
 
+      if (!eligible.length) return [];
+
       const selected = [];
       let total = 0;
       let attempts = 0;
@@ -2865,7 +2879,7 @@
         <button class="child-button ${child.id === selectedChildId ? "active" : ""}" type="button" data-child="${child.id}">
           ${renderChildPhoto(child)}
           <div>
-            <strong>${child.name}</strong>
+            <strong>${escapeHtml(child.name)}</strong>
             <small>Fine rate $${child.fineRate}/day · difficulty 1-${child.maxDifficulty}</small>
           </div>
           <div class="fine-pill">$${child.openFines}</div>
@@ -2896,11 +2910,11 @@
       document.getElementById("streakPodium").innerHTML = order.map(child => {
         const rank = winners.findIndex(winner => winner.id === child.id);
         return `
-          <button class="podium-place ${placeClasses[rank]} ${child.id === selectedChildId ? "active" : ""}" type="button" data-podium-child="${child.id}" aria-label="Open ${child.name}'s dashboard, ${placeLabels[rank]} place with ${child.streak} all-time streak days">
+          <button class="podium-place ${placeClasses[rank]} ${child.id === selectedChildId ? "active" : ""}" type="button" data-podium-child="${child.id}" aria-label="Open ${escapeHtml(child.name)}'s dashboard, ${placeLabels[rank]} place with ${child.streak} all-time streak days">
             <span class="podium-rank">${placeLabels[rank]} place</span>
             <span class="podium-medal">${medals[rank]}</span>
             ${renderChildPhoto(child, "podium-photo")}
-            <strong class="podium-name">${child.name}</strong>
+            <strong class="podium-name">${escapeHtml(child.name)}</strong>
             <span class="podium-streak">${child.streak} all-time days</span>
           </button>
         `;
@@ -2945,13 +2959,13 @@
       const proofKey = encodeURIComponent(choreKey(child, chore, choreType));
       const completed = Boolean(record.completedAt);
       const statusClass = choreStatusClass(record, warning);
-      const proofThumb = record.proofImage ? `<img class="proof-thumb" src="${record.proofImage}" alt="${chore.name} proof photo">` : "";
+      const proofThumb = record.proofImage ? `<img class="proof-thumb" src="${escapeHtml(record.proofImage)}" alt="${escapeHtml(chore.name)} proof photo">` : "";
       return `
         <button class="check-btn ${completed ? "completed" : ""}" type="button" data-chore-type="${choreType}" data-chore-name="${encodedName}" ${completed ? "disabled" : ""}>${completed ? "Done" : "Complete"}</button>
         <button class="proof-btn" type="button" data-proof-key="${proofKey}" data-chore-type="${choreType}" data-chore-name="${encodedName}">${record.proofImage ? "Photo saved" : "Photo"}</button>
         <input class="proof-input" type="file" accept="image/*" data-proof-key="${proofKey}" data-chore-type="${choreType}" data-chore-name="${encodedName}">
         ${proofThumb}
-        <span class="status ${statusClass}">${choreStatusText(record, fallbackStatus)}</span>
+        <span class="status ${statusClass}">${escapeHtml(choreStatusText(record, fallbackStatus))}</span>
       `;
     }
 
@@ -2983,8 +2997,8 @@
           <div class="task-icon">${index + 1}</div>
           ${renderChildPhoto(child, "task-person")}
           <div>
-            <strong>${chore.name}</strong>
-            <span>Estimated ${chore.minutes} minutes. Complete these before rotating fined chores. ${familySettings.reviewRecipient} still reviews at ${familySettings.reviewReminderTime}.</span>
+            <strong>${escapeHtml(chore.name)}</strong>
+            <span>Estimated ${chore.minutes} minutes. Complete these before rotating fined chores. ${escapeHtml(familySettings.reviewRecipient)} still reviews at ${escapeHtml(familySettings.reviewReminderTime)}.</span>
           </div>
           <div class="task-actions">
             ${renderTaskActions(child, chore, "priority", "Needs review")}
@@ -2993,7 +3007,7 @@
       `;
       }).join("");
 
-      document.getElementById("rotatingTasks").innerHTML = rotating.map((chore, index) => {
+      document.getElementById("rotatingTasks").innerHTML = rotating.length ? rotating.map((chore, index) => {
         const record = getChoreRecord(child, chore, "rotating");
         const warning = index === 0 && child.openFines;
         return `
@@ -3001,15 +3015,15 @@
           <div class="task-icon">${chore.difficulty}</div>
           ${renderChildPhoto(child, "task-person")}
           <div>
-            <strong>${chore.name}</strong>
-            <span>Difficulty ${chore.difficulty}/10. Estimated ${chore.minutes} minutes. Has until ${approvedDeadline}. If incomplete by the deadline without ${extensionApproverShortName()}’s extension, charge $${child.fineRate}.</span>
+            <strong>${escapeHtml(chore.name)}</strong>
+            <span>Difficulty ${chore.difficulty}/10. Estimated ${chore.minutes} minutes. Has until ${escapeHtml(approvedDeadline)}. If incomplete by the deadline without ${escapeHtml(extensionApproverShortName())}’s extension, charge $${child.fineRate}.</span>
           </div>
           <div class="task-actions">
             ${renderTaskActions(child, chore, "rotating", warning ? `$${child.fineRate} risk` : "Due", warning)}
           </div>
         </div>
       `;
-      }).join("");
+      }).join("") : `<div class="notice-card warn">No eligible rotating chores are active for ${escapeHtml(child.name)}. Turn on chores in the master list or adjust difficulty approvals.</div>`;
 
       renderReviewList(child, routines, rotating);
       attachCompletionHandlers(child);
@@ -3023,7 +3037,7 @@
       document.getElementById("reviewList").innerHTML = reviewItems.map(chore => {
         const record = getChoreRecord(child, chore, chore.reviewType);
         const encodedName = encodeURIComponent(chore.name);
-        const proofThumb = record.proofImage ? `<img class="proof-thumb" src="${record.proofImage}" alt="${chore.name} proof photo">` : "";
+        const proofThumb = record.proofImage ? `<img class="proof-thumb" src="${escapeHtml(record.proofImage)}" alt="${escapeHtml(chore.name)} proof photo">` : "";
         const detail = record.reviewStatus === "approved"
           ? "approved after inspection"
           : record.reviewStatus === "redo"
@@ -3034,14 +3048,14 @@
         return `
         <div class="review-row">
           <div>
-            <strong>${child.name}: ${chore.name}</strong>
-            <span>${chore.typeLabel} chore · ${detail}</span>
+            <strong>${escapeHtml(child.name)}: ${escapeHtml(chore.name)}</strong>
+            <span>${escapeHtml(chore.typeLabel)} chore · ${escapeHtml(detail)}</span>
           </div>
           <div class="review-actions">
             ${proofThumb}
             <button class="ghost-btn" type="button" data-review-action="redo" data-review-type="${chore.reviewType}" data-review-name="${encodedName}">Redo</button>
             <button class="primary-btn" type="button" data-review-action="approve" data-review-type="${chore.reviewType}" data-review-name="${encodedName}" ${record.completedAt ? "" : "disabled"}>Approve</button>
-            <span class="status ${choreStatusClass(record, false)}">${choreStatusText(record, "Inspect")}</span>
+            <span class="status ${choreStatusClass(record, false)}">${escapeHtml(choreStatusText(record, "Inspect"))}</span>
           </div>
         </div>
       `;
@@ -3081,9 +3095,9 @@
         return `
           <div class="day-card ${day === 0 ? "today" : ""}">
             <h4>${formatDate(day)}</h4>
-            <p>${minutes} rotating min, due ${day === 0 ? approvedDeadline : familySettings.defaultDeadline}</p>
-            ${routines.map(chore => `<span class="mini-task streak">${chore.name}</span>`).join("")}
-            ${rotating.map(chore => `<span class="mini-task">${chore.name} · ${chore.minutes}m · D${chore.difficulty}</span>`).join("")}
+            <p>${minutes} rotating min, due ${escapeHtml(day === 0 ? approvedDeadline : familySettings.defaultDeadline)}</p>
+            ${routines.map(chore => `<span class="mini-task streak">${escapeHtml(chore.name)}</span>`).join("")}
+            ${rotating.length ? rotating.map(chore => `<span class="mini-task">${escapeHtml(chore.name)} · ${chore.minutes}m · D${chore.difficulty}</span>`).join("") : `<span class="mini-task">No eligible rotating chores active</span>`}
           </div>
         `;
       }).join("");
@@ -3094,7 +3108,7 @@
       document.getElementById("forecastList").innerHTML = Array.from({ length: 30 }).map((_, day) => {
         const rotating = getRotatingChores(child, day);
         const minutes = rotating.reduce((sum, chore) => sum + chore.minutes, 0);
-        const chores = rotating.map(chore => `${chore.name} (${chore.minutes}m, D${chore.difficulty})`).join("; ");
+        const chores = rotating.length ? rotating.map(chore => `${escapeHtml(chore.name)} (${chore.minutes}m, D${chore.difficulty})`).join("; ") : "No eligible rotating chores active";
         return `
           <div class="forecast-row">
             <div class="forecast-date">${formatDate(day)}</div>
@@ -3132,7 +3146,7 @@
         : `Watch workload balance: ${heaviest.child.name} has ${spread} more rotating minutes than ${lightest.child.name} over the next 30 days.`;
       document.getElementById("fairnessList").innerHTML = summary.map(item => `
         <div class="fairness-row">
-          <strong>${item.child.name}</strong>
+          <strong>${escapeHtml(item.child.name)}</strong>
           <span class="fairness-stat">${item.totalMinutes} min</span>
           <span class="fairness-stat">${item.averageMinutes.toFixed(1)}/day</span>
           <span class="fairness-stat">D${item.difficultyPoints} · max ${item.hardest}</span>
@@ -3145,8 +3159,8 @@
       document.getElementById("fineLedger").innerHTML = ledger[child.id].map((item, index) => `
         <div class="ledger-row">
           <div>
-            <strong>${item.title}</strong>
-            <span>${item.date} · ${item.amount}</span>
+            <strong>${escapeHtml(item.title)}</strong>
+            <span>${escapeHtml(item.date)} · ${escapeHtml(item.amount)}</span>
           </div>
           <div class="review-actions">
             <div class="${item.paid ? "paid" : "unpaid"}">${item.paid ? "Paid" : "Unpaid"}</div>
@@ -3172,8 +3186,8 @@
       document.getElementById("bonusLedger").innerHTML = bonusLedger[child.id].map(item => `
         <div class="ledger-row">
           <div>
-            <strong>${item.title}</strong>
-            <span>${item.date} · ${item.amount}</span>
+            <strong>${escapeHtml(item.title)}</strong>
+            <span>${escapeHtml(item.date)} · ${escapeHtml(item.amount)}</span>
           </div>
           <div class="${item.paid ? "paid" : "unpaid"}">${item.paid ? "Paid" : "Pending"}</div>
         </div>
@@ -3427,11 +3441,11 @@
       document.getElementById("choreCountLabel").textContent = `${activeCount} on / ${choreLibrary.length} saved`;
       document.getElementById("choreTable").innerHTML = choreLibrary.map((chore, index) => `
         <tr class="${chore.active === false ? "inactive" : ""}">
-          <td>${chore.name}</td>
+          <td>${escapeHtml(chore.name)}</td>
           <td>${chore.minutes}</td>
           <td><span class="difficulty">${chore.difficulty}</span></td>
-          <td>${chore.frequency || "Daily"}</td>
-          <td>${chore.fit}</td>
+          <td>${escapeHtml(chore.frequency || "Daily")}</td>
+          <td>${escapeHtml(chore.fit)}</td>
           <td><button class="toggle-btn ${chore.active === false ? "off" : ""}" type="button" data-chore-index="${index}">${chore.active === false ? "Off" : "On"}</button></td>
         </tr>
       `).join("");
@@ -3451,9 +3465,9 @@
       document.getElementById("feedbackList").innerHTML = betaFeedback.length ? betaFeedback.map(item => `
         <div class="feedback-item">
           <div>
-            <strong>${item.category} · ${item.person}</strong>
-            <span>${item.severity} · ${item.date}</span>
-            <span>${item.text}</span>
+            <strong>${escapeHtml(item.category)} · ${escapeHtml(item.person)}</strong>
+            <span>${escapeHtml(item.severity)} · ${escapeHtml(item.date)}</span>
+            <span>${escapeHtml(item.text)}</span>
           </div>
           <button class="ghost-btn" type="button" data-feedback-id="${item.id}">${item.resolved ? "Resolved" : "Resolve"}</button>
         </div>
@@ -3531,7 +3545,7 @@
       document.getElementById("payLedger").innerHTML = helperPayRecords.map(record => `
         <div class="ledger-row">
           <div>
-            <strong>${record.week}</strong>
+            <strong>${escapeHtml(record.week)}</strong>
             <span>${record.hours.toFixed(2)} hours x $${record.rate.toFixed(2)}/hr = $${(record.hours * record.rate).toFixed(2)}</span>
           </div>
           <div class="${record.paid ? "paid" : "unpaid"}">${record.paid ? "Paid" : "Due"}</div>
@@ -3562,7 +3576,7 @@
     function renderIngredients() {
       document.getElementById("ingredientList").innerHTML = ingredientRequests.map(item => `
         <div class="ingredient-item">
-          <span>${item}</span>
+          <span>${escapeHtml(item)}</span>
           <span>Requested</span>
         </div>
       `).join("");
@@ -3586,8 +3600,8 @@
         const title = column.querySelector("h4")?.outerHTML || "";
         column.innerHTML = `${title}${tasks.map((task, index) => `
           <div class="helper-task" draggable="true" data-helper-column-id="${columnId}" data-helper-task-index="${index}">
-            <strong>${task.title}</strong>
-            <span>${task.detail}</span>
+            <strong>${escapeHtml(task.title)}</strong>
+            <span>${escapeHtml(task.detail)}</span>
           </div>
         `).join("")}`;
       });
