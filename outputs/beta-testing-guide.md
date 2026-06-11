@@ -36,8 +36,9 @@ Each day, Brigham or Karmel should test:
 4. Send one chore back for redo during beta to test the loop.
 5. Finalize the selected child or all children.
 6. Confirm missed rotating chores charge a fine only once for the day.
-7. Confirm finalized chores lock against late edits.
-8. Mark a fine paid and confirm the open fine total changes.
+7. Confirm the fine ledger shows the actual missed deadline, including any Brigham-approved extension time.
+8. Confirm finalized chores lock against late edits.
+9. Mark a fine paid and confirm the open fine total changes.
 
 ## Extension Test
 

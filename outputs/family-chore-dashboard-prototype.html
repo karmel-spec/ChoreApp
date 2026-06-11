@@ -3368,7 +3368,7 @@
         <div class="ledger-row">
           <div>
             <strong>${escapeHtml(item.title)}</strong>
-            <span>${escapeHtml(item.date)} · ${escapeHtml(item.amount)}</span>
+            <span>${escapeHtml(item.date)}${item.deadline ? ` · deadline ${escapeHtml(item.deadline)}` : ""} · ${escapeHtml(item.amount)}</span>
           </div>
           <div class="review-actions">
             <div class="${item.paid ? "paid" : "unpaid"}">${item.paid ? "Paid" : "Unpaid"}</div>
@@ -3519,16 +3519,18 @@
         return;
       }
       const child = children.find(item => item.id === selectedChildId);
-      addFineToLedger(child, "Missed noon deadline", child.fineRate);
+      const deadline = approvedDeadlineFor(child);
+      addFineToLedger(child, `Missed ${deadline} deadline`, child.fineRate, deadline);
       render();
-      document.getElementById("fineRateStatus").textContent = `${child.name} was charged $${child.fineRate} for a missed deadline.`;
+      document.getElementById("fineRateStatus").textContent = `${child.name} was charged $${child.fineRate} for a missed ${deadline} deadline.`;
     }
 
-    function addFineToLedger(child, title, amount) {
+    function addFineToLedger(child, title, amount, deadline = approvedDeadlineFor(child)) {
       child.openFines = Number((child.openFines + amount).toFixed(2));
       ledger[child.id].unshift({
         title,
         date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+        deadline,
         amount: `$${amount}`,
         paid: false
       });
@@ -3583,11 +3585,13 @@
       }
 
       const missed = getMissedRotatingChores(child);
+      const deadline = approvedDeadlineFor(child);
       const amount = missed.length ? child.fineRate : 0;
       const streakCredited = creditDailyStreakIfEarned(child);
       fineAssessments[key] = {
         childId: child.id,
         date: localDateKey(),
+        deadline,
         missed: missed.map(chore => chore.name),
         charged: amount,
         streakCredited,
@@ -3595,7 +3599,7 @@
         finalizedAt: new Date().toISOString()
       };
       if (amount > 0) {
-        addFineToLedger(child, `Noon review: ${missed.length} unfinished rotating chore${missed.length === 1 ? "" : "s"}`, amount);
+        addFineToLedger(child, `${deadline} review: ${missed.length} unfinished rotating chore${missed.length === 1 ? "" : "s"}`, amount, deadline);
       } else {
         persistBetaData();
       }
@@ -3604,9 +3608,10 @@
         skipped: false,
         charged: amount,
         missed: missed.map(chore => chore.name),
+        deadline,
         streakCredited,
         message: amount > 0
-          ? `${child.name}: charged $${amount}.`
+          ? `${child.name}: charged $${amount} after the ${deadline} deadline.`
           : `${child.name}: all rotating chores cleared.${streakCredited ? " Streak credited." : ""}`
       };
     }
