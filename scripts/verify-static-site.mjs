@@ -220,6 +220,7 @@ const requiredAppIds = [
   "finalizeChildBtn",
   "finalizeAllBtn",
   "fineLedger",
+  "fineLedgerSummary",
   "chargeFineBtn",
   "bonusLedger",
   "bonusPeriodNote",

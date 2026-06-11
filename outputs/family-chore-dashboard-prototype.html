@@ -1690,6 +1690,7 @@
               <button class="ghost-btn" type="button" id="chargeFineBtn">Charge Missed Deadline Fine</button>
               <div class="admin-status" id="fineRateStatus"></div>
             </div>
+            <div class="notice-card" id="fineLedgerSummary">Fine totals loading...</div>
             <div class="ledger" id="fineLedger"></div>
           </div>
         </section>
@@ -3381,6 +3382,7 @@
 
     function renderLedger(child) {
       document.getElementById("ledgerName").textContent = child.name;
+      document.getElementById("fineLedgerSummary").textContent = `${child.name} has $${child.openFines} open fines and $${child.paidFines} marked paid.`;
       document.getElementById("fineLedger").innerHTML = ledger[child.id].map((item, index) => `
         <div class="ledger-row">
           <div>
