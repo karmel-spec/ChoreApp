@@ -1784,7 +1784,7 @@
             <span id="forecastName">Child</span>
           </div>
           <div class="side-body">
-            <div class="notice-card">A month-out planning preview for the selected child. It uses the current chore library, active toggles, difficulty limits, and random rotation seed.</div>
+            <div class="notice-card">A month-out planning preview for the selected child. It uses the current chore library, active toggles, schedule frequency, notice timing, difficulty limits, and random rotation seed.</div>
             <div class="forecast-list" id="forecastList"></div>
           </div>
         </section>
@@ -2905,6 +2905,8 @@
     function getRotatingChores(child, dayOffset) {
       const eligible = choreLibrary
         .filter(chore => chore.active !== false)
+        .filter(chore => noticeAllowsChore(chore, dayOffset))
+        .filter(chore => frequencyAllowsChore(chore, dayOffset))
         .filter(chore => chore.difficulty <= child.maxDifficulty)
         .filter(chore => child.targetHard || chore.difficulty <= 4)
         .sort((a, b) => child.targetHard ? b.difficulty - a.difficulty : a.difficulty - b.difficulty);
@@ -2931,6 +2933,41 @@
       base.setHours(0, 0, 0, 0);
       base.setDate(base.getDate() + offset);
       return base.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+    }
+
+    function dateForOffset(offset) {
+      const date = new Date();
+      date.setHours(0, 0, 0, 0);
+      date.setDate(date.getDate() + offset);
+      return date;
+    }
+
+    function choreCreatedDate(chore) {
+      if (!chore.createdAt) return null;
+      const date = new Date(chore.createdAt);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    function noticeAllowsChore(chore, dayOffset) {
+      if (chore.notice === "Start today") return true;
+      const created = choreCreatedDate(chore);
+      if (!created) return true;
+      const availableDate = new Date(created);
+      availableDate.setHours(0, 0, 0, 0);
+      if (chore.notice === "Start next week") availableDate.setDate(availableDate.getDate() + 7);
+      if (chore.notice === "Starts after 24 hours") availableDate.setDate(availableDate.getDate() + 1);
+      return dateForOffset(dayOffset) >= availableDate;
+    }
+
+    function frequencyAllowsChore(chore, dayOffset) {
+      const frequency = chore.frequency || "Daily";
+      const date = dateForOffset(dayOffset);
+      if (frequency === "Daily") return true;
+      if (frequency === "Monday only") return date.getDay() === 1;
+      if (frequency === "Weekly") return dayOffset % 7 === seededIndex(chore.name.length + shuffleOffset, 7);
+      if (frequency === "Monthly") return date.getDate() === ((seededIndex(chore.name.length + 11, 28) % 28) + 1);
+      if (frequency === "One-off") return dayOffset === seededIndex(chore.name.length + shuffleOffset, 30);
+      return true;
     }
 
     function currentBonusPeriod() {
@@ -3817,7 +3854,7 @@
         document.getElementById("adminStatus").textContent = "Add a chore name first.";
         return;
       }
-      choreLibrary.unshift({ name, minutes, difficulty, fit, frequency, notice, active: true });
+      choreLibrary.unshift({ name, minutes, difficulty, fit, frequency, notice, active: true, createdAt: new Date().toISOString() });
       shuffleOffset += 3;
       persistBetaData();
       document.getElementById("adminStatus").textContent = `${name} added as ${frequency.toLowerCase()} and set to ${notice.toLowerCase()}.`;
