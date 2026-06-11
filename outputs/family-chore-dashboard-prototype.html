@@ -3762,20 +3762,27 @@
           <div>
             <strong>${escapeHtml(item.category)} · ${escapeHtml(item.person)}</strong>
             <span>${escapeHtml(item.severity)} · ${escapeHtml(item.date)}</span>
+            ${item.resolvedAt ? `<span>Resolved by ${escapeHtml(item.resolvedBy || "Admin")} · ${escapeHtml(item.resolvedAt)}</span>` : ""}
             <span>${escapeHtml(item.text)}</span>
           </div>
-          <button class="ghost-btn" type="button" data-feedback-id="${item.id}">${item.resolved ? "Resolved" : "Resolve"}</button>
+          <button class="ghost-btn" type="button" data-feedback-id="${item.id}" ${item.resolved || !isAdmin() ? "disabled" : ""}>${item.resolved ? "Resolved" : "Resolve"}</button>
         </div>
       `).join("") : `<div class="notice-card">No beta feedback logged yet.</div>`;
 
       document.querySelectorAll("[data-feedback-id]").forEach(button => {
         button.addEventListener("click", () => {
+          if (!isAdmin()) {
+            document.getElementById("feedbackStatus").textContent = "Only Brigham or Karmel can mark beta feedback resolved.";
+            return;
+          }
           const item = betaFeedback.find(entry => entry.id === button.dataset.feedbackId);
-          if (!item) return;
+          if (!item || item.resolved) return;
           item.resolved = true;
+          item.resolvedBy = currentUser?.name || "Admin";
+          item.resolvedAt = new Date().toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
           persistBetaData();
           renderFeedbackLog();
-          document.getElementById("feedbackStatus").textContent = "Feedback marked resolved.";
+          document.getElementById("feedbackStatus").textContent = "Feedback marked resolved by parent admin.";
         });
       });
     }

@@ -94,6 +94,8 @@ const requiredMarkers = [
   "teamworkChoresBetaDataMeta",
   "Beta Feedback Log",
   "betaFeedback",
+  "Only Brigham or Karmel can mark beta feedback resolved",
+  "resolvedBy",
   "addFeedbackBtn",
   "feedbackList",
   "currentBonusPeriod",
@@ -165,6 +167,7 @@ const requiredGuideMarkers = [
   "Confirm a new week starts a new pay record",
   "local beta data summary",
   "Beta Feedback Log",
+  "Anyone can add feedback",
   "Known Prototype Limits",
   "Ready For Production When"
 ];

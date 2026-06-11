@@ -120,7 +120,7 @@ Use the in-app Beta Feedback Log or a shared note to record:
 
 ## Beta Feedback Log
 
-Use the in-app feedback log whenever something feels off. Choose a category, severity, person, and short note. Mark items resolved only after the family agrees the issue is fixed or no longer important.
+Use the in-app feedback log whenever something feels off. Choose a category, severity, person, and short note. Anyone can add feedback, but only Brigham or Karmel should mark items resolved after the family agrees the issue is fixed or no longer important.
 
 ## Ready For Production When
 
