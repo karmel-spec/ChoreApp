@@ -1649,6 +1649,7 @@
                 </div>
               </div>
               <button class="primary-btn" type="button" id="approveBtn">Grant Approved Extension</button>
+              <div class="admin-status" id="extensionStatus"></div>
             </div>
             <div class="rule-box" style="margin:0;">
               <strong>How it works</strong>
@@ -2573,6 +2574,10 @@
       document.getElementById("approvalOption").textContent = `Approved by ${familySettings.extensionApprover}`;
       document.getElementById("extensionRuleText").textContent = `The child sends a text-style petition to ${familySettings.extensionApprover} at ${familySettings.extensionContact}. Only ${extensionApproverShortName()} can approve an extension; if approved, the deadline moves from ${familySettings.defaultDeadline} to the approved time for that child only.`;
       document.getElementById("reviewReminderText").textContent = `At ${familySettings.reviewReminderTime}, send ${familySettings.reviewRecipient} a text reminder at ${familySettings.reviewContact} to physically inspect today’s completed chores before fines are finalized.`;
+      document.getElementById("approveBtn").disabled = !isExtensionApprover();
+      document.getElementById("extensionStatus").textContent = isExtensionApprover()
+        ? `${familySettings.extensionApprover} is signed in and can approve extension petitions.`
+        : `Only ${familySettings.extensionApprover} can approve extension petitions.`;
     }
 
     function saveFamilySettings() {
@@ -2689,6 +2694,10 @@
 
     function isAdmin() {
       return currentUser?.role === "admin";
+    }
+
+    function isExtensionApprover() {
+      return currentUser?.id === "brigham";
     }
 
     function renderChildPhoto(child, className = "avatar") {
@@ -3813,16 +3822,20 @@
     });
 
     document.getElementById("approveBtn").addEventListener("click", () => {
+      if (!isExtensionApprover()) {
+        document.getElementById("extensionStatus").textContent = `Extension not changed. Only ${familySettings.extensionApprover} can approve this request.`;
+        return;
+      }
       if (document.getElementById("approval").value === "Deny") {
         resetApprovedDeadline();
-        document.getElementById("reviewStatus").textContent = `Extension denied. Fine deadline stays ${familySettings.defaultDeadline}.`;
         render();
+        document.getElementById("extensionStatus").textContent = `Extension denied. Fine deadline stays ${familySettings.defaultDeadline}.`;
         return;
       }
       const child = children.find(item => item.id === selectedChildId);
       approvedDeadline = document.getElementById("newTime").value || familySettings.defaultDeadline;
-      document.getElementById("reviewStatus").textContent = `${familySettings.extensionApprover}-approved extension saved for ${child.name}: deadline moved to ${approvedDeadline}.`;
       render();
+      document.getElementById("extensionStatus").textContent = `${familySettings.extensionApprover}-approved extension saved for ${child.name}: deadline moved to ${approvedDeadline}.`;
     });
 
     document.getElementById("addChoreBtn").addEventListener("click", addAdminChore);
