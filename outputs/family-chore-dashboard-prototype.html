@@ -1875,6 +1875,7 @@
                 </div>
               </div>
               <div class="admin-status" id="betaDataStatus"></div>
+              <div class="notice-card" id="betaDataSummary">Local beta data summary loading...</div>
             </div>
           </div>
         </section>
@@ -2219,6 +2220,7 @@
     const gmailStoreKey = "teamworkChoresGmailLinks";
     const choreStateStoreKey = "teamworkChoresChoreState";
     const betaDataStoreKey = "teamworkChoresBetaData";
+    const betaDataMetaStoreKey = "teamworkChoresBetaDataMeta";
     const accounts = [
       { id: "karmel", name: "Karmel", initials: "K", role: "admin", label: "Mom admin", gmail: "" },
       { id: "brigham", name: "Brigham", initials: "BR", role: "admin", label: "Dad admin", gmail: "" },
@@ -2325,6 +2327,31 @@
       } catch {
         return {};
       }
+    }
+
+    function getBetaDataMeta() {
+      try {
+        return JSON.parse(localStorage.getItem(betaDataMetaStoreKey)) || {};
+      } catch {
+        return {};
+      }
+    }
+
+    function saveBetaDataMeta(updates) {
+      localStorage.setItem(betaDataMetaStoreKey, JSON.stringify({
+        ...getBetaDataMeta(),
+        ...updates
+      }));
+    }
+
+    function shortDateTime(value) {
+      if (!value) return "Never";
+      return new Date(value).toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit"
+      });
     }
 
     function persistBetaData() {
@@ -2466,6 +2493,8 @@
       link.download = `teamwork-chores-backup-${localDateKey()}.json`;
       link.click();
       URL.revokeObjectURL(url);
+      saveBetaDataMeta({ lastExportAt: new Date().toISOString() });
+      renderBetaDataSummary();
       document.getElementById("betaDataStatus").textContent = "Backup exported. Keep it private because it can include family photos and chore history.";
     }
 
@@ -2477,6 +2506,7 @@
       localStorage.setItem(choreStateStoreKey, JSON.stringify(backup.choreState || {}));
       localStorage.setItem(photoStoreKey, JSON.stringify(backup.childPhotos || {}));
       localStorage.setItem(gmailStoreKey, JSON.stringify(backup.gmailLinks || {}));
+      saveBetaDataMeta({ lastImportAt: new Date().toISOString(), importedFrom: backup.exportedAt || "" });
       hydrateBetaData();
       hydrateStoredChildPhotos();
       renderLoginGrid();
@@ -2491,6 +2521,10 @@
       const file = document.getElementById("betaDataFile").files[0];
       if (!file) {
         document.getElementById("betaDataStatus").textContent = "Choose a Teamwork Chores backup JSON file first.";
+        return;
+      }
+      if (!window.confirm("Importing this backup will replace the beta data saved in this browser. Export a backup first if you want to keep the current test data.")) {
+        document.getElementById("betaDataStatus").textContent = "Import cancelled.";
         return;
       }
       const reader = new FileReader();
@@ -2516,6 +2550,7 @@
       }
       localStorage.removeItem(betaDataStoreKey);
       localStorage.removeItem(choreStateStoreKey);
+      saveBetaDataMeta({ lastResetAt: new Date().toISOString() });
       window.location.reload();
     }
 
@@ -3539,6 +3574,27 @@
       document.getElementById("profileStatus").textContent = `${child.name} is back to initials.`;
     }
 
+    function renderBetaDataSummary() {
+      const betaData = getStoredBetaData();
+      const choreState = getStoredChoreState();
+      const photos = getStoredChildPhotos();
+      const gmailLinks = getStoredGmailLinks();
+      const meta = getBetaDataMeta();
+      const activeChores = Array.isArray(betaData.choreLibrary)
+        ? betaData.choreLibrary.filter(chore => chore.active !== false).length
+        : choreLibrary.filter(chore => chore.active !== false).length;
+      document.getElementById("betaDataSummary").textContent = [
+        `${Object.keys(choreState).length} chore records`,
+        `${activeChores} active chores`,
+        `${(betaData.betaFeedback || betaFeedback).length} feedback notes`,
+        `${Object.keys(photos).length} child photos`,
+        `${Object.keys(gmailLinks).length} Gmail links`,
+        `last export: ${shortDateTime(meta.lastExportAt)}`,
+        `last import: ${shortDateTime(meta.lastImportAt)}`,
+        `last reset: ${shortDateTime(meta.lastResetAt)}`
+      ].join(" · ");
+    }
+
     function renderChoreTable() {
       const activeCount = choreLibrary.filter(chore => chore.active !== false).length;
       document.getElementById("choreCountLabel").textContent = `${activeCount} on / ${choreLibrary.length} saved`;
@@ -3787,6 +3843,7 @@
       renderLedger(child);
       renderBonusPanel(child);
       renderProfilePanel(child);
+      renderBetaDataSummary();
       renderChoreTable();
       renderHelperPay();
       renderHelperBoard();
