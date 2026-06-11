@@ -21,6 +21,7 @@ Netlify configuration lives in `netlify.toml`:
 - Publish directory: `outputs`
 - App route: `/app`
 - Design route: `/designs`
+- Beta guide route: `/beta-guide`
 
 ## GitHub to Netlify Publish Loop
 

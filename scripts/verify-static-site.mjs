@@ -34,6 +34,7 @@ function assertScriptParses(html, file) {
 }
 
 const requiredFiles = [
+  ".github/workflows/deploy-netlify.yml",
   "outputs/index.html",
   "outputs/family-chore-dashboard-prototype.html",
   "outputs/chore-app-designs.html",
@@ -55,6 +56,8 @@ const homeHtml = await readFile("outputs/index.html", "utf8");
 const betaGuide = await readFile("outputs/beta-testing-guide.md", "utf8");
 const betaGuideHtml = await readFile("outputs/beta-testing-guide.html", "utf8");
 const phasePlan = await readFile("outputs/chore-app-phase-plan.md", "utf8");
+const netlifyConfig = await readFile("netlify.toml", "utf8");
+const deployWorkflow = await readFile(".github/workflows/deploy-netlify.yml", "utf8");
 const manifest = JSON.parse(await readFile("outputs/manifest.webmanifest", "utf8"));
 const serviceWorker = await readFile("outputs/service-worker.js", "utf8");
 const expectedCacheName = "teamwork-chores-beta-2026-06-11";
@@ -293,6 +296,39 @@ for (const html of [appHtml, homeHtml, betaGuideHtml]) {
 
 if (manifest.name !== "Teamwork Chores" || manifest.start_url !== "/app" || manifest.display !== "standalone") {
   throw new Error("Manifest is missing required app install metadata.");
+}
+
+const requiredNetlifyMarkers = [
+  'command = "npm run build"',
+  'publish = "outputs"',
+  'from = "/app"',
+  'to = "/family-chore-dashboard-prototype.html"',
+  'from = "/beta-guide"',
+  'to = "/beta-testing-guide.html"',
+  'for = "/service-worker.js"',
+  'must-revalidate'
+];
+
+for (const marker of requiredNetlifyMarkers) {
+  if (!netlifyConfig.includes(marker)) {
+    throw new Error(`Netlify config is missing: ${marker}`);
+  }
+}
+
+const requiredDeployWorkflowMarkers = [
+  "Deploy to Netlify",
+  "branches:",
+  "- main",
+  "npm run build",
+  "netlify-cli deploy --prod --dir=outputs",
+  "NETLIFY_AUTH_TOKEN",
+  "NETLIFY_SITE_ID"
+];
+
+for (const marker of requiredDeployWorkflowMarkers) {
+  if (!deployWorkflow.includes(marker)) {
+    throw new Error(`Deploy workflow is missing: ${marker}`);
+  }
 }
 
 for (const cachedPath of ["/app", "/beta-guide", "/offline.html", "/manifest.webmanifest"]) {
