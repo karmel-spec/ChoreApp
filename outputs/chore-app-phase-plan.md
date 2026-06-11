@@ -44,6 +44,8 @@ Recommended web stack:
 
 Phase 1 should be installable to the phone home screen as a web app before investing in native app-store packaging.
 
+Use `beta-testing-guide.md` during the website beta to test daily chores, parent review, fines, bonuses, Vanessa helper workflows, backups, and known prototype limits.
+
 ## Phase 2: App Store Preparation
 
 Package the web app for iOS and Android once the family workflow feels right.

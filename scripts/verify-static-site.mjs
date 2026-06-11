@@ -38,6 +38,7 @@ const requiredFiles = [
   "outputs/family-chore-dashboard-prototype.html",
   "outputs/chore-app-designs.html",
   "outputs/chore-app-phase-plan.md",
+  "outputs/beta-testing-guide.md",
   "outputs/manifest.webmanifest",
   "outputs/service-worker.js",
   "outputs/offline.html",
@@ -50,6 +51,7 @@ for (const file of requiredFiles) {
 
 const appHtml = await readFile("outputs/family-chore-dashboard-prototype.html", "utf8");
 const homeHtml = await readFile("outputs/index.html", "utf8");
+const betaGuide = await readFile("outputs/beta-testing-guide.md", "utf8");
 const manifest = JSON.parse(await readFile("outputs/manifest.webmanifest", "utf8"));
 const serviceWorker = await readFile("outputs/service-worker.js", "utf8");
 
@@ -92,6 +94,21 @@ const requiredMarkers = [
 for (const marker of requiredMarkers) {
   if (!appHtml.includes(marker)) {
     throw new Error(`Missing expected app marker: ${marker}`);
+  }
+}
+
+const requiredGuideMarkers = [
+  "Teamwork Chores Beta Testing Guide",
+  "Daily Child Test",
+  "Parent Noon Review Test",
+  "Vanessa Helper Test",
+  "Known Prototype Limits",
+  "Ready For Production When"
+];
+
+for (const marker of requiredGuideMarkers) {
+  if (!betaGuide.includes(marker)) {
+    throw new Error(`Missing expected beta guide marker: ${marker}`);
   }
 }
 

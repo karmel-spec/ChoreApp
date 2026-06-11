@@ -41,6 +41,10 @@ git push origin main
 
 GitHub Actions verifies the static site and deploys `outputs/` to Netlify.
 
+## Website Beta Testing
+
+Use `outputs/beta-testing-guide.md` for the family beta script. It covers daily child testing, parent noon review, admin chore rotation, bonuses, Vanessa helper workflows, backups, known prototype limits, and production-readiness signals.
+
 ## Google Login Setup
 
 The prototype now includes a Gmail-linked login flow for every family member. It stores the linked Gmail in the browser for demo purposes.
