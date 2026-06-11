@@ -3043,6 +3043,12 @@
       return new Date().toLocaleDateString("en-US", { month: "short", year: "numeric" });
     }
 
+    function isCurrentBonusPeriodRecord(item) {
+      if (item.period) return item.period === currentBonusPeriod();
+      const currentMonth = new Date().toLocaleDateString("en-US", { month: "short" });
+      return String(item.date || "").startsWith(currentMonth);
+    }
+
     function nextBonusResetLabel() {
       const date = new Date();
       return new Date(date.getFullYear(), date.getMonth() + 1, 1).toLocaleDateString("en-US", {
@@ -3428,17 +3434,26 @@
       document.getElementById("bonusStatus").textContent = "Bonus award amounts updated for all children.";
     }
 
+    function hasBonusAward(child, bonus) {
+      return bonusLedger[child.id].some(item => {
+        if (item.type && item.type !== bonus.type) return false;
+        if (Number(item.days) && Number(item.days) !== bonus.days) return false;
+        const titleMatches = item.title === (bonus.type === "super" ? `${bonus.days}-day super bonus` : `${bonus.days}-day monthly streak`);
+        if (!item.type && !item.days && !titleMatches) return false;
+        return bonus.type === "super" || isCurrentBonusPeriodRecord(item);
+      });
+    }
+
     function getEligibleBonus(child) {
       const monthlyEarned = bonusRules.monthly
         .filter(rule => child.monthlyStreak >= rule.days)
-        .sort((a, b) => b.days - a.days)[0];
+        .map(rule => ({ type: "monthly", ...rule }));
       const superEarned = bonusRules.super
         .filter(rule => child.streak >= rule.days)
-        .sort((a, b) => b.days - a.days)[0];
-      if (superEarned && (!monthlyEarned || superEarned.amount > monthlyEarned.amount)) {
-        return { type: "super", ...superEarned };
-      }
-      return monthlyEarned ? { type: "monthly", ...monthlyEarned } : null;
+        .map(rule => ({ type: "super", ...rule }));
+      return [...superEarned, ...monthlyEarned]
+        .filter(bonus => !hasBonusAward(child, bonus))
+        .sort((a, b) => b.amount - a.amount || b.days - a.days)[0] || null;
     }
 
     function awardEligibleBonus() {
@@ -3455,17 +3470,15 @@
       const title = bonus.type === "super" ? `${bonus.days}-day super bonus` : `${bonus.days}-day monthly streak`;
       const bonusPeriod = currentBonusPeriod();
       const bonusMonthLabel = currentBonusMonthLabel();
-      const alreadyAwarded = bonusLedger[child.id].some(item => {
-        if (item.title !== title) return false;
-        return bonus.type === "super" || item.period === bonusPeriod || item.date === bonusMonthLabel;
-      });
-      if (alreadyAwarded) {
+      if (hasBonusAward(child, bonus)) {
         document.getElementById("bonusStatus").textContent = `${child.name} already received the ${title} for this bonus period.`;
         return;
       }
       child.accountBalance += bonus.amount;
       bonusLedger[child.id].unshift({
         title,
+        type: bonus.type,
+        days: bonus.days,
         date: bonus.type === "super" ? "Lifetime" : bonusMonthLabel,
         period: bonus.type === "super" ? "all-time" : bonusPeriod,
         amount: `$${bonus.amount}`,

@@ -66,8 +66,9 @@ Once per week:
 1. Review monthly streak and overall streak.
 2. Edit bonus rules as admin.
 3. Award an eligible bonus.
-4. Confirm the chore account balance changes.
-5. Export a backup after bonus changes.
+4. Confirm separate 5-day, 7-day, 30-day, and super-bonus milestones do not block each other.
+5. Confirm the chore account balance changes only once per awarded milestone.
+6. Export a backup after bonus changes.
 
 ## Vanessa Helper Test
 
