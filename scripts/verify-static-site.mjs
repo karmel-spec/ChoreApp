@@ -79,6 +79,9 @@ const requiredMarkers = [
   "Only ${familySettings.extensionApprover} can approve extension petitions",
   "Continue with Google",
   "selectedLoginId = account.id",
+  "enforceChildSessionScope",
+  "currentUser?.role !== \"child\"",
+  "selectedChildId = currentUser.childId",
   "All-Time Streak Podium",
   "Best overall lead for lifetime streaks",
   "All-time leader loading",
@@ -168,6 +171,7 @@ for (const marker of requiredMarkers) {
 const requiredGuideMarkers = [
   "Teamwork Chores Beta Testing Guide",
   "Daily Child Test",
+  "Try opening another child’s direct dashboard link",
   "photo-first proof marks the chore ready for review",
   "Parent Noon Review Test",
   "finalized chores lock",

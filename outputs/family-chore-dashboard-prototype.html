@@ -2795,6 +2795,15 @@
       return currentUser?.id === "brigham";
     }
 
+    function enforceChildSessionScope() {
+      if (currentUser?.role !== "child" || !currentUser.childId) return;
+      if (selectedChildId === currentUser.childId) return;
+      selectedChildId = currentUser.childId;
+      const url = new URL(window.location.href);
+      url.searchParams.set("child", selectedChildId);
+      window.history.replaceState({}, "", url);
+    }
+
     function renderChildPhoto(child, className = "avatar") {
       const image = child.profileImage
         ? `<img src="${escapeHtml(child.profileImage)}" alt="${escapeHtml(child.name)} profile photo">`
@@ -4075,6 +4084,7 @@
     }
 
     function render() {
+      enforceChildSessionScope();
       const child = children.find(item => item.id === selectedChildId);
       renderFamilySettings();
       renderFamilyList();
