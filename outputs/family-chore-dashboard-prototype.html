@@ -1617,6 +1617,7 @@
 
     const validChildIds = ["thayne", "brig", "josh", "jojo", "louis", "brielle"];
     const requestedChildId = new URLSearchParams(window.location.search).get("child");
+    const photoStoreKey = "choreAppChildPhotos";
     let selectedChildId = validChildIds.includes(requestedChildId) ? requestedChildId : "thayne";
     let activeView = "daily";
     let shuffleOffset = 0;
@@ -1643,6 +1644,31 @@
       "Cilantro"
     ];
     let celebrationTimer = null;
+
+    function getStoredChildPhotos() {
+      try {
+        return JSON.parse(localStorage.getItem(photoStoreKey)) || {};
+      } catch {
+        return {};
+      }
+    }
+
+    function saveStoredChildPhoto(childId, value) {
+      const photos = getStoredChildPhotos();
+      if (value) {
+        photos[childId] = value;
+      } else {
+        delete photos[childId];
+      }
+      localStorage.setItem(photoStoreKey, JSON.stringify(photos));
+    }
+
+    function hydrateStoredChildPhotos() {
+      const photos = getStoredChildPhotos();
+      children.forEach(child => {
+        child.profileImage = photos[child.id] || child.profileImage || "";
+      });
+    }
 
     function seededIndex(seed, max) {
       const x = Math.sin(seed * 999) * 10000;
@@ -2050,6 +2076,7 @@
         const reader = new FileReader();
         reader.onload = event => {
           child.profileImage = event.target.result;
+          saveStoredChildPhoto(child.id, child.profileImage);
           render();
           document.getElementById("profileStatus").textContent = `${child.name}'s profile photo was updated from a local file.`;
         };
@@ -2058,6 +2085,7 @@
       }
       if (url) {
         child.profileImage = url;
+        saveStoredChildPhoto(child.id, child.profileImage);
         render();
         document.getElementById("profileStatus").textContent = `${child.name}'s profile photo URL was saved.`;
         return;
@@ -2072,6 +2100,7 @@
       }
       const child = children.find(item => item.id === selectedChildId);
       child.profileImage = "";
+      saveStoredChildPhoto(child.id, "");
       document.getElementById("profilePhotoFile").value = "";
       render();
       document.getElementById("profileStatus").textContent = `${child.name} is back to initials.`;
@@ -2291,6 +2320,7 @@
       document.getElementById("reviewStatus").textContent = `Noon review text queued for Mom: inspect ${child.name}'s chores before fines are finalized.`;
     });
 
+    hydrateStoredChildPhotos();
     render();
     setupHelperDragDrop();
   </script>
