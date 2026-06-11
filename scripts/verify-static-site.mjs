@@ -20,7 +20,9 @@ const requiredMarkers = [
   "Grant Dad-Approved Extension",
   "Continue with Google",
   "All-Time Streak Podium",
-  "teamworkChoresChoreState"
+  "teamworkChoresChoreState",
+  "teamworkChoresBetaData",
+  "Charge Missed Deadline Fine"
 ];
 
 for (const marker of requiredMarkers) {

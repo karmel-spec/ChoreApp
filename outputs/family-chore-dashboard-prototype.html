@@ -1474,6 +1474,7 @@
                 <input id="fineRateInput" value="5" inputmode="decimal">
                 <button class="primary-btn" type="button" id="saveFineRateBtn">Save Rate</button>
               </div>
+              <button class="ghost-btn" type="button" id="chargeFineBtn">Charge Missed Deadline Fine</button>
               <div class="admin-status" id="fineRateStatus"></div>
             </div>
             <div class="ledger" id="fineLedger"></div>
@@ -1852,7 +1853,7 @@
       { name: "Guest room reset", minutes: 20, difficulty: 5, fit: "Older kids", frequency: "One-off", active: false }
     ];
 
-    const ledger = {
+    let ledger = {
       thayne: [
         { title: "No open fines", date: "All paid", amount: "$0", paid: true }
       ],
@@ -1875,7 +1876,7 @@
       ]
     };
 
-    const bonusLedger = {
+    let bonusLedger = {
       thayne: [
         { title: "100-day super bonus", date: "Jun 10", amount: "$100", paid: true },
         { title: "7-day monthly streak", date: "Jun 7", amount: "$10", paid: true }
@@ -1903,6 +1904,7 @@
     const sessionStoreKey = "teamworkChoresSession";
     const gmailStoreKey = "teamworkChoresGmailLinks";
     const choreStateStoreKey = "teamworkChoresChoreState";
+    const betaDataStoreKey = "teamworkChoresBetaData";
     const accounts = [
       { id: "karmel", name: "Karmel", initials: "K", role: "admin", label: "Mom admin", gmail: "" },
       { id: "brigham", name: "Brigham", initials: "BR", role: "admin", label: "Dad admin", gmail: "" },
@@ -1932,6 +1934,7 @@
       ]
     };
     let helperWeeklyHours = 14.25;
+    let helperRate = 17;
     let helperPayRecords = [
       { week: "Jun 1-7", hours: 16.5, rate: 17, paid: true },
       { week: "Jun 8-14", hours: 14.25, rate: 17, paid: false }
@@ -1963,6 +1966,64 @@
 
     function saveStoredChoreState(state) {
       localStorage.setItem(choreStateStoreKey, JSON.stringify(state));
+    }
+
+    function getStoredBetaData() {
+      try {
+        return JSON.parse(localStorage.getItem(betaDataStoreKey)) || {};
+      } catch {
+        return {};
+      }
+    }
+
+    function persistBetaData() {
+      const childSettings = Object.fromEntries(children.map(child => [child.id, {
+        fineRate: child.fineRate,
+        openFines: child.openFines,
+        paidFines: child.paidFines,
+        accountBalance: child.accountBalance,
+        streak: child.streak,
+        monthlyStreak: child.monthlyStreak
+      }]));
+      localStorage.setItem(betaDataStoreKey, JSON.stringify({
+        childSettings,
+        ledger,
+        bonusLedger,
+        bonusRules,
+        helperWeeklyHours,
+        helperRate,
+        helperPayRecords,
+        ingredientRequests,
+        choreLibrary,
+        shuffleOffset
+      }));
+    }
+
+    function hydrateBetaData() {
+      const data = getStoredBetaData();
+      if (data.childSettings) {
+        children.forEach(child => {
+          const saved = data.childSettings[child.id];
+          if (!saved) return;
+          child.fineRate = Number(saved.fineRate ?? child.fineRate);
+          child.openFines = Number(saved.openFines ?? child.openFines);
+          child.paidFines = Number(saved.paidFines ?? child.paidFines);
+          child.accountBalance = Number(saved.accountBalance ?? child.accountBalance);
+          child.streak = Number(saved.streak ?? child.streak);
+          child.monthlyStreak = Number(saved.monthlyStreak ?? child.monthlyStreak);
+        });
+      }
+      if (data.ledger) ledger = data.ledger;
+      if (data.bonusLedger) bonusLedger = data.bonusLedger;
+      if (data.bonusRules) bonusRules = data.bonusRules;
+      if (Array.isArray(data.choreLibrary)) {
+        choreLibrary.splice(0, choreLibrary.length, ...data.choreLibrary);
+      }
+      if (Array.isArray(data.helperPayRecords)) helperPayRecords = data.helperPayRecords;
+      if (Array.isArray(data.ingredientRequests)) ingredientRequests = data.ingredientRequests;
+      if (Number.isFinite(Number(data.helperWeeklyHours))) helperWeeklyHours = Number(data.helperWeeklyHours);
+      if (Number.isFinite(Number(data.helperRate))) helperRate = Number(data.helperRate);
+      if (Number.isFinite(Number(data.shuffleOffset))) shuffleOffset = Number(data.shuffleOffset);
     }
 
     function choreKey(child, chore, type) {
@@ -2561,15 +2622,21 @@
 
     function renderLedger(child) {
       document.getElementById("ledgerName").textContent = child.name;
-      document.getElementById("fineLedger").innerHTML = ledger[child.id].map(item => `
+      document.getElementById("fineLedger").innerHTML = ledger[child.id].map((item, index) => `
         <div class="ledger-row">
           <div>
             <strong>${item.title}</strong>
             <span>${item.date} · ${item.amount}</span>
           </div>
-          <div class="${item.paid ? "paid" : "unpaid"}">${item.paid ? "Paid" : "Unpaid"}</div>
+          <div class="review-actions">
+            <div class="${item.paid ? "paid" : "unpaid"}">${item.paid ? "Paid" : "Unpaid"}</div>
+            ${item.paid ? "" : `<button class="ghost-btn" type="button" data-pay-fine-index="${index}">Mark Paid</button>`}
+          </div>
         </div>
       `).join("");
+      document.querySelectorAll("[data-pay-fine-index]").forEach(button => {
+        button.addEventListener("click", () => markFinePaid(child, Number(button.dataset.payFineIndex)));
+      });
       document.getElementById("fineRateStatus").textContent = `${child.name}'s missed-day fine is $${child.fineRate} unless Dad approves an extension.`;
     }
 
@@ -2616,6 +2683,7 @@
         ]
       };
       const child = children.find(item => item.id === selectedChildId);
+      persistBetaData();
       renderBonusPanel(child);
       document.getElementById("bonusStatus").textContent = "Bonus award amounts updated for all children.";
     }
@@ -2660,6 +2728,7 @@
         amount: `$${bonus.amount}`,
         paid: true
       });
+      persistBetaData();
       renderDaily(child);
       renderBonusPanel(child);
       document.getElementById("bonusStatus").textContent = `${child.name}'s chore account was credited $${bonus.amount} for ${title}.`;
@@ -2673,8 +2742,43 @@
       const child = children.find(item => item.id === selectedChildId);
       const newRate = Math.max(0, Number(document.getElementById("fineRateInput").value) || 0);
       child.fineRate = Number(newRate.toFixed(2));
+      persistBetaData();
       render();
       document.getElementById("fineRateStatus").textContent = `${child.name}'s daily fine rate is now $${child.fineRate}.`;
+    }
+
+    function chargeMissedDeadlineFine() {
+      if (!isAdmin()) {
+        document.getElementById("fineRateStatus").textContent = "Only Brigham or Karmel can charge fines.";
+        return;
+      }
+      const child = children.find(item => item.id === selectedChildId);
+      child.openFines = Number((child.openFines + child.fineRate).toFixed(2));
+      ledger[child.id].unshift({
+        title: "Missed noon deadline",
+        date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+        amount: `$${child.fineRate}`,
+        paid: false
+      });
+      persistBetaData();
+      render();
+      document.getElementById("fineRateStatus").textContent = `${child.name} was charged $${child.fineRate} for a missed deadline.`;
+    }
+
+    function markFinePaid(child, fineIndex) {
+      if (!isAdmin()) {
+        document.getElementById("fineRateStatus").textContent = "Only Brigham or Karmel can mark fines paid.";
+        return;
+      }
+      const item = ledger[child.id][fineIndex];
+      if (!item || item.paid) return;
+      item.paid = true;
+      const amount = Number(String(item.amount).replace(/[^0-9.]/g, "")) || 0;
+      child.openFines = Math.max(0, Number((child.openFines - amount).toFixed(2)));
+      child.paidFines = Number((child.paidFines + amount).toFixed(2));
+      persistBetaData();
+      render();
+      document.getElementById("fineRateStatus").textContent = `${child.name}'s ${item.title.toLowerCase()} fine was marked paid.`;
     }
 
     function saveProfileImage() {
@@ -2737,6 +2841,7 @@
           const chore = choreLibrary[Number(button.dataset.choreIndex)];
           chore.active = chore.active === false;
           shuffleOffset += 5;
+          persistBetaData();
           document.getElementById("adminStatus").textContent = `${chore.name} is now ${chore.active === false ? "out of" : "back in"} the rotation. ${activeCount} chores were active before this change.`;
           render();
         });
@@ -2761,8 +2866,20 @@
       return (end - start) / 60;
     }
 
+    function currentWeekLabel() {
+      const start = new Date();
+      start.setHours(0, 0, 0, 0);
+      start.setDate(start.getDate() - start.getDay());
+      const end = new Date(start);
+      end.setDate(start.getDate() + 6);
+      const options = { month: "short", day: "numeric" };
+      return `${start.toLocaleDateString("en-US", options)}-${end.toLocaleDateString("en-US", options)}`;
+    }
+
     function renderHelperPay() {
-      const rate = Number(document.getElementById("helperRate")?.value || 17);
+      const rate = Number(document.getElementById("helperRate")?.value || helperRate || 17);
+      helperRate = rate;
+      if (document.getElementById("helperRate")) document.getElementById("helperRate").value = rate;
       const pay = helperWeeklyHours * rate;
       document.getElementById("helperHours").textContent = helperWeeklyHours.toFixed(2);
       document.getElementById("helperRateLabel").textContent = `$${rate.toFixed(2)}/hr`;
@@ -2786,12 +2903,14 @@
         return;
       }
       helperWeeklyHours += hours;
+      helperRate = rate;
       helperPayRecords[helperPayRecords.length - 1] = {
-        week: "Jun 8-14",
+        week: currentWeekLabel(),
         hours: helperWeeklyHours,
         rate,
         paid: false
       };
+      persistBetaData();
       document.getElementById("timeCardStatus").textContent = `Saved ${hours.toFixed(2)} hours for Vanessa today.`;
       renderHelperPay();
     }
@@ -2812,6 +2931,7 @@
         if (!ingredientRequests.includes(item)) ingredientRequests.push(item);
       });
       document.getElementById("ingredientRequest").value = "";
+      persistBetaData();
       renderIngredients();
     }
 
@@ -2853,6 +2973,7 @@
       }
       choreLibrary.unshift({ name, minutes, difficulty, fit, frequency, notice, active: true });
       shuffleOffset += 3;
+      persistBetaData();
       document.getElementById("adminStatus").textContent = `${name} added as ${frequency.toLowerCase()} and set to ${notice.toLowerCase()}.`;
       render();
     }
@@ -2920,6 +3041,8 @@
 
     document.getElementById("saveFineRateBtn").addEventListener("click", saveFineRate);
 
+    document.getElementById("chargeFineBtn").addEventListener("click", chargeMissedDeadlineFine);
+
     document.getElementById("saveBonusRulesBtn").addEventListener("click", saveBonusRules);
 
     document.getElementById("awardBonusBtn").addEventListener("click", awardEligibleBonus);
@@ -2937,6 +3060,7 @@
       document.getElementById("reviewStatus").textContent = `Noon review text queued for Mom: inspect ${child.name}'s chores before fines are finalized.`;
     });
 
+    hydrateBetaData();
     hydrateStoredChildPhotos();
     renderLoginGrid();
     restoreLogin();
