@@ -40,7 +40,9 @@ const requiredMarkers = [
   "forecastList",
   "Family Rule Settings",
   "familySettings",
-  "Save Family Rules"
+  "Save Family Rules",
+  "helperBoardTasks",
+  "saveHelperBoardOrder"
 ];
 
 for (const marker of requiredMarkers) {

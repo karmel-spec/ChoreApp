@@ -1794,21 +1794,12 @@
             <div class="priority-board" id="helperBoard">
               <div class="priority-column" data-helper-column="daily">
                 <h4>Daily Recurring</h4>
-                <div class="helper-task" draggable="true"><strong>Kitchen reset</strong><span>Counters, dishes, table, quick floor check.</span></div>
-                <div class="helper-task" draggable="true"><strong>Laundry flow</strong><span>Move loads, fold towels, flag special items.</span></div>
-                <div class="helper-task" draggable="true"><strong>Main living areas</strong><span>Reset pillows, blankets, clutter baskets.</span></div>
               </div>
               <div class="priority-column" data-helper-column="projects">
                 <h4>Projects</h4>
-                <div class="helper-task" draggable="true"><strong>Pantry organization</strong><span>Group snacks and note low staples.</span></div>
-                <div class="helper-task" draggable="true"><strong>Mudroom deep reset</strong><span>Shoes, hooks, bins, floor.</span></div>
-                <div class="helper-task" draggable="true"><strong>Bathroom cabinet sort</strong><span>Expired items, restock, wipe shelves.</span></div>
               </div>
               <div class="priority-column" data-helper-column="oneoff">
                 <h4>Time Permitting</h4>
-                <div class="helper-task" draggable="true"><strong>Wash patio cushions</strong><span>Only if weather allows drying.</span></div>
-                <div class="helper-task" draggable="true"><strong>Car snack cleanup</strong><span>Remove wrappers and wipe cupholders.</span></div>
-                <div class="helper-task" draggable="true"><strong>Holiday bin labels</strong><span>Make labels clearer for storage.</span></div>
               </div>
             </div>
 
@@ -2087,6 +2078,23 @@
       "Tortillas",
       "Cilantro"
     ];
+    let helperBoardTasks = {
+      daily: [
+        { title: "Kitchen reset", detail: "Counters, dishes, table, quick floor check." },
+        { title: "Laundry flow", detail: "Move loads, fold towels, flag special items." },
+        { title: "Main living areas", detail: "Reset pillows, blankets, clutter baskets." }
+      ],
+      projects: [
+        { title: "Pantry organization", detail: "Group snacks and note low staples." },
+        { title: "Mudroom deep reset", detail: "Shoes, hooks, bins, floor." },
+        { title: "Bathroom cabinet sort", detail: "Expired items, restock, wipe shelves." }
+      ],
+      oneoff: [
+        { title: "Wash patio cushions", detail: "Only if weather allows drying." },
+        { title: "Car snack cleanup", detail: "Remove wrappers and wipe cupholders." },
+        { title: "Holiday bin labels", detail: "Make labels clearer for storage." }
+      ]
+    };
     let fineAssessments = {};
     let familySettings = {
       defaultDeadline: "12:00 PM",
@@ -2145,6 +2153,7 @@
         helperWeeklyHours,
         helperRate,
         helperPayRecords,
+        helperBoardTasks,
         ingredientRequests,
         choreLibrary,
         shuffleOffset,
@@ -2174,6 +2183,7 @@
         choreLibrary.splice(0, choreLibrary.length, ...data.choreLibrary);
       }
       if (Array.isArray(data.helperPayRecords)) helperPayRecords = data.helperPayRecords;
+      if (data.helperBoardTasks) helperBoardTasks = { ...helperBoardTasks, ...data.helperBoardTasks };
       if (Array.isArray(data.ingredientRequests)) ingredientRequests = data.ingredientRequests;
       if (data.fineAssessments) fineAssessments = data.fineAssessments;
       if (data.familySettings) familySettings = { ...familySettings, ...data.familySettings };
@@ -3307,6 +3317,34 @@
       renderIngredients();
     }
 
+    function renderHelperBoard() {
+      Object.entries(helperBoardTasks).forEach(([columnId, tasks]) => {
+        const column = document.querySelector(`[data-helper-column="${columnId}"]`);
+        if (!column) return;
+        const title = column.querySelector("h4")?.outerHTML || "";
+        column.innerHTML = `${title}${tasks.map((task, index) => `
+          <div class="helper-task" draggable="true" data-helper-column-id="${columnId}" data-helper-task-index="${index}">
+            <strong>${task.title}</strong>
+            <span>${task.detail}</span>
+          </div>
+        `).join("")}`;
+      });
+      setupHelperDragDrop();
+    }
+
+    function saveHelperBoardOrder() {
+      const nextTasks = {};
+      document.querySelectorAll(".priority-column").forEach(column => {
+        const columnId = column.dataset.helperColumn;
+        nextTasks[columnId] = Array.from(column.querySelectorAll(".helper-task")).map(task => ({
+          title: task.querySelector("strong")?.textContent || "",
+          detail: task.querySelector("span")?.textContent || ""
+        })).filter(task => task.title);
+      });
+      helperBoardTasks = { ...helperBoardTasks, ...nextTasks };
+      persistBetaData();
+    }
+
     function setupHelperDragDrop() {
       let dragged = null;
       document.querySelectorAll(".helper-task").forEach(task => {
@@ -3328,6 +3366,7 @@
             column.appendChild(dragged);
           }
           dragged = null;
+          saveHelperBoardOrder();
         });
       });
     }
@@ -3370,6 +3409,7 @@
       renderProfilePanel(child);
       renderChoreTable();
       renderHelperPay();
+      renderHelperBoard();
       renderIngredients();
       renderView();
       renderAdminLocks();
