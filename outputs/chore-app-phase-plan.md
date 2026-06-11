@@ -14,6 +14,7 @@ Core web app features:
 - Admin chore library with on/off rotation toggles
 - Admin chore intake for daily, Monday-only, weekly, monthly, and one-off chores
 - 24-hour notice before new chores enter rotation
+- Home hub with family photo, rotating inspirational thoughts, and a good-news feed for streaks, bonuses, and teamwork wins
 - Completion checkbox plus optional photo proof
 - Noon text reminder for Mom to physically inspect chores
 - Fine ledger with paid/unpaid tracking

@@ -10,8 +10,13 @@
       --muted: #667085;
       --line: #d8dee8;
       --blue: #2f6edb;
+      --teal: #147c8a;
+      --mint: #0f9f7a;
+      --coral: #e35b4f;
+      --gold: #d69c21;
       --paper: #f5f7fb;
       --white: #ffffff;
+      --shadow: 0 18px 52px rgba(24, 49, 63, .13);
     }
 
     * { box-sizing: border-box; }
@@ -22,42 +27,84 @@
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: var(--ink);
       background: linear-gradient(180deg, #fbfcfe 0%, #eef3f8 100%);
-      display: grid;
-      place-items: center;
-      padding: 24px;
     }
 
     main {
-      width: min(760px, 100%);
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      padding: clamp(18px, 4vw, 46px);
+    }
+
+    .home-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(340px, .85fr);
+      gap: 22px;
+      align-items: stretch;
+    }
+
+    .hero,
+    .panel {
       background: var(--white);
       border: 1px solid var(--line);
       border-radius: 8px;
-      box-shadow: 0 18px 52px rgba(24, 49, 63, .13);
-      padding: clamp(22px, 5vw, 44px);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .photo {
+      min-height: 420px;
+      position: relative;
+      display: grid;
+      align-items: end;
+      padding: clamp(22px, 4vw, 38px);
+      background:
+        linear-gradient(180deg, rgba(12, 27, 36, .04) 0%, rgba(12, 27, 36, .78) 100%),
+        url("https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=1600&q=80") center/cover;
+    }
+
+    .photo::before {
+      content: "Family photo";
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      color: #fff;
+      background: rgba(12, 27, 36, .55);
+      border: 1px solid rgba(255,255,255,.42);
+      border-radius: 7px;
+      padding: 7px 9px;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .hero-copy {
+      position: relative;
+      color: #fff;
+      max-width: 660px;
     }
 
     h1 {
       margin: 0;
-      font-size: clamp(34px, 6vw, 58px);
-      line-height: 1.02;
+      font-size: clamp(36px, 6vw, 72px);
+      line-height: .98;
       letter-spacing: 0;
     }
 
-    p {
-      color: var(--muted);
-      line-height: 1.55;
-      font-size: 16px;
+    .hero-copy p {
       margin: 14px 0 0;
+      font-size: 18px;
+      line-height: 1.45;
+      opacity: .92;
     }
 
     .actions {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
-      margin-top: 24px;
+      margin-top: 22px;
     }
 
-    a {
+    a,
+    button {
       display: inline-grid;
       place-items: center;
       min-height: 42px;
@@ -68,6 +115,8 @@
       border: 1px solid var(--line);
       color: var(--ink);
       background: #fff;
+      font: inherit;
+      cursor: pointer;
     }
 
     a.primary {
@@ -75,17 +124,281 @@
       border-color: var(--blue);
       background: var(--blue);
     }
+
+    .side {
+      display: grid;
+      gap: 18px;
+    }
+
+    .panel-head {
+      padding: 16px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .panel-head h2 {
+      margin: 0;
+      font-size: 17px;
+    }
+
+    .panel-head span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .thought {
+      padding: 18px;
+    }
+
+    .thought blockquote {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.32;
+      font-weight: 850;
+    }
+
+    .thought p {
+      margin: 10px 0 0;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .thought-dots {
+      display: flex;
+      gap: 6px;
+      margin-top: 16px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #c8d0dc;
+    }
+
+    .dot.active {
+      background: var(--blue);
+    }
+
+    .feed {
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+      max-height: 470px;
+      overflow: auto;
+    }
+
+    .feed-item {
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr);
+      gap: 10px;
+      align-items: start;
+      padding: 11px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcff;
+    }
+
+    .badge {
+      width: 42px;
+      height: 42px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-weight: 900;
+      background: var(--blue);
+    }
+
+    .badge.gold { background: var(--gold); color: #2d2100; }
+    .badge.mint { background: var(--mint); }
+    .badge.coral { background: var(--coral); }
+    .badge.teal { background: var(--teal); }
+
+    .feed-item strong {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 3px;
+    }
+
+    .feed-item p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.38;
+    }
+
+    .ticker {
+      margin-top: 22px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .stat {
+      background: rgba(255,255,255,.92);
+      border: 1px solid rgba(255,255,255,.45);
+      border-radius: 8px;
+      padding: 12px;
+      color: #fff;
+      backdrop-filter: blur(6px);
+    }
+
+    .stat span {
+      display: block;
+      font-size: 11px;
+      font-weight: 900;
+      opacity: .78;
+    }
+
+    .stat strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 22px;
+    }
+
+    @media (max-width: 920px) {
+      .home-grid {
+        grid-template-columns: 1fr;
+      }
+      .photo {
+        min-height: 520px;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .photo {
+        min-height: 620px;
+      }
+      .ticker {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
   </style>
 </head>
 <body>
   <main>
-    <h1>Family Chore Dashboard</h1>
-    <p>Prototype home for the family chore app, including child dashboards, rotating chores, fines, extension requests, Mom review, Vanessa's helper workspace, and the build roadmap.</p>
-    <div class="actions">
-      <a class="primary" href="/family-chore-dashboard-prototype.html">Open Prototype</a>
-      <a href="/chore-app-designs.html">View Design Options</a>
-      <a href="/chore-app-phase-plan.md">Read Phase Plan</a>
-    </div>
+    <section class="home-grid" aria-label="Family chore app home">
+      <div class="hero">
+        <div class="photo">
+          <div class="hero-copy">
+            <h1>Teamwork Starts At Home</h1>
+            <p id="heroThought">Every small act of care makes the whole home feel lighter.</p>
+            <div class="actions">
+              <a class="primary" href="/family-chore-dashboard-prototype.html">Open Chore Dashboard</a>
+              <a href="/chore-app-phase-plan.md">Read Phase Plan</a>
+              <a href="/chore-app-designs.html">Design Options</a>
+            </div>
+            <div class="ticker">
+              <div class="stat"><span>TEAM STREAK</span><strong>20 days</strong></div>
+              <div class="stat"><span>BONUSES</span><strong>$175</strong></div>
+              <div class="stat"><span>CHORES DONE</span><strong>48</strong></div>
+              <div class="stat"><span>FINES AVOIDED</span><strong>$35</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="side">
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Thought For Today</h2>
+            <span id="thoughtCount">1 of 6</span>
+          </div>
+          <div class="thought">
+            <blockquote id="thoughtQuote">Contribution turns a house into a home.</blockquote>
+            <p id="thoughtNote">A clean space is not about perfection. It is about respect, calm, and making room for the next good thing.</p>
+            <div class="thought-dots" id="thoughtDots"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Good News Feed</h2>
+            <span>Family wins</span>
+          </div>
+          <div class="feed" id="goodNewsFeed"></div>
+        </section>
+      </div>
+    </section>
   </main>
+
+  <script>
+    const thoughts = [
+      {
+        quote: "Contribution turns a house into a home.",
+        note: "A clean space is not about perfection. It is about respect, calm, and making room for the next good thing.",
+        hero: "Every small act of care makes the whole home feel lighter."
+      },
+      {
+        quote: "Discipline is love repeated in small actions.",
+        note: "Doing the simple thing on time builds trust in yourself and peace for everyone around you.",
+        hero: "Small steady effort beats big last-minute energy."
+      },
+      {
+        quote: "Teamwork means nobody carries the whole house alone.",
+        note: "When one person steps up, everyone gets a little more room to breathe.",
+        hero: "This family wins when everyone contributes."
+      },
+      {
+        quote: "Effort is visible, even when no one claps right away.",
+        note: "The bed made, the trash taken out, the floor swept. These quiet wins matter.",
+        hero: "Quiet effort is still a powerful kind of leadership."
+      },
+      {
+        quote: "Cleanliness creates calm.",
+        note: "A reset room, a clear counter, and a tidy bathroom help the whole day feel more possible.",
+        hero: "Order around us helps create steadiness inside us."
+      },
+      {
+        quote: "Gratitude grows when we notice the work.",
+        note: "Every completed chore is someone saying, I care about this family.",
+        hero: "Thank you for making home feel cared for today."
+      }
+    ];
+
+    const goodNews = [
+      { badge: "JJ", color: "gold", title: "JoJo just hit a 20-day streak bonus!", body: "Way to go superstar JoJo. Keep up the great work, team." },
+      { badge: "B", color: "mint", title: "Brielle protected her morning streak.", body: "Sticker-worthy effort. Her room reset was done before rotating chores." },
+      { badge: "L", color: "coral", title: "Louis completed a quest before noon.", body: "Kitchen reset cleared. XP earned and the streak lives on." },
+      { badge: "TH", color: "teal", title: "Thayne brought calm leadership today.", body: "A thoughtful reset of shared space helped the whole home feel steadier." },
+      { badge: "BJ", color: "gold", title: "Brig Jr. handled a harder chore.", body: "Garage entry cleaned with no reminder. That is grown-up follow-through." },
+      { badge: "J", color: "teal", title: "Josh kept the team moving.", body: "Vacuuming done early and inspection-ready. Solid work." }
+    ];
+
+    let thoughtIndex = 0;
+
+    function renderThought() {
+      const thought = thoughts[thoughtIndex];
+      document.getElementById("thoughtQuote").textContent = thought.quote;
+      document.getElementById("thoughtNote").textContent = thought.note;
+      document.getElementById("heroThought").textContent = thought.hero;
+      document.getElementById("thoughtCount").textContent = `${thoughtIndex + 1} of ${thoughts.length}`;
+      document.getElementById("thoughtDots").innerHTML = thoughts.map((_, index) => (
+        `<span class="dot ${index === thoughtIndex ? "active" : ""}"></span>`
+      )).join("");
+      thoughtIndex = (thoughtIndex + 1) % thoughts.length;
+    }
+
+    function renderFeed() {
+      document.getElementById("goodNewsFeed").innerHTML = goodNews.map(item => `
+        <article class="feed-item">
+          <div class="badge ${item.color}">${item.badge}</div>
+          <div>
+            <strong>${item.title}</strong>
+            <p>${item.body}</p>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    renderThought();
+    renderFeed();
+    setInterval(renderThought, 5200);
+  </script>
 </body>
 </html>
