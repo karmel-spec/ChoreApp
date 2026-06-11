@@ -93,7 +93,8 @@ Once per week:
 3. Import the backup in another browser or device.
 4. Confirm the import warning appears before replacing local beta data.
 5. Confirm chores, photos, helper tasks, fines, bonuses, and settings restore.
-6. Check the local beta data summary counts and last export/import/reset timestamps.
+6. Reset test data only after exporting a backup, and confirm photos and Gmail links are cleared with the rest of the local beta data.
+7. Check the local beta data summary counts and last export/import/reset timestamps.
 
 ## Known Prototype Limits
 

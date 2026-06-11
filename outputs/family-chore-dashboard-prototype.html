@@ -2547,12 +2547,16 @@
         document.getElementById("betaDataStatus").textContent = "Only Brigham or Karmel can reset beta data.";
         return;
       }
-      if (!window.confirm("Reset beta chore activity and admin test data on this browser? Export a backup first if you want to keep it.")) {
+      if (!window.confirm("Reset all local beta data on this browser, including chore activity, photos, Gmail links, and test settings? Export a backup first if you want to keep it.")) {
         document.getElementById("betaDataStatus").textContent = "Reset cancelled.";
         return;
       }
       localStorage.removeItem(betaDataStoreKey);
       localStorage.removeItem(choreStateStoreKey);
+      localStorage.removeItem(photoStoreKey);
+      localStorage.removeItem(gmailStoreKey);
+      localStorage.removeItem(sessionStoreKey);
+      localStorage.removeItem("teamworkChoresAuthProvider");
       saveBetaDataMeta({ lastResetAt: new Date().toISOString() });
       window.location.reload();
     }
