@@ -438,6 +438,11 @@
       background: #fff8f7;
     }
 
+    .task.completed {
+      border-color: #b7e8db;
+      background: #f5fffb;
+    }
+
     .task strong {
       display: block;
       font-size: 13px;
@@ -499,6 +504,25 @@
       border-color: #b7e8db;
     }
 
+    .check-btn.completed {
+      color: #fff;
+      background: #08705a;
+      border-color: #08705a;
+    }
+
+    .proof-input {
+      display: none;
+    }
+
+    .proof-thumb {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      object-fit: cover;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
     .status.done {
       color: #08705a;
       background: #dff5ef;
@@ -509,6 +533,14 @@
       color: #b43b33;
       background: #ffecea;
       border-color: #ffd0cc;
+    }
+
+    .review-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      justify-content: flex-end;
+      flex-wrap: wrap;
     }
 
     .celebration-overlay {
@@ -1870,6 +1902,7 @@
     const photoStoreKey = "choreAppChildPhotos";
     const sessionStoreKey = "teamworkChoresSession";
     const gmailStoreKey = "teamworkChoresGmailLinks";
+    const choreStateStoreKey = "teamworkChoresChoreState";
     const accounts = [
       { id: "karmel", name: "Karmel", initials: "K", role: "admin", label: "Mom admin", gmail: "" },
       { id: "brigham", name: "Brigham", initials: "BR", role: "admin", label: "Dad admin", gmail: "" },
@@ -1909,6 +1942,52 @@
       "Cilantro"
     ];
     let celebrationTimer = null;
+
+    function localDateKey(offset = 0) {
+      const date = new Date();
+      date.setHours(0, 0, 0, 0);
+      date.setDate(date.getDate() + offset);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function getStoredChoreState() {
+      try {
+        return JSON.parse(localStorage.getItem(choreStateStoreKey)) || {};
+      } catch {
+        return {};
+      }
+    }
+
+    function saveStoredChoreState(state) {
+      localStorage.setItem(choreStateStoreKey, JSON.stringify(state));
+    }
+
+    function choreKey(child, chore, type) {
+      return `${localDateKey()}|${child.id}|${type}|${chore.name}`;
+    }
+
+    function getChoreRecord(child, chore, type) {
+      return getStoredChoreState()[choreKey(child, chore, type)] || {};
+    }
+
+    function updateChoreRecord(child, chore, type, updates) {
+      const state = getStoredChoreState();
+      const key = choreKey(child, chore, type);
+      state[key] = {
+        ...(state[key] || {}),
+        childId: child.id,
+        choreName: chore.name,
+        choreType: type,
+        date: localDateKey(),
+        updatedAt: new Date().toISOString(),
+        ...updates
+      };
+      saveStoredChoreState(state);
+      return state[key];
+    }
 
     function getStoredChildPhotos() {
       try {
@@ -2177,10 +2256,44 @@
     function attachCompletionHandlers(child) {
       document.querySelectorAll(".check-btn[data-chore-name]").forEach(button => {
         button.addEventListener("click", () => {
-          button.textContent = "Done";
-          button.classList.add("completed");
-          button.disabled = true;
-          showCelebration(child, button.dataset.choreName);
+          const choreName = decodeURIComponent(button.dataset.choreName);
+          const choreType = button.dataset.choreType;
+          const chore = findTodayChore(child, choreName, choreType);
+          if (!chore) return;
+          updateChoreRecord(child, chore, choreType, {
+            completedAt: new Date().toISOString(),
+            reviewStatus: "waiting"
+          });
+          showCelebration(child, chore.name);
+          render();
+        });
+      });
+
+      document.querySelectorAll(".proof-btn[data-chore-name]").forEach(button => {
+        button.addEventListener("click", () => {
+          const input = document.querySelector(`.proof-input[data-proof-key="${button.dataset.proofKey}"]`);
+          if (input) input.click();
+        });
+      });
+
+      document.querySelectorAll(".proof-input[data-chore-name]").forEach(input => {
+        input.addEventListener("change", () => {
+          const file = input.files[0];
+          if (!file) return;
+          const choreName = decodeURIComponent(input.dataset.choreName);
+          const choreType = input.dataset.choreType;
+          const chore = findTodayChore(child, choreName, choreType);
+          if (!chore) return;
+          const reader = new FileReader();
+          reader.onload = event => {
+            updateChoreRecord(child, chore, choreType, {
+              proofImage: event.target.result,
+              proofName: file.name,
+              proofSubmittedAt: new Date().toISOString()
+            });
+            render();
+          };
+          reader.readAsDataURL(file);
         });
       });
     }
@@ -2208,7 +2321,8 @@
     }
 
     function formatDate(offset) {
-      const base = new Date(2026, 5, 10);
+      const base = new Date();
+      base.setHours(0, 0, 0, 0);
       base.setDate(base.getDate() + offset);
       return base.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
     }
@@ -2274,6 +2388,43 @@
       });
     }
 
+    function findTodayChore(child, choreName, choreType) {
+      const routines = getRoutines(child);
+      const rotating = getRotatingChores(child, 0);
+      const source = choreType === "priority" ? routines : rotating;
+      return source.find(chore => chore.name === choreName);
+    }
+
+    function choreStatusText(record, fallback) {
+      if (record.reviewStatus === "approved") return "Approved";
+      if (record.reviewStatus === "redo") return "Needs redo";
+      if (record.completedAt && record.proofImage) return "Photo ready";
+      if (record.completedAt) return "Ready for review";
+      return fallback;
+    }
+
+    function choreStatusClass(record, warning) {
+      if (record.reviewStatus === "approved" || record.completedAt) return "done";
+      if (record.reviewStatus === "redo" || warning) return "warn";
+      return "";
+    }
+
+    function renderTaskActions(child, chore, choreType, fallbackStatus, warning = false) {
+      const record = getChoreRecord(child, chore, choreType);
+      const encodedName = encodeURIComponent(chore.name);
+      const proofKey = encodeURIComponent(choreKey(child, chore, choreType));
+      const completed = Boolean(record.completedAt);
+      const statusClass = choreStatusClass(record, warning);
+      const proofThumb = record.proofImage ? `<img class="proof-thumb" src="${record.proofImage}" alt="${chore.name} proof photo">` : "";
+      return `
+        <button class="check-btn ${completed ? "completed" : ""}" type="button" data-chore-type="${choreType}" data-chore-name="${encodedName}" ${completed ? "disabled" : ""}>${completed ? "Done" : "Complete"}</button>
+        <button class="proof-btn" type="button" data-proof-key="${proofKey}" data-chore-type="${choreType}" data-chore-name="${encodedName}">${record.proofImage ? "Photo saved" : "Photo"}</button>
+        <input class="proof-input" type="file" accept="image/*" data-proof-key="${proofKey}" data-chore-type="${choreType}" data-chore-name="${encodedName}">
+        ${proofThumb}
+        <span class="status ${statusClass}">${choreStatusText(record, fallbackStatus)}</span>
+      `;
+    }
+
     function renderDaily(child) {
       const routines = getRoutines(child);
       const rotating = getRotatingChores(child, 0);
@@ -2295,8 +2446,10 @@
       document.getElementById("accountMetric").textContent = `$${child.accountBalance}`;
       document.getElementById("fineRateInput").value = child.fineRate;
 
-      document.getElementById("streakTasks").innerHTML = routines.map((chore, index) => `
-        <div class="task streak">
+      document.getElementById("streakTasks").innerHTML = routines.map((chore, index) => {
+        const record = getChoreRecord(child, chore, "priority");
+        return `
+        <div class="task streak ${record.completedAt ? "completed" : ""}">
           <div class="task-icon">${index + 1}</div>
           ${renderChildPhoto(child, "task-person")}
           <div>
@@ -2304,15 +2457,17 @@
             <span>Estimated ${chore.minutes} minutes. Complete these before rotating fined chores. Mom still reviews at noon.</span>
           </div>
           <div class="task-actions">
-            <button class="check-btn" type="button" data-chore-name="${chore.name}">Complete</button>
-            <button class="proof-btn" type="button">Photo</button>
-            <span class="status done">Needs review</span>
+            ${renderTaskActions(child, chore, "priority", "Needs review")}
           </div>
         </div>
-      `).join("");
+      `;
+      }).join("");
 
-      document.getElementById("rotatingTasks").innerHTML = rotating.map((chore, index) => `
-        <div class="task ${index === 0 && child.openFines ? "overdue" : ""}">
+      document.getElementById("rotatingTasks").innerHTML = rotating.map((chore, index) => {
+        const record = getChoreRecord(child, chore, "rotating");
+        const warning = index === 0 && child.openFines;
+        return `
+        <div class="task ${warning ? "overdue" : ""} ${record.completedAt ? "completed" : ""}">
           <div class="task-icon">${chore.difficulty}</div>
           ${renderChildPhoto(child, "task-person")}
           <div>
@@ -2320,12 +2475,11 @@
             <span>Difficulty ${chore.difficulty}/10. Estimated ${chore.minutes} minutes. Has until ${approvedDeadline}. If incomplete by the deadline without Dad’s extension, charge $${child.fineRate}.</span>
           </div>
           <div class="task-actions">
-            <button class="check-btn" type="button" data-chore-name="${chore.name}">Complete</button>
-            <button class="proof-btn" type="button">Photo</button>
-            <span class="status ${index === 0 && child.openFines ? "warn" : ""}">${index === 0 && child.openFines ? `$${child.fineRate} risk` : "Due"}</span>
+            ${renderTaskActions(child, chore, "rotating", warning ? `$${child.fineRate} risk` : "Due", warning)}
           </div>
         </div>
-      `).join("");
+      `;
+      }).join("");
 
       renderReviewList(child, routines, rotating);
       attachCompletionHandlers(child);
@@ -2333,18 +2487,59 @@
 
     function renderReviewList(child, routines, rotating) {
       const reviewItems = [
-        ...routines.slice(0, 2).map(chore => ({ ...chore, type: "Streak" })),
-        ...rotating.map(chore => ({ ...chore, type: "Rotating" }))
+        ...routines.map(chore => ({ ...chore, reviewType: "priority", typeLabel: "Priority" })),
+        ...rotating.map(chore => ({ ...chore, reviewType: "rotating", typeLabel: "Rotating" }))
       ];
-      document.getElementById("reviewList").innerHTML = reviewItems.map((chore, index) => `
+      document.getElementById("reviewList").innerHTML = reviewItems.map(chore => {
+        const record = getChoreRecord(child, chore, chore.reviewType);
+        const encodedName = encodeURIComponent(chore.name);
+        const proofThumb = record.proofImage ? `<img class="proof-thumb" src="${record.proofImage}" alt="${chore.name} proof photo">` : "";
+        const detail = record.reviewStatus === "approved"
+          ? "approved after inspection"
+          : record.reviewStatus === "redo"
+            ? "sent back for redo"
+            : record.completedAt
+              ? `${record.proofImage ? "photo submitted" : "checkbox clicked"} · waiting for physical inspection`
+              : "not yet marked complete";
+        return `
         <div class="review-row">
           <div>
             <strong>${child.name}: ${chore.name}</strong>
-            <span>${chore.type} chore · ${index % 2 === 0 ? "photo submitted" : "checkbox clicked"} · waiting for physical inspection</span>
+            <span>${chore.typeLabel} chore · ${detail}</span>
           </div>
-          <span class="status ${index % 3 === 0 ? "done" : ""}">${index % 3 === 0 ? "Approve" : "Inspect"}</span>
+          <div class="review-actions">
+            ${proofThumb}
+            <button class="ghost-btn" type="button" data-review-action="redo" data-review-type="${chore.reviewType}" data-review-name="${encodedName}">Redo</button>
+            <button class="primary-btn" type="button" data-review-action="approve" data-review-type="${chore.reviewType}" data-review-name="${encodedName}" ${record.completedAt ? "" : "disabled"}>Approve</button>
+            <span class="status ${choreStatusClass(record, false)}">${choreStatusText(record, "Inspect")}</span>
+          </div>
         </div>
-      `).join("");
+      `;
+      }).join("");
+
+      document.querySelectorAll("[data-review-action]").forEach(button => {
+        button.addEventListener("click", () => {
+          if (!isAdmin()) {
+            document.getElementById("reviewStatus").textContent = "Only Brigham or Karmel can approve inspected chores.";
+            return;
+          }
+          const choreName = decodeURIComponent(button.dataset.reviewName);
+          const choreType = button.dataset.reviewType;
+          const chore = findTodayChore(child, choreName, choreType);
+          if (!chore) return;
+          const action = button.dataset.reviewAction;
+          updateChoreRecord(child, chore, choreType, {
+            reviewStatus: action === "approve" ? "approved" : "redo",
+            completedAt: action === "approve" ? getChoreRecord(child, chore, choreType).completedAt : "",
+            reviewedBy: currentUser.name,
+            reviewedAt: new Date().toISOString()
+          });
+          document.getElementById("reviewStatus").textContent = action === "approve"
+            ? `${child.name}'s ${chore.name} was approved by ${currentUser.name}.`
+            : `${child.name}'s ${chore.name} was sent back for redo.`;
+          render();
+        });
+      });
     }
 
     function renderWeekly(child) {

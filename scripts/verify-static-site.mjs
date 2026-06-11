@@ -17,7 +17,10 @@ const requiredMarkers = [
   "Teamwork Chores",
   "Mom's Helper",
   "Build Roadmap",
-  "Grant Dad-Approved Extension"
+  "Grant Dad-Approved Extension",
+  "Continue with Google",
+  "All-Time Streak Podium",
+  "teamworkChoresChoreState"
 ];
 
 for (const marker of requiredMarkers) {
