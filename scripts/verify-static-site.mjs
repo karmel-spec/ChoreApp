@@ -115,6 +115,7 @@ const requiredMarkers = [
   "noticeAllowsChore",
   "frequencyAllowsChore",
   "fitAllowsChild",
+  "tieBreak",
   "schedule frequency, notice timing",
   "approved-for fit",
   "Family Rule Settings",

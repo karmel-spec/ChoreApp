@@ -2964,22 +2964,28 @@
         .filter(chore => fitAllowsChild(chore, child))
         .filter(chore => chore.difficulty <= child.maxDifficulty)
         .filter(chore => child.targetHard || chore.difficulty <= 4)
-        .sort((a, b) => child.targetHard ? b.difficulty - a.difficulty : a.difficulty - b.difficulty);
+        .map((chore, index) => ({
+          chore,
+          tieBreak: seededIndex((dayOffset + 1) * (index + 3) + shuffleOffset + child.name.length, 10000)
+        }))
+        .sort((a, b) => {
+          const difficultyOrder = child.targetHard
+            ? b.chore.difficulty - a.chore.difficulty
+            : a.chore.difficulty - b.chore.difficulty;
+          return difficultyOrder || a.tieBreak - b.tieBreak;
+        })
+        .map(item => item.chore);
 
       if (!eligible.length) return [];
 
       const selected = [];
       let total = 0;
-      let attempts = 0;
-      while (total < 22 && attempts < 12) {
-        const index = seededIndex(dayOffset + shuffleOffset + attempts + child.name.length, eligible.length);
-        const chore = eligible[index];
-        if (!selected.some(item => item.name === chore.name) && total + chore.minutes <= 30) {
+      eligible.forEach(chore => {
+        if (total < 22 && total + chore.minutes <= 30) {
           selected.push(chore);
           total += chore.minutes;
         }
-        attempts += 1;
-      }
+      });
       return selected.length ? selected : [eligible[0]];
     }
 
