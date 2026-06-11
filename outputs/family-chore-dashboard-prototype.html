@@ -151,6 +151,16 @@
       color: #fff;
       font-weight: 900;
       font-size: 13px;
+      overflow: hidden;
+    }
+
+    .avatar img,
+    .profile-photo img,
+    .task-person img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
     }
 
     .avatar.thayne { background: var(--blue); }
@@ -206,6 +216,27 @@
 
     .dashboard {
       min-width: 0;
+    }
+
+    .profile-card {
+      display: grid;
+      grid-template-columns: 64px minmax(0, 1fr);
+      gap: 13px;
+      align-items: center;
+    }
+
+    .profile-photo {
+      width: 64px;
+      height: 64px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-weight: 900;
+      font-size: 19px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.36);
+      background: rgba(255,255,255,.18);
     }
 
     .top-strip {
@@ -364,7 +395,7 @@
 
     .task {
       display: grid;
-      grid-template-columns: 34px minmax(0, 1fr) auto;
+      grid-template-columns: 34px 34px minmax(0, 1fr) auto;
       gap: 10px;
       align-items: center;
       padding: 10px;
@@ -382,6 +413,19 @@
       font-weight: 900;
       background: #e8f2ff;
       color: var(--blue);
+    }
+
+    .task-person {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-weight: 900;
+      font-size: 12px;
+      overflow: hidden;
+      background: var(--teal);
     }
 
     .task.streak .task-icon {
@@ -600,6 +644,10 @@
       background: #fbfcff;
     }
 
+    .admin-form.locked {
+      opacity: .64;
+    }
+
     .admin-form label {
       display: block;
       color: var(--muted);
@@ -614,6 +662,17 @@
       font-size: 12px;
       font-weight: 900;
       margin-top: 8px;
+    }
+
+    .locked-note {
+      color: #b43b33;
+      background: #fff8f7;
+      border: 1px solid #ffd0cc;
+      border-radius: 7px;
+      padding: 8px;
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.35;
     }
 
     .ledger {
@@ -917,6 +976,14 @@
           <h2>Family</h2>
           <span>Dashboards</span>
         </div>
+        <div class="rule-box">
+          <strong>Viewing As</strong>
+          <select id="adminModeSelect">
+            <option value="Karmel">Karmel admin</option>
+            <option value="Brigham">Brigham admin</option>
+            <option value="Child">Child preview</option>
+          </select>
+        </div>
         <div class="family-list" id="familyList"></div>
         <div class="rule-box">
           <strong>Assignment Rule</strong>
@@ -926,9 +993,12 @@
 
       <section class="panel dashboard">
         <div class="top-strip">
-          <div>
-            <h2 id="childHeading">Today</h2>
-            <p id="childSubhead">Routine streak chores are due before rotating chores. Rotating chores are fined if incomplete after the approved deadline.</p>
+          <div class="profile-card">
+            <div class="profile-photo" id="dashboardPhoto">TH</div>
+            <div>
+              <h2 id="childHeading">Today</h2>
+              <p id="childSubhead">Routine streak chores are due before rotating chores. Rotating chores are fined if incomplete after the approved deadline.</p>
+            </div>
           </div>
           <div class="timer">
             <span id="deadlineLabel">Rotating chores due</span>
@@ -1027,7 +1097,7 @@
             <span id="ledgerName">Child</span>
           </div>
           <div class="side-body">
-            <div class="admin-form">
+            <div class="admin-form admin-only" id="fineRateAdminForm">
               <label for="fineRateInput">Editable Daily Fine Rate</label>
               <div class="form-row">
                 <input id="fineRateInput" value="5" inputmode="decimal">
@@ -1051,7 +1121,7 @@
               <div class="helper-metric"><span>OVERALL STREAK</span><strong id="overallStreakMetric">0</strong></div>
               <div class="helper-metric"><span>BALANCE</span><strong id="bonusBalanceMetric">$0</strong></div>
             </div>
-            <div class="admin-form">
+            <div class="admin-form admin-only" id="bonusAdminForm">
               <div class="form-row three">
                 <div>
                   <label for="bonus5">5-Day Bonus</label>
@@ -1077,6 +1147,26 @@
               <div class="admin-status" id="bonusStatus"></div>
             </div>
             <div class="ledger" id="bonusLedger"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Profile Photo</h3>
+            <span id="profileName">Child</span>
+          </div>
+          <div class="side-body">
+            <div class="notice-card">Each child can have a profile image for their dashboard, chore tracker, and family list. Admins can paste an image URL or choose a local photo for the prototype.</div>
+            <div class="admin-form admin-only" id="profileAdminForm">
+              <label for="profileImageUrl">Image URL</label>
+              <input id="profileImageUrl" placeholder="https://example.com/photo.jpg">
+              <div class="form-row">
+                <input id="profilePhotoFile" type="file" accept="image/*">
+                <button class="primary-btn" type="button" id="saveProfileImageBtn">Save Photo</button>
+              </div>
+              <button class="ghost-btn" type="button" id="clearProfileImageBtn">Use Initials</button>
+              <div class="admin-status" id="profileStatus"></div>
+            </div>
           </div>
         </section>
 
@@ -1279,12 +1369,12 @@
 
   <script>
     const children = [
-      { id: "thayne", name: "Thayne", initials: "TH", maxDifficulty: 10, targetHard: true, streak: 111, monthlyStreak: 11, openFines: 0, paidFines: 15, fineRate: 5, accountBalance: 45 },
-      { id: "brig", name: "Brig Jr.", initials: "BJ", maxDifficulty: 10, targetHard: true, streak: 38, monthlyStreak: 8, openFines: 5, paidFines: 10, fineRate: 5, accountBalance: 20 },
-      { id: "josh", name: "Josh", initials: "J", maxDifficulty: 10, targetHard: true, streak: 64, monthlyStreak: 14, openFines: 0, paidFines: 5, fineRate: 5, accountBalance: 35 },
-      { id: "jojo", name: "JoJo", initials: "JJ", maxDifficulty: 10, targetHard: true, streak: 5, monthlyStreak: 5, openFines: 10, paidFines: 0, fineRate: 5, accountBalance: 0 },
-      { id: "louis", name: "Louis", initials: "L", maxDifficulty: 6, targetHard: false, streak: 6, monthlyStreak: 6, openFines: 0, paidFines: 5, fineRate: 3, accountBalance: 5 },
-      { id: "brielle", name: "Brielle", initials: "B", maxDifficulty: 4, targetHard: false, streak: 9, monthlyStreak: 9, openFines: 0, paidFines: 0, fineRate: 2, accountBalance: 10 }
+      { id: "thayne", name: "Thayne", initials: "TH", maxDifficulty: 10, targetHard: true, streak: 111, monthlyStreak: 11, openFines: 0, paidFines: 15, fineRate: 5, accountBalance: 45, profileImage: "" },
+      { id: "brig", name: "Brig Jr.", initials: "BJ", maxDifficulty: 10, targetHard: true, streak: 38, monthlyStreak: 8, openFines: 5, paidFines: 10, fineRate: 5, accountBalance: 20, profileImage: "" },
+      { id: "josh", name: "Josh", initials: "J", maxDifficulty: 10, targetHard: true, streak: 64, monthlyStreak: 14, openFines: 0, paidFines: 5, fineRate: 5, accountBalance: 35, profileImage: "" },
+      { id: "jojo", name: "JoJo", initials: "JJ", maxDifficulty: 10, targetHard: true, streak: 5, monthlyStreak: 5, openFines: 10, paidFines: 0, fineRate: 5, accountBalance: 0, profileImage: "" },
+      { id: "louis", name: "Louis", initials: "L", maxDifficulty: 6, targetHard: false, streak: 6, monthlyStreak: 6, openFines: 0, paidFines: 5, fineRate: 3, accountBalance: 5, profileImage: "" },
+      { id: "brielle", name: "Brielle", initials: "B", maxDifficulty: 4, targetHard: false, streak: 9, monthlyStreak: 9, openFines: 0, paidFines: 0, fineRate: 2, accountBalance: 10, profileImage: "" }
     ];
 
     const routineChores = [
@@ -1409,6 +1499,7 @@
     let activeView = "daily";
     let shuffleOffset = 0;
     let approvedDeadline = "12:00 PM";
+    let activeViewer = "Karmel";
     let bonusRules = {
       monthly: [
         { days: 5, amount: 5 },
@@ -1439,6 +1530,33 @@
       const chores = [...routineChores];
       if (child.id === "louis" || child.id === "brielle") chores.push(...youngerRoutine);
       return chores;
+    }
+
+    function isAdmin() {
+      return activeViewer === "Karmel" || activeViewer === "Brigham";
+    }
+
+    function renderChildPhoto(child, className = "avatar") {
+      const image = child.profileImage ? `<img src="${child.profileImage}" alt="${child.name} profile photo">` : child.initials;
+      return `<div class="${className} ${child.id}">${image}</div>`;
+    }
+
+    function renderAdminLocks() {
+      const locked = !isAdmin();
+      document.querySelectorAll(".admin-only").forEach(form => {
+        form.classList.toggle("locked", locked);
+        form.querySelectorAll("input, button, select").forEach(control => {
+          control.disabled = locked;
+        });
+      });
+      document.querySelectorAll(".locked-note").forEach(note => note.remove());
+      if (!locked) return;
+      document.querySelectorAll(".admin-only").forEach(form => {
+        const note = document.createElement("div");
+        note.className = "locked-note";
+        note.textContent = "Locked. Fine rates, bonus rates, and profile photos can only be edited by Brigham or Karmel.";
+        form.prepend(note);
+      });
     }
 
     function getRotatingChores(child, dayOffset) {
@@ -1473,7 +1591,7 @@
       const list = document.getElementById("familyList");
       list.innerHTML = children.map(child => `
         <button class="child-button ${child.id === selectedChildId ? "active" : ""}" type="button" data-child="${child.id}">
-          <div class="avatar ${child.id}">${child.initials}</div>
+          ${renderChildPhoto(child)}
           <div>
             <strong>${child.name}</strong>
             <small>Fine rate $${child.fineRate}/day · difficulty 1-${child.maxDifficulty}</small>
@@ -1496,6 +1614,8 @@
       const rotatingMinutes = rotating.reduce((sum, chore) => sum + chore.minutes, 0);
       const routineMinutes = routines.reduce((sum, chore) => sum + chore.minutes, 0);
 
+      document.getElementById("dashboardPhoto").outerHTML = renderChildPhoto(child, "profile-photo");
+      document.querySelector(".profile-photo").id = "dashboardPhoto";
       document.getElementById("childHeading").textContent = `${child.name}'s Dashboard`;
       document.getElementById("childSubhead").textContent = `${child.name} has ${routineMinutes} minutes of streak chores, then ${rotatingMinutes} minutes of rotating chores.`;
       document.getElementById("deadlineTime").textContent = approvedDeadline;
@@ -1510,6 +1630,7 @@
       document.getElementById("streakTasks").innerHTML = routines.map((chore, index) => `
         <div class="task streak">
           <div class="task-icon">${index + 1}</div>
+          ${renderChildPhoto(child, "task-person")}
           <div>
             <strong>${chore.name}</strong>
             <span>Estimated ${chore.minutes} minutes. Complete these before rotating fined chores. Mom still reviews at noon.</span>
@@ -1525,6 +1646,7 @@
       document.getElementById("rotatingTasks").innerHTML = rotating.map((chore, index) => `
         <div class="task ${index === 0 && child.openFines ? "overdue" : ""}">
           <div class="task-icon">${chore.difficulty}</div>
+          ${renderChildPhoto(child, "task-person")}
           <div>
             <strong>${chore.name}</strong>
             <span>Difficulty ${chore.difficulty}/10. Estimated ${chore.minutes} minutes. Has until ${approvedDeadline}. If incomplete by the deadline without Dad’s extension, charge $${child.fineRate}.</span>
@@ -1608,7 +1730,17 @@
       document.getElementById("bonusStatus").textContent = `Monthly streak resets July 1. Overall streak continues from ${child.streak} days.`;
     }
 
+    function renderProfilePanel(child) {
+      document.getElementById("profileName").textContent = child.name;
+      document.getElementById("profileImageUrl").value = child.profileImage && !child.profileImage.startsWith("data:") ? child.profileImage : "";
+      document.getElementById("profileStatus").textContent = child.profileImage ? `${child.name}'s profile photo is set.` : `${child.name} is using initials until an admin adds a photo.`;
+    }
+
     function saveBonusRules() {
+      if (!isAdmin()) {
+        document.getElementById("bonusStatus").textContent = "Only Brigham or Karmel can edit bonus rates.";
+        return;
+      }
       bonusRules = {
         monthly: [
           { days: 5, amount: Math.max(0, Number(document.getElementById("bonus5").value) || 0) },
@@ -1638,6 +1770,10 @@
     }
 
     function awardEligibleBonus() {
+      if (!isAdmin()) {
+        document.getElementById("bonusStatus").textContent = "Only Brigham or Karmel can award bonus money.";
+        return;
+      }
       const child = children.find(item => item.id === selectedChildId);
       const bonus = getEligibleBonus(child);
       if (!bonus) {
@@ -1666,11 +1802,54 @@
     }
 
     function saveFineRate() {
+      if (!isAdmin()) {
+        document.getElementById("fineRateStatus").textContent = "Only Brigham or Karmel can edit fine rates.";
+        return;
+      }
       const child = children.find(item => item.id === selectedChildId);
       const newRate = Math.max(0, Number(document.getElementById("fineRateInput").value) || 0);
       child.fineRate = Number(newRate.toFixed(2));
       render();
       document.getElementById("fineRateStatus").textContent = `${child.name}'s daily fine rate is now $${child.fineRate}.`;
+    }
+
+    function saveProfileImage() {
+      if (!isAdmin()) {
+        document.getElementById("profileStatus").textContent = "Only Brigham or Karmel can edit profile photos.";
+        return;
+      }
+      const child = children.find(item => item.id === selectedChildId);
+      const file = document.getElementById("profilePhotoFile").files[0];
+      const url = document.getElementById("profileImageUrl").value.trim();
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = event => {
+          child.profileImage = event.target.result;
+          render();
+          document.getElementById("profileStatus").textContent = `${child.name}'s profile photo was updated from a local file.`;
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
+      if (url) {
+        child.profileImage = url;
+        render();
+        document.getElementById("profileStatus").textContent = `${child.name}'s profile photo URL was saved.`;
+        return;
+      }
+      document.getElementById("profileStatus").textContent = "Paste an image URL or choose a local image file.";
+    }
+
+    function clearProfileImage() {
+      if (!isAdmin()) {
+        document.getElementById("profileStatus").textContent = "Only Brigham or Karmel can edit profile photos.";
+        return;
+      }
+      const child = children.find(item => item.id === selectedChildId);
+      child.profileImage = "";
+      document.getElementById("profilePhotoFile").value = "";
+      render();
+      document.getElementById("profileStatus").textContent = `${child.name} is back to initials.`;
     }
 
     function renderChoreTable() {
@@ -1825,10 +2004,12 @@
       renderWeekly(child);
       renderLedger(child);
       renderBonusPanel(child);
+      renderProfilePanel(child);
       renderChoreTable();
       renderHelperPay();
       renderIngredients();
       renderView();
+      renderAdminLocks();
     }
 
     document.getElementById("dailyBtn").addEventListener("click", () => {
@@ -1839,6 +2020,11 @@
     document.getElementById("weeklyBtn").addEventListener("click", () => {
       activeView = "weekly";
       renderView();
+    });
+
+    document.getElementById("adminModeSelect").addEventListener("change", event => {
+      activeViewer = event.target.value;
+      render();
     });
 
     document.getElementById("shuffleBtn").addEventListener("click", () => {
@@ -1866,6 +2052,10 @@
     document.getElementById("saveBonusRulesBtn").addEventListener("click", saveBonusRules);
 
     document.getElementById("awardBonusBtn").addEventListener("click", awardEligibleBonus);
+
+    document.getElementById("saveProfileImageBtn").addEventListener("click", saveProfileImage);
+
+    document.getElementById("clearProfileImageBtn").addEventListener("click", clearProfileImage);
 
     document.getElementById("saveTimeCardBtn").addEventListener("click", saveHelperTimeCard);
 

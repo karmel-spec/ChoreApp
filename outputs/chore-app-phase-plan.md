@@ -21,6 +21,8 @@ Core web app features:
 - Extension petition flow where only Brigham-dad can approve deadline changes by text
 - Chore account balances for each child
 - Admin-editable streak bonus awards such as 5-day, 7-day, and 30-day monthly bonuses
+- Fine rates, bonus rates, and child profile photos editable only by Brigham and Karmel admin accounts
+- Editable child profile images shown on dashboards, family list, and chore tracker rows
 - Monthly bonus streaks that restart on the first of each month while overall streaks continue
 - Long-term super bonuses for larger overall streak milestones
 
