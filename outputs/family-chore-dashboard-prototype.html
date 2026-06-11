@@ -1938,6 +1938,7 @@
           </div>
           <div class="side-body">
             <div class="notice-card">Vanessa has her own workspace. She can see assigned chores and priorities, but she is not part of the children’s random fine rotation.</div>
+            <div class="notice-card" id="helperWorkspaceStatus">Helper workspace permissions loading...</div>
 
             <div class="helper-grid">
               <div class="helper-metric"><span>WEEK HOURS</span><strong id="helperHours">0.0</strong></div>
@@ -1945,7 +1946,7 @@
               <div class="helper-metric"><span>PAYCHECK</span><strong id="helperPay">$0.00</strong></div>
             </div>
 
-            <div class="admin-form">
+            <div class="admin-form" id="helperTimeCardForm">
               <div class="form-row three">
                 <div>
                   <label for="helperArrival">Arrival</label>
@@ -1976,7 +1977,7 @@
               </div>
             </div>
 
-            <div class="admin-form">
+            <div class="admin-form" id="ingredientRequestForm">
               <label for="ingredientRequest">Ingredient Request</label>
               <input id="ingredientRequest" value="Chicken broth, tortillas, cilantro">
               <div class="form-row">
@@ -2731,6 +2732,14 @@
       return currentUser?.role === "admin";
     }
 
+    function isHelperUser() {
+      return currentUser?.role === "helper";
+    }
+
+    function canUseHelperWorkspace() {
+      return isAdmin() || isHelperUser();
+    }
+
     function isExtensionApprover() {
       return currentUser?.id === "brigham";
     }
@@ -2758,6 +2767,26 @@
         note.textContent = "Locked. Fine rates, bonus rates, chore rotation, and profile photos can only be edited by Brigham or Karmel.";
         form.prepend(note);
       });
+    }
+
+    function renderHelperLocks() {
+      const helperAllowed = canUseHelperWorkspace();
+      const helperForms = [
+        document.getElementById("helperTimeCardForm"),
+        document.getElementById("ingredientRequestForm")
+      ].filter(Boolean);
+      helperForms.forEach(form => {
+        form.classList.toggle("locked", !helperAllowed);
+        form.querySelectorAll("input, button").forEach(control => {
+          control.disabled = !helperAllowed;
+        });
+      });
+      document.getElementById("helperRate").disabled = !isAdmin();
+      document.getElementById("helperWorkspaceStatus").textContent = isAdmin()
+        ? "Admin view: Brigham or Karmel can edit rate, review pay, and help manage Vanessa's priorities."
+        : isHelperUser()
+          ? "Vanessa view: time card, priorities, and ingredient requests are open. Pay rate is parent-admin controlled."
+          : "View only: Vanessa's helper workspace can be edited by Vanessa, Brigham, or Karmel.";
     }
 
     function getCelebrationProfile(child, choreName) {
@@ -3768,8 +3797,12 @@
     }
 
     function saveHelperTimeCard() {
+      if (!canUseHelperWorkspace()) {
+        document.getElementById("timeCardStatus").textContent = "Only Vanessa, Brigham, or Karmel can save helper time.";
+        return;
+      }
       const hours = calculateHelperShiftHours();
-      const rate = Number(document.getElementById("helperRate").value || 17);
+      const rate = isAdmin() ? Number(document.getElementById("helperRate").value || 17) : helperRate;
       if (hours === null) {
         document.getElementById("timeCardStatus").textContent = "Use times like 8:30 AM and 1:15 PM.";
         return;
@@ -3797,6 +3830,10 @@
     }
 
     function addIngredientRequest() {
+      if (!canUseHelperWorkspace()) {
+        document.getElementById("timeCardStatus").textContent = "Only Vanessa, Brigham, or Karmel can add ingredient requests.";
+        return;
+      }
       const raw = document.getElementById("ingredientRequest").value.trim();
       if (!raw) return;
       raw.split(",").map(item => item.trim()).filter(Boolean).forEach(item => {
@@ -3823,6 +3860,7 @@
     }
 
     function saveHelperBoardOrder() {
+      if (!canUseHelperWorkspace()) return;
       const nextTasks = {};
       document.querySelectorAll(".priority-column").forEach(column => {
         const columnId = column.dataset.helperColumn;
@@ -3838,15 +3876,19 @@
     function setupHelperDragDrop() {
       let dragged = null;
       document.querySelectorAll(".helper-task").forEach(task => {
+        task.draggable = canUseHelperWorkspace();
         task.addEventListener("dragstart", () => {
+          if (!canUseHelperWorkspace()) return;
           dragged = task;
         });
       });
       document.querySelectorAll(".priority-column").forEach(column => {
         column.addEventListener("dragover", event => {
+          if (!canUseHelperWorkspace()) return;
           event.preventDefault();
         });
         column.addEventListener("drop", event => {
+          if (!canUseHelperWorkspace()) return;
           event.preventDefault();
           if (!dragged) return;
           const target = event.target.closest(".helper-task");
@@ -3910,6 +3952,7 @@
       renderFeedbackLog();
       renderView();
       renderAdminLocks();
+      renderHelperLocks();
     }
 
     document.getElementById("dailyBtn").addEventListener("click", () => {

@@ -117,6 +117,9 @@ const requiredMarkers = [
   "Only Brigham or Karmel can change the master chore rotation",
   "helperBoardTasks",
   "saveHelperBoardOrder",
+  "canUseHelperWorkspace",
+  "renderHelperLocks",
+  "Pay rate is parent-admin controlled",
   "30-Day Fairness",
   "fairnessList",
   "calculateFairnessSummary",
@@ -187,6 +190,9 @@ const requiredAppIds = [
   "feedbackStatus",
   "feedbackList",
   "helperBoard",
+  "helperWorkspaceStatus",
+  "helperTimeCardForm",
+  "ingredientRequestForm",
   "ingredientList"
 ];
 
