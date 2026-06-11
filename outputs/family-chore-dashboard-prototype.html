@@ -786,6 +786,128 @@
       line-height: 1.35;
     }
 
+    .login-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      display: none;
+      place-items: center;
+      padding: 20px;
+      background: rgba(15, 23, 42, .72);
+    }
+
+    .login-overlay.show {
+      display: grid;
+    }
+
+    .login-card {
+      width: min(820px, 100%);
+      max-height: min(760px, calc(100vh - 40px));
+      overflow: auto;
+      background: #fff;
+      border: 1px solid rgba(255,255,255,.6);
+      border-radius: 8px;
+      box-shadow: 0 24px 80px rgba(15, 23, 42, .34);
+      padding: clamp(18px, 4vw, 28px);
+    }
+
+    .login-card h2 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 44px);
+      letter-spacing: 0;
+    }
+
+    .login-card p {
+      color: var(--muted);
+      line-height: 1.45;
+      margin: 8px 0 18px;
+    }
+
+    .login-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .login-user {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcff;
+      padding: 12px 8px;
+      display: grid;
+      justify-items: center;
+      gap: 8px;
+      cursor: pointer;
+      text-align: center;
+      color: var(--ink);
+    }
+
+    .login-user.active {
+      border-color: #bfd2fb;
+      background: #edf4ff;
+      box-shadow: inset 0 0 0 1px #bfd2fb;
+    }
+
+    .login-user strong,
+    .login-user span {
+      display: block;
+    }
+
+    .login-user span {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .login-avatar {
+      width: 46px;
+      height: 46px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-weight: 900;
+      overflow: hidden;
+      background: var(--blue);
+    }
+
+    .login-avatar.karmel { background: var(--violet); }
+    .login-avatar.brigham { background: var(--navy); }
+    .login-avatar.vanessa { background: var(--mint); }
+
+    .login-actions {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      margin-top: 14px;
+      align-items: end;
+    }
+
+    .login-actions label {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      margin-bottom: 5px;
+    }
+
+    .login-actions input {
+      width: 100%;
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 8px;
+      font: inherit;
+    }
+
+    .login-status {
+      min-height: 18px;
+      margin-top: 10px;
+      color: var(--teal);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
     .ledger {
       display: grid;
       gap: 7px;
@@ -1014,7 +1136,11 @@
 
     @media (max-width: 780px) {
       .helper-grid,
-      .priority-board {
+      .priority-board,
+      .login-grid {
+        grid-template-columns: 1fr;
+      }
+      .login-actions {
         grid-template-columns: 1fr;
       }
     }
@@ -1077,7 +1203,7 @@
       <h1>Teamwork Chores</h1>
       <p class="intro">A Design 2 prototype with streak routines first, randomized rotating chores second, noon fines, extension petitions, child dashboards, seven-day planning, and an admin-maintained chore library.</p>
     </div>
-    <div class="admin-chip">Mom Admin: edit routines, chores, fines, approvals</div>
+    <div class="admin-chip" id="currentUserChip">Not signed in</div>
   </header>
 
   <main>
@@ -1088,12 +1214,9 @@
           <span>Dashboards</span>
         </div>
         <div class="rule-box">
-          <strong>Viewing As</strong>
-          <select id="adminModeSelect">
-            <option value="Karmel">Karmel admin</option>
-            <option value="Brigham">Brigham admin</option>
-            <option value="Child">Child preview</option>
-          </select>
+          <strong>Signed In</strong>
+          <p id="loginSummary">Choose a family login to continue.</p>
+          <button class="ghost-btn" type="button" id="switchLoginBtn">Switch Login</button>
         </div>
         <div class="family-list" id="familyList"></div>
         <div class="rule-box">
@@ -1478,6 +1601,22 @@
     </div>
   </main>
 
+  <div class="login-overlay" id="loginOverlay" aria-live="polite">
+    <section class="login-card" aria-label="Sign in to Teamwork Chores">
+      <h2>Sign In</h2>
+      <p>Choose your family profile. Admin controls are available only for Brigham and Karmel. PINs are placeholders in this prototype.</p>
+      <div class="login-grid" id="loginGrid"></div>
+      <div class="login-actions">
+        <div>
+          <label for="loginPin">PIN</label>
+          <input id="loginPin" inputmode="numeric" placeholder="Demo PIN optional">
+        </div>
+        <button class="primary-btn" type="button" id="loginBtn">Enter</button>
+      </div>
+      <div class="login-status" id="loginStatus"></div>
+    </section>
+  </div>
+
   <div class="celebration-overlay" id="celebrationOverlay" aria-live="polite">
     <div class="celebration-card">
       <div class="celebration-burst" id="celebrationBurst"></div>
@@ -1618,11 +1757,25 @@
     const validChildIds = ["thayne", "brig", "josh", "jojo", "louis", "brielle"];
     const requestedChildId = new URLSearchParams(window.location.search).get("child");
     const photoStoreKey = "choreAppChildPhotos";
+    const sessionStoreKey = "teamworkChoresSession";
+    const accounts = [
+      { id: "karmel", name: "Karmel", initials: "K", role: "admin", label: "Mom admin" },
+      { id: "brigham", name: "Brigham", initials: "BR", role: "admin", label: "Dad admin" },
+      { id: "vanessa", name: "Vanessa", initials: "V", role: "helper", label: "Mom's helper" },
+      { id: "thayne", name: "Thayne", initials: "TH", role: "child", childId: "thayne", label: "Age 20" },
+      { id: "brig", name: "Brig Jr.", initials: "BJ", role: "child", childId: "brig", label: "Age 18" },
+      { id: "josh", name: "Josh", initials: "J", role: "child", childId: "josh", label: "Age 16" },
+      { id: "jojo", name: "JoJo", initials: "JJ", role: "child", childId: "jojo", label: "Age 15" },
+      { id: "louis", name: "Louis", initials: "L", role: "child", childId: "louis", label: "Age 12" },
+      { id: "brielle", name: "Brielle", initials: "B", role: "child", childId: "brielle", label: "Age 8" }
+    ];
     let selectedChildId = validChildIds.includes(requestedChildId) ? requestedChildId : "thayne";
     let activeView = "daily";
     let shuffleOffset = 0;
     let approvedDeadline = "12:00 PM";
     let activeViewer = "Karmel";
+    let selectedLoginId = "karmel";
+    let currentUser = null;
     let bonusRules = {
       monthly: [
         { days: 5, amount: 5 },
@@ -1670,6 +1823,74 @@
       });
     }
 
+    function getAccountById(accountId) {
+      return accounts.find(account => account.id === accountId);
+    }
+
+    function roleLabel(account) {
+      if (!account) return "Not signed in";
+      if (account.role === "admin") return `${account.name} admin`;
+      if (account.role === "helper") return "Vanessa helper";
+      return `${account.name} child login`;
+    }
+
+    function renderLoginGrid() {
+      document.getElementById("loginGrid").innerHTML = accounts.map(account => `
+        <button class="login-user ${account.id === selectedLoginId ? "active" : ""}" type="button" data-login-id="${account.id}">
+          <span class="login-avatar ${account.childId || account.id}">${account.initials}</span>
+          <strong>${account.name}</strong>
+          <span>${account.label}</span>
+        </button>
+      `).join("");
+      document.querySelectorAll("[data-login-id]").forEach(button => {
+        button.addEventListener("click", () => {
+          selectedLoginId = button.dataset.loginId;
+          renderLoginGrid();
+        });
+      });
+    }
+
+    function applyAccount(account) {
+      currentUser = account;
+      if (!account) {
+        document.getElementById("loginOverlay").classList.add("show");
+        document.getElementById("currentUserChip").textContent = "Not signed in";
+        document.getElementById("loginSummary").textContent = "Choose a family login to continue.";
+        return;
+      }
+      activeViewer = account.role === "admin" ? account.name : account.role === "helper" ? "Vanessa" : "Child";
+      if (account.childId) {
+        selectedChildId = account.childId;
+        const url = new URL(window.location.href);
+        url.searchParams.set("child", selectedChildId);
+        window.history.replaceState({}, "", url);
+      }
+      document.getElementById("loginOverlay").classList.remove("show");
+      document.getElementById("currentUserChip").textContent = roleLabel(account);
+      document.getElementById("loginSummary").textContent = `${roleLabel(account)} is signed in.`;
+      localStorage.setItem(sessionStoreKey, account.id);
+    }
+
+    function loginSelectedAccount() {
+      const account = getAccountById(selectedLoginId);
+      if (!account) {
+        document.getElementById("loginStatus").textContent = "Choose a family member first.";
+        return;
+      }
+      applyAccount(account);
+      render();
+    }
+
+    function restoreLogin() {
+      const storedAccount = getAccountById(localStorage.getItem(sessionStoreKey));
+      if (storedAccount) {
+        selectedLoginId = storedAccount.id;
+        applyAccount(storedAccount);
+        return;
+      }
+      document.getElementById("loginOverlay").classList.add("show");
+    }
+
     function seededIndex(seed, max) {
       const x = Math.sin(seed * 999) * 10000;
       return Math.floor((x - Math.floor(x)) * max);
@@ -1682,7 +1903,7 @@
     }
 
     function isAdmin() {
-      return activeViewer === "Karmel" || activeViewer === "Brigham";
+      return currentUser?.role === "admin";
     }
 
     function renderChildPhoto(child, className = "avatar") {
@@ -1834,7 +2055,10 @@
 
     function renderFamilyList() {
       const list = document.getElementById("familyList");
-      list.innerHTML = children.map(child => `
+      const visibleChildren = currentUser?.role === "child"
+        ? children.filter(child => child.id === currentUser.childId)
+        : children;
+      list.innerHTML = visibleChildren.map(child => `
         <button class="child-button ${child.id === selectedChildId ? "active" : ""}" type="button" data-child="${child.id}">
           ${renderChildPhoto(child)}
           <div>
@@ -1846,6 +2070,7 @@
       `).join("");
       list.querySelectorAll("button").forEach(button => {
         button.addEventListener("click", () => {
+          if (currentUser?.role === "child" && currentUser.childId !== button.dataset.child) return;
           selectedChildId = button.dataset.child;
           approvedDeadline = "12:00 PM";
           const url = new URL(window.location.href);
@@ -2276,10 +2501,11 @@
       renderView();
     });
 
-    document.getElementById("adminModeSelect").addEventListener("change", event => {
-      activeViewer = event.target.value;
-      render();
+    document.getElementById("switchLoginBtn").addEventListener("click", () => {
+      document.getElementById("loginOverlay").classList.add("show");
     });
+
+    document.getElementById("loginBtn").addEventListener("click", loginSelectedAccount);
 
     document.getElementById("shuffleBtn").addEventListener("click", () => {
       shuffleOffset += 7;
@@ -2321,6 +2547,8 @@
     });
 
     hydrateStoredChildPhotos();
+    renderLoginGrid();
+    restoreLogin();
     render();
     setupHelperDragDrop();
   </script>

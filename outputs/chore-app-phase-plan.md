@@ -6,6 +6,7 @@ Build this first as a responsive web app that works well on phones, tablets, and
 
 Core web app features:
 - Family dashboards for Thayne, Brig Jr., Josh, JoJo, Louis, and Brielle
+- Login profiles for Brigham, Karmel, Vanessa, and each child, with role-based access
 - Daily view and rolling 7-day view
 - Streak chores due before rotating fined chores
 - Randomized rotating chore assignments
