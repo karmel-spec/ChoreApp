@@ -128,6 +128,7 @@ const requiredMarkers = [
   "canUseHelperWorkspace",
   "renderHelperLocks",
   "Pay rate is parent-admin controlled",
+  "Number(currentRecord.rate || helperRate || 17)",
   "syncCurrentHelperWeek",
   "30-Day Fairness",
   "fairnessList",

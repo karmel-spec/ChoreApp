@@ -3825,7 +3825,9 @@
 
     function renderHelperPay() {
       const currentRecord = syncCurrentHelperWeek();
-      const rate = Number(document.getElementById("helperRate")?.value || currentRecord.rate || helperRate || 17);
+      const rate = isAdmin()
+        ? Number(document.getElementById("helperRate")?.value || currentRecord.rate || helperRate || 17)
+        : Number(currentRecord.rate || helperRate || 17);
       helperRate = rate;
       currentRecord.rate = rate;
       currentRecord.hours = helperWeeklyHours;
@@ -3995,9 +3997,9 @@
       renderProfilePanel(child);
       renderBetaDataSummary();
       renderChoreTable();
+      renderHelperPay();
       renderAdminLocks();
       renderHelperLocks();
-      renderHelperPay();
       renderHelperBoard();
       renderIngredients();
       renderFeedbackLog();
