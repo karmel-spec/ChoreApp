@@ -22,7 +22,10 @@ const requiredMarkers = [
   "All-Time Streak Podium",
   "teamworkChoresChoreState",
   "teamworkChoresBetaData",
-  "Charge Missed Deadline Fine"
+  "Charge Missed Deadline Fine",
+  "Beta Data Tools",
+  "Export Backup",
+  "Import Backup"
 ];
 
 for (const marker of requiredMarkers) {

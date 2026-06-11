@@ -860,6 +860,17 @@
       opacity: .64;
     }
 
+    .backup-actions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      align-items: end;
+    }
+
+    .backup-file {
+      grid-column: 1 / -1;
+    }
+
     .admin-form label {
       display: block;
       color: var(--muted);
@@ -1623,6 +1634,28 @@
 
         <section class="panel">
           <div class="panel-head">
+            <h3>Beta Data Tools</h3>
+            <span>Backup</span>
+          </div>
+          <div class="side-body">
+            <div class="notice-card">During website beta, data is saved in this browser. Admins can export a backup, import it on another device, or reset testing data without changing the published app.</div>
+            <div class="admin-form admin-only" id="betaDataAdminForm">
+              <div class="backup-actions">
+                <button class="primary-btn" type="button" id="exportBetaDataBtn">Export Backup</button>
+                <button class="ghost-btn" type="button" id="importBetaDataBtn">Import Backup</button>
+                <button class="ghost-btn" type="button" id="resetBetaDataBtn">Reset Test Data</button>
+                <div class="backup-file">
+                  <label for="betaDataFile">Backup File</label>
+                  <input id="betaDataFile" type="file" accept="application/json,.json">
+                </div>
+              </div>
+              <div class="admin-status" id="betaDataStatus"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
             <h3>Mom's Helper</h3>
             <span>Vanessa</span>
           </div>
@@ -2073,6 +2106,85 @@
       children.forEach(child => {
         child.profileImage = photos[child.id] || child.profileImage || "";
       });
+    }
+
+    function createBetaBackup() {
+      persistBetaData();
+      return {
+        app: "Teamwork Chores",
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        betaData: getStoredBetaData(),
+        choreState: getStoredChoreState(),
+        childPhotos: getStoredChildPhotos(),
+        gmailLinks: getStoredGmailLinks()
+      };
+    }
+
+    function exportBetaData() {
+      if (!isAdmin()) {
+        document.getElementById("betaDataStatus").textContent = "Only Brigham or Karmel can export beta data.";
+        return;
+      }
+      const backup = createBetaBackup();
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `teamwork-chores-backup-${localDateKey()}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+      document.getElementById("betaDataStatus").textContent = "Backup exported. Keep it private because it can include family photos and chore history.";
+    }
+
+    function applyImportedBackup(backup) {
+      if (!backup || backup.app !== "Teamwork Chores" || !backup.betaData) {
+        throw new Error("That file is not a Teamwork Chores beta backup.");
+      }
+      localStorage.setItem(betaDataStoreKey, JSON.stringify(backup.betaData || {}));
+      localStorage.setItem(choreStateStoreKey, JSON.stringify(backup.choreState || {}));
+      localStorage.setItem(photoStoreKey, JSON.stringify(backup.childPhotos || {}));
+      localStorage.setItem(gmailStoreKey, JSON.stringify(backup.gmailLinks || {}));
+      hydrateBetaData();
+      hydrateStoredChildPhotos();
+      renderLoginGrid();
+      render();
+    }
+
+    function importBetaData() {
+      if (!isAdmin()) {
+        document.getElementById("betaDataStatus").textContent = "Only Brigham or Karmel can import beta data.";
+        return;
+      }
+      const file = document.getElementById("betaDataFile").files[0];
+      if (!file) {
+        document.getElementById("betaDataStatus").textContent = "Choose a Teamwork Chores backup JSON file first.";
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = event => {
+        try {
+          applyImportedBackup(JSON.parse(event.target.result));
+          document.getElementById("betaDataStatus").textContent = "Backup imported. The dashboard has been refreshed with the saved beta data.";
+        } catch (error) {
+          document.getElementById("betaDataStatus").textContent = error.message;
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function resetBetaData() {
+      if (!isAdmin()) {
+        document.getElementById("betaDataStatus").textContent = "Only Brigham or Karmel can reset beta data.";
+        return;
+      }
+      if (!window.confirm("Reset beta chore activity and admin test data on this browser? Export a backup first if you want to keep it.")) {
+        document.getElementById("betaDataStatus").textContent = "Reset cancelled.";
+        return;
+      }
+      localStorage.removeItem(betaDataStoreKey);
+      localStorage.removeItem(choreStateStoreKey);
+      window.location.reload();
     }
 
     function getAccountById(accountId) {
@@ -3038,6 +3150,12 @@
     });
 
     document.getElementById("addChoreBtn").addEventListener("click", addAdminChore);
+
+    document.getElementById("exportBetaDataBtn").addEventListener("click", exportBetaData);
+
+    document.getElementById("importBetaDataBtn").addEventListener("click", importBetaData);
+
+    document.getElementById("resetBetaDataBtn").addEventListener("click", resetBetaData);
 
     document.getElementById("saveFineRateBtn").addEventListener("click", saveFineRate);
 
