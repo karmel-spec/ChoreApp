@@ -56,6 +56,7 @@ const betaGuide = await readFile("outputs/beta-testing-guide.md", "utf8");
 const betaGuideHtml = await readFile("outputs/beta-testing-guide.html", "utf8");
 const manifest = JSON.parse(await readFile("outputs/manifest.webmanifest", "utf8"));
 const serviceWorker = await readFile("outputs/service-worker.js", "utf8");
+const expectedCacheName = "teamwork-chores-beta-2026-06-11";
 
 assertUniqueIds(appHtml, "outputs/family-chore-dashboard-prototype.html");
 assertUniqueIds(homeHtml, "outputs/index.html");
@@ -257,6 +258,10 @@ for (const cachedPath of ["/app", "/beta-guide", "/offline.html", "/manifest.web
   if (!serviceWorker.includes(cachedPath)) {
     throw new Error(`Service worker is missing cached path: ${cachedPath}`);
   }
+}
+
+if (!serviceWorker.includes(`const CACHE_NAME = "${expectedCacheName}"`)) {
+  throw new Error(`Service worker cache name must be ${expectedCacheName}.`);
 }
 
 const cachedFiles = {
