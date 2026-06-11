@@ -2333,7 +2333,8 @@
         paidFines: child.paidFines,
         accountBalance: child.accountBalance,
         streak: child.streak,
-        monthlyStreak: child.monthlyStreak
+        monthlyStreak: child.monthlyStreak,
+        monthlyStreakPeriod: child.monthlyStreakPeriod || currentBonusPeriod()
       }]));
       localStorage.setItem(betaDataStoreKey, JSON.stringify({
         childSettings,
@@ -2365,6 +2366,11 @@
           child.accountBalance = Number(saved.accountBalance ?? child.accountBalance);
           child.streak = Number(saved.streak ?? child.streak);
           child.monthlyStreak = Number(saved.monthlyStreak ?? child.monthlyStreak);
+          child.monthlyStreakPeriod = saved.monthlyStreakPeriod || currentBonusPeriod();
+          if (child.monthlyStreakPeriod !== currentBonusPeriod()) {
+            child.monthlyStreak = 0;
+            child.monthlyStreakPeriod = currentBonusPeriod();
+          }
         });
       }
       if (data.ledger) ledger = data.ledger;
@@ -3192,7 +3198,20 @@
       document.getElementById("fineRateStatus").textContent = `${child.name}'s missed-day fine is $${child.fineRate} unless ${familySettings.extensionApprover} approves an extension.`;
     }
 
+    function ensureCurrentMonthlyStreakPeriod(child) {
+      const period = currentBonusPeriod();
+      if (!child.monthlyStreakPeriod) {
+        child.monthlyStreakPeriod = period;
+        return false;
+      }
+      if (child.monthlyStreakPeriod === period) return false;
+      child.monthlyStreak = 0;
+      child.monthlyStreakPeriod = period;
+      return true;
+    }
+
     function renderBonusPanel(child) {
+      if (ensureCurrentMonthlyStreakPeriod(child)) persistBetaData();
       document.getElementById("bonusName").textContent = child.name;
       document.getElementById("monthlyStreakMetric").textContent = `${child.monthlyStreak} days`;
       document.getElementById("overallStreakMetric").textContent = `${child.streak} days`;
@@ -3336,6 +3355,25 @@
       });
     }
 
+    function allTodayChoresApproved(child) {
+      const dailyChores = [
+        ...getRoutines(child).map(chore => ({ chore, type: "priority" })),
+        ...getRotatingChores(child, 0).map(chore => ({ chore, type: "rotating" }))
+      ];
+      return dailyChores.length > 0 && dailyChores.every(item => {
+        const record = getChoreRecord(child, item.chore, item.type);
+        return record.reviewStatus === "approved";
+      });
+    }
+
+    function creditDailyStreakIfEarned(child) {
+      if (!allTodayChoresApproved(child)) return false;
+      ensureCurrentMonthlyStreakPeriod(child);
+      child.streak += 1;
+      child.monthlyStreak += 1;
+      return true;
+    }
+
     function finalizeChildReview(child) {
       const key = assessmentKey(child);
       if (fineAssessments[key]?.finalizedAt) {
@@ -3344,17 +3382,20 @@
           skipped: true,
           charged: 0,
           missed: fineAssessments[key].missed || [],
+          streakCredited: Boolean(fineAssessments[key].streakCredited),
           message: `${child.name} was already finalized today.`
         };
       }
 
       const missed = getMissedRotatingChores(child);
       const amount = missed.length ? child.fineRate : 0;
+      const streakCredited = creditDailyStreakIfEarned(child);
       fineAssessments[key] = {
         childId: child.id,
         date: localDateKey(),
         missed: missed.map(chore => chore.name),
         charged: amount,
+        streakCredited,
         finalizedBy: currentUser?.name || "Admin",
         finalizedAt: new Date().toISOString()
       };
@@ -3368,7 +3409,10 @@
         skipped: false,
         charged: amount,
         missed: missed.map(chore => chore.name),
-        message: amount > 0 ? `${child.name}: charged $${amount}.` : `${child.name}: all rotating chores cleared.`
+        streakCredited,
+        message: amount > 0
+          ? `${child.name}: charged $${amount}.`
+          : `${child.name}: all rotating chores cleared.${streakCredited ? " Streak credited." : ""}`
       };
     }
 
@@ -3382,7 +3426,7 @@
       render();
       document.getElementById("reviewStatus").textContent = result.skipped
         ? result.message
-        : `${result.message} ${result.missed.length ? `Missed: ${result.missed.join(", ")}.` : "No fine charged."}`;
+        : `${result.message} ${result.missed.length ? `Missed: ${result.missed.join(", ")}.` : "No fine charged."} ${result.streakCredited ? `${child.name}'s monthly and overall streaks increased by 1.` : "Streak credit requires every priority and rotating chore to be approved."}`;
     }
 
     function finalizeAllChildrenReview() {
@@ -3393,11 +3437,12 @@
       const results = children.map(child => finalizeChildReview(child));
       const chargedTotal = results.reduce((sum, result) => sum + result.charged, 0);
       const chargedChildren = results.filter(result => result.charged > 0).map(result => `${result.child.name} $${result.charged}`);
+      const streakChildren = results.filter(result => result.streakCredited && !result.skipped).map(result => result.child.name);
       const skippedCount = results.filter(result => result.skipped).length;
       render();
       document.getElementById("reviewStatus").textContent = chargedChildren.length
-        ? `Noon review finalized. Charged ${chargedChildren.join(", ")}. Total $${chargedTotal}. ${skippedCount ? `${skippedCount} already finalized.` : ""}`
-        : `Noon review finalized. No new fines charged. ${skippedCount ? `${skippedCount} already finalized.` : ""}`;
+        ? `Noon review finalized. Charged ${chargedChildren.join(", ")}. Total $${chargedTotal}. ${streakChildren.length ? `Streaks credited: ${streakChildren.join(", ")}.` : ""} ${skippedCount ? `${skippedCount} already finalized.` : ""}`
+        : `Noon review finalized. No new fines charged. ${streakChildren.length ? `Streaks credited: ${streakChildren.join(", ")}.` : ""} ${skippedCount ? `${skippedCount} already finalized.` : ""}`;
     }
 
     function markFinePaid(child, fineIndex) {
