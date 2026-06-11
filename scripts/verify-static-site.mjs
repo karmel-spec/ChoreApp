@@ -76,6 +76,7 @@ const requiredMarkers = [
   "clearApprovedDeadline",
   "Only ${familySettings.extensionApprover} can approve extension petitions",
   "Continue with Google",
+  "selectedLoginId = account.id",
   "All-Time Streak Podium",
   "Best overall lead for lifetime streaks",
   "renderStreakPodium",

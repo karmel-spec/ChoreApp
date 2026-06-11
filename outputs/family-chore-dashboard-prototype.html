@@ -2688,6 +2688,7 @@
         document.getElementById("loginSummary").textContent = "Choose a family login to continue.";
         return;
       }
+      selectedLoginId = account.id;
       activeViewer = account.role === "admin" ? account.name : account.role === "helper" ? "Vanessa" : "Child";
       if (account.childId) {
         selectedChildId = account.childId;
@@ -4042,6 +4043,7 @@
     });
 
     document.getElementById("switchLoginBtn").addEventListener("click", () => {
+      renderLoginGrid();
       document.getElementById("loginOverlay").classList.add("show");
     });
 
