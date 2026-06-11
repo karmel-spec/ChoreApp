@@ -1098,7 +1098,7 @@
         <div class="family-list" id="familyList"></div>
         <div class="rule-box">
           <strong>Assignment Rule</strong>
-          <p>Daily streak chores are due first. Rotating fined chores stay under 30 minutes per child and are chosen randomly within each child’s approved difficulty range.</p>
+          <p>Daily priority chores are due first. Rotating fined chores stay under 30 minutes per child and are chosen randomly within each child’s approved difficulty range.</p>
         </div>
       </aside>
 
@@ -1108,7 +1108,7 @@
             <div class="profile-photo" id="dashboardPhoto">TH</div>
             <div>
               <h2 id="childHeading">Today</h2>
-              <p id="childSubhead">Routine streak chores are due before rotating chores. Rotating chores are fined if incomplete after the approved deadline.</p>
+              <p id="childSubhead">Priority chores are due before rotating chores. Rotating chores are fined if incomplete after the approved deadline.</p>
             </div>
           </div>
           <div class="timer">
@@ -1135,7 +1135,7 @@
           </div>
 
           <div class="section-title">
-            <h3>Streak Chores</h3>
+            <h3>Priority Chores</h3>
             <span>Due before rotating chores</span>
           </div>
           <div class="task-list" id="streakTasks"></div>
@@ -1834,7 +1834,9 @@
       document.getElementById("dashboardPhoto").outerHTML = renderChildPhoto(child, "profile-photo");
       document.querySelector(".profile-photo").id = "dashboardPhoto";
       document.getElementById("childHeading").textContent = `${child.name}'s Dashboard`;
-      document.getElementById("childSubhead").textContent = `${child.name} has ${routineMinutes} minutes of streak chores, then ${rotatingMinutes} minutes of rotating chores.`;
+      document.getElementById("childSubhead").textContent = child.id === "louis"
+        ? "Louis has 10 minutes of priority chores, then 26 minutes of rotating chores."
+        : `${child.name} has ${routineMinutes} minutes of priority chores, then ${rotatingMinutes} minutes of rotating chores.`;
       document.getElementById("deadlineTime").textContent = approvedDeadline;
       document.getElementById("rotatingNote").textContent = `Has until ${approvedDeadline}`;
       document.getElementById("minutesMetric").textContent = `${rotatingMinutes} min`;
