@@ -159,6 +159,7 @@
 
     .avatar img,
     .profile-photo img,
+    .podium-photo img,
     .task-person img {
       width: 100%;
       height: 100%;
@@ -172,6 +173,13 @@
     .avatar.jojo { background: var(--gold); color: #2d2100; }
     .avatar.louis { background: var(--coral); }
     .avatar.brielle { background: var(--mint); }
+
+    .podium-photo.thayne { background: var(--blue); }
+    .podium-photo.brig { background: var(--teal); }
+    .podium-photo.josh { background: var(--violet); }
+    .podium-photo.jojo { background: var(--gold); color: #2d2100; }
+    .podium-photo.louis { background: var(--coral); }
+    .podium-photo.brielle { background: var(--mint); }
 
     .child-button strong {
       display: block;
@@ -879,6 +887,15 @@
       text-align: center;
       min-width: 0;
       box-shadow: 0 8px 18px rgba(15, 23, 42, .06);
+      cursor: pointer;
+      transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+    }
+
+    .podium-place:hover,
+    .podium-place.active {
+      transform: translateY(-2px);
+      border-color: var(--teal);
+      box-shadow: 0 12px 24px rgba(15, 23, 42, .1);
     }
 
     .podium-place.first {
@@ -917,6 +934,20 @@
       background: #ffe19a;
     }
 
+    .podium-photo {
+      width: 46px;
+      height: 46px;
+      margin: 0 auto 6px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-weight: 900;
+      font-size: 14px;
+      overflow: hidden;
+      box-shadow: none;
+    }
+
     .podium-name {
       display: block;
       color: var(--ink);
@@ -931,6 +962,13 @@
       font-size: 11px;
       font-weight: 900;
       margin-top: 3px;
+    }
+
+    .podium-summary {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
     }
 
     .admin-form {
@@ -1362,6 +1400,37 @@
       font-weight: 800;
     }
 
+    .feedback-list {
+      display: grid;
+      gap: 7px;
+      max-height: 260px;
+      overflow: auto;
+    }
+
+    .feedback-item {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: start;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 9px;
+    }
+
+    .feedback-item strong {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 3px;
+    }
+
+    .feedback-item span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
     @media (max-width: 780px) {
       .helper-grid,
       .priority-board,
@@ -1449,6 +1518,7 @@
         <div class="family-list" id="familyList"></div>
         <div class="rule-box">
           <strong>All-Time Streak Podium</strong>
+          <p class="podium-summary">Best overall lead for lifetime streaks. Tap a winner to open their dashboard.</p>
           <div class="podium" id="streakPodium"></div>
         </div>
         <div class="rule-box">
@@ -1809,6 +1879,57 @@
 
         <section class="panel">
           <div class="panel-head">
+            <h3>Beta Feedback Log</h3>
+            <span>Testing notes</span>
+          </div>
+          <div class="side-body">
+            <div class="notice-card">Capture beta issues as they happen: confusing wording, wrong chore difficulty, timer problems, fine disputes, fairness concerns, or feature ideas.</div>
+            <div class="admin-form" id="feedbackForm">
+              <div class="form-row three">
+                <div>
+                  <label for="feedbackCategory">Category</label>
+                  <select id="feedbackCategory">
+                    <option>Bug</option>
+                    <option>Chore timing</option>
+                    <option>Fairness</option>
+                    <option>Fine or bonus</option>
+                    <option>Wording</option>
+                    <option>Feature idea</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="feedbackSeverity">Severity</label>
+                  <select id="feedbackSeverity">
+                    <option>Watch</option>
+                    <option>Important</option>
+                    <option>Blocking</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="feedbackPerson">Person</label>
+                  <select id="feedbackPerson">
+                    <option>Whole family</option>
+                    <option>Thayne</option>
+                    <option>Brig Jr.</option>
+                    <option>Josh</option>
+                    <option>JoJo</option>
+                    <option>Louis</option>
+                    <option>Brielle</option>
+                    <option>Vanessa</option>
+                  </select>
+                </div>
+              </div>
+              <label for="feedbackText">Note</label>
+              <textarea id="feedbackText" placeholder="What happened? What should change?"></textarea>
+              <button class="primary-btn" type="button" id="addFeedbackBtn">Add Feedback</button>
+              <div class="admin-status" id="feedbackStatus"></div>
+            </div>
+            <div class="feedback-list" id="feedbackList"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
             <h3>Mom's Helper</h3>
             <span>Vanessa</span>
           </div>
@@ -2161,6 +2282,7 @@
       reviewRecipient: "Mom",
       reviewContact: "Mom text"
     };
+    let betaFeedback = [];
     let celebrationTimer = null;
 
     function localDateKey(offset = 0) {
@@ -2215,7 +2337,8 @@
         choreLibrary,
         shuffleOffset,
         fineAssessments,
-        familySettings
+        familySettings,
+        betaFeedback
       }));
     }
 
@@ -2244,6 +2367,7 @@
       if (Array.isArray(data.ingredientRequests)) ingredientRequests = data.ingredientRequests;
       if (data.fineAssessments) fineAssessments = data.fineAssessments;
       if (data.familySettings) familySettings = { ...familySettings, ...data.familySettings };
+      if (Array.isArray(data.betaFeedback)) betaFeedback = data.betaFeedback;
       if (Number.isFinite(Number(data.helperWeeklyHours))) helperWeeklyHours = Number(data.helperWeeklyHours);
       if (Number.isFinite(Number(data.helperRate))) helperRate = Number(data.helperRate);
       if (Number.isFinite(Number(data.shuffleOffset))) shuffleOffset = Number(data.shuffleOffset);
@@ -2772,11 +2896,12 @@
       document.getElementById("streakPodium").innerHTML = order.map(child => {
         const rank = winners.findIndex(winner => winner.id === child.id);
         return `
-          <button class="podium-place ${placeClasses[rank]}" type="button" data-podium-child="${child.id}">
+          <button class="podium-place ${placeClasses[rank]} ${child.id === selectedChildId ? "active" : ""}" type="button" data-podium-child="${child.id}" aria-label="Open ${child.name}'s dashboard, ${placeLabels[rank]} place with ${child.streak} all-time streak days">
             <span class="podium-rank">${placeLabels[rank]} place</span>
             <span class="podium-medal">${medals[rank]}</span>
+            ${renderChildPhoto(child, "podium-photo")}
             <strong class="podium-name">${child.name}</strong>
-            <span class="podium-streak">${child.streak} day streak</span>
+            <span class="podium-streak">${child.streak} all-time days</span>
           </button>
         `;
       }).join("");
@@ -3322,6 +3447,51 @@
       });
     }
 
+    function renderFeedbackLog() {
+      document.getElementById("feedbackList").innerHTML = betaFeedback.length ? betaFeedback.map(item => `
+        <div class="feedback-item">
+          <div>
+            <strong>${item.category} · ${item.person}</strong>
+            <span>${item.severity} · ${item.date}</span>
+            <span>${item.text}</span>
+          </div>
+          <button class="ghost-btn" type="button" data-feedback-id="${item.id}">${item.resolved ? "Resolved" : "Resolve"}</button>
+        </div>
+      `).join("") : `<div class="notice-card">No beta feedback logged yet.</div>`;
+
+      document.querySelectorAll("[data-feedback-id]").forEach(button => {
+        button.addEventListener("click", () => {
+          const item = betaFeedback.find(entry => entry.id === button.dataset.feedbackId);
+          if (!item) return;
+          item.resolved = true;
+          persistBetaData();
+          renderFeedbackLog();
+          document.getElementById("feedbackStatus").textContent = "Feedback marked resolved.";
+        });
+      });
+    }
+
+    function addFeedback() {
+      const text = document.getElementById("feedbackText").value.trim();
+      if (!text) {
+        document.getElementById("feedbackStatus").textContent = "Add a note before saving feedback.";
+        return;
+      }
+      betaFeedback.unshift({
+        id: `feedback-${Date.now()}`,
+        category: document.getElementById("feedbackCategory").value,
+        severity: document.getElementById("feedbackSeverity").value,
+        person: document.getElementById("feedbackPerson").value,
+        text,
+        date: new Date().toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }),
+        resolved: false
+      });
+      document.getElementById("feedbackText").value = "";
+      persistBetaData();
+      renderFeedbackLog();
+      document.getElementById("feedbackStatus").textContent = "Feedback saved for beta review.";
+    }
+
     function parseTimeToMinutes(value) {
       const match = value.trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)$/i);
       if (!match) return null;
@@ -3504,6 +3674,7 @@
       renderHelperPay();
       renderHelperBoard();
       renderIngredients();
+      renderFeedbackLog();
       renderView();
       renderAdminLocks();
     }
@@ -3547,6 +3718,8 @@
     });
 
     document.getElementById("addChoreBtn").addEventListener("click", addAdminChore);
+
+    document.getElementById("addFeedbackBtn").addEventListener("click", addFeedback);
 
     document.getElementById("exportBetaDataBtn").addEventListener("click", exportBetaData);
 

@@ -88,7 +88,7 @@ Once per week:
 
 ## What To Track
 
-Use a shared note or family chat to record:
+Use the in-app Beta Feedback Log or a shared note to record:
 
 - Missing chores
 - Chores with wrong difficulty
@@ -97,6 +97,10 @@ Use a shared note or family chat to record:
 - Any fine or bonus disagreement
 - Whether the 30-day forecast feels fair
 - Whether kids understand the dashboard without parent explanation
+
+## Beta Feedback Log
+
+Use the in-app feedback log whenever something feels off. Choose a category, severity, person, and short note. Mark items resolved only after the family agrees the issue is fixed or no longer important.
 
 ## Ready For Production When
 
