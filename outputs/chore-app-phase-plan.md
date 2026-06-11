@@ -19,6 +19,10 @@ Core web app features:
 - Fine ledger with paid/unpaid tracking
 - Editable per-child daily fine rates for missed 12:00 PM deadlines
 - Extension petition flow where only Brigham-dad can approve deadline changes by text
+- Chore account balances for each child
+- Admin-editable streak bonus awards such as 5-day, 7-day, and 30-day monthly bonuses
+- Monthly bonus streaks that restart on the first of each month while overall streaks continue
+- Long-term super bonuses for larger overall streak milestones
 
 Recommended web stack:
 - Responsive PWA-style web app

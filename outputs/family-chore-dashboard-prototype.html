@@ -313,7 +313,7 @@
 
     .metrics {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 10px;
     }
 
@@ -950,6 +950,7 @@
             <div class="metric"><span>STREAK</span><strong id="streakMetric">0 days</strong></div>
             <div class="metric"><span>OPEN FINES</span><strong id="openFineMetric">$0</strong></div>
             <div class="metric"><span>DAILY FINE RATE</span><strong id="fineRateMetric">$0</strong></div>
+            <div class="metric"><span>CHORE ACCOUNT</span><strong id="accountMetric">$0</strong></div>
           </div>
 
           <div class="section-title">
@@ -1035,6 +1036,47 @@
               <div class="admin-status" id="fineRateStatus"></div>
             </div>
             <div class="ledger" id="fineLedger"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Bonus Account</h3>
+            <span id="bonusName">Child</span>
+          </div>
+          <div class="side-body">
+            <div class="notice-card">Monthly bonus streaks restart on the first of each month. Overall streaks keep growing and can unlock long-term super bonuses.</div>
+            <div class="helper-grid">
+              <div class="helper-metric"><span>MONTH STREAK</span><strong id="monthlyStreakMetric">0</strong></div>
+              <div class="helper-metric"><span>OVERALL STREAK</span><strong id="overallStreakMetric">0</strong></div>
+              <div class="helper-metric"><span>BALANCE</span><strong id="bonusBalanceMetric">$0</strong></div>
+            </div>
+            <div class="admin-form">
+              <div class="form-row three">
+                <div>
+                  <label for="bonus5">5-Day Bonus</label>
+                  <input id="bonus5" value="5" inputmode="decimal">
+                </div>
+                <div>
+                  <label for="bonus7">7-Day Bonus</label>
+                  <input id="bonus7" value="10" inputmode="decimal">
+                </div>
+                <div>
+                  <label for="bonus30">30-Day Bonus</label>
+                  <input id="bonus30" value="50" inputmode="decimal">
+                </div>
+              </div>
+              <div class="form-row">
+                <div>
+                  <label for="super100">100-Day Super Bonus</label>
+                  <input id="super100" value="100" inputmode="decimal">
+                </div>
+                <button class="primary-btn" type="button" id="saveBonusRulesBtn">Save Bonus Rules</button>
+              </div>
+              <button class="ghost-btn" type="button" id="awardBonusBtn">Award Eligible Bonus</button>
+              <div class="admin-status" id="bonusStatus"></div>
+            </div>
+            <div class="ledger" id="bonusLedger"></div>
           </div>
         </section>
 
@@ -1237,12 +1279,12 @@
 
   <script>
     const children = [
-      { id: "thayne", name: "Thayne", initials: "TH", maxDifficulty: 10, targetHard: true, streak: 11, openFines: 0, paidFines: 15, fineRate: 5 },
-      { id: "brig", name: "Brig Jr.", initials: "BJ", maxDifficulty: 10, targetHard: true, streak: 8, openFines: 5, paidFines: 10, fineRate: 5 },
-      { id: "josh", name: "Josh", initials: "J", maxDifficulty: 10, targetHard: true, streak: 14, openFines: 0, paidFines: 5, fineRate: 5 },
-      { id: "jojo", name: "JoJo", initials: "JJ", maxDifficulty: 10, targetHard: true, streak: 5, openFines: 10, paidFines: 0, fineRate: 5 },
-      { id: "louis", name: "Louis", initials: "L", maxDifficulty: 6, targetHard: false, streak: 6, openFines: 0, paidFines: 5, fineRate: 3 },
-      { id: "brielle", name: "Brielle", initials: "B", maxDifficulty: 4, targetHard: false, streak: 9, openFines: 0, paidFines: 0, fineRate: 2 }
+      { id: "thayne", name: "Thayne", initials: "TH", maxDifficulty: 10, targetHard: true, streak: 111, monthlyStreak: 11, openFines: 0, paidFines: 15, fineRate: 5, accountBalance: 45 },
+      { id: "brig", name: "Brig Jr.", initials: "BJ", maxDifficulty: 10, targetHard: true, streak: 38, monthlyStreak: 8, openFines: 5, paidFines: 10, fineRate: 5, accountBalance: 20 },
+      { id: "josh", name: "Josh", initials: "J", maxDifficulty: 10, targetHard: true, streak: 64, monthlyStreak: 14, openFines: 0, paidFines: 5, fineRate: 5, accountBalance: 35 },
+      { id: "jojo", name: "JoJo", initials: "JJ", maxDifficulty: 10, targetHard: true, streak: 5, monthlyStreak: 5, openFines: 10, paidFines: 0, fineRate: 5, accountBalance: 0 },
+      { id: "louis", name: "Louis", initials: "L", maxDifficulty: 6, targetHard: false, streak: 6, monthlyStreak: 6, openFines: 0, paidFines: 5, fineRate: 3, accountBalance: 5 },
+      { id: "brielle", name: "Brielle", initials: "B", maxDifficulty: 4, targetHard: false, streak: 9, monthlyStreak: 9, openFines: 0, paidFines: 0, fineRate: 2, accountBalance: 10 }
     ];
 
     const routineChores = [
@@ -1341,10 +1383,42 @@
       ]
     };
 
+    const bonusLedger = {
+      thayne: [
+        { title: "100-day super bonus", date: "Jun 10", amount: "$100", paid: true },
+        { title: "7-day monthly streak", date: "Jun 7", amount: "$10", paid: true }
+      ],
+      brig: [
+        { title: "7-day monthly streak", date: "Jun 7", amount: "$10", paid: true }
+      ],
+      josh: [
+        { title: "7-day monthly streak", date: "Jun 7", amount: "$10", paid: true }
+      ],
+      jojo: [
+        { title: "5-day monthly streak", date: "Jun 5", amount: "$5", paid: false }
+      ],
+      louis: [
+        { title: "5-day monthly streak", date: "Jun 5", amount: "$5", paid: true }
+      ],
+      brielle: [
+        { title: "7-day monthly streak", date: "Jun 7", amount: "$10", paid: true }
+      ]
+    };
+
     let selectedChildId = "thayne";
     let activeView = "daily";
     let shuffleOffset = 0;
     let approvedDeadline = "12:00 PM";
+    let bonusRules = {
+      monthly: [
+        { days: 5, amount: 5 },
+        { days: 7, amount: 10 },
+        { days: 30, amount: 50 }
+      ],
+      super: [
+        { days: 100, amount: 100 }
+      ]
+    };
     let helperWeeklyHours = 14.25;
     let helperPayRecords = [
       { week: "Jun 1-7", hours: 16.5, rate: 17, paid: true },
@@ -1430,6 +1504,7 @@
       document.getElementById("streakMetric").textContent = `${child.streak} days`;
       document.getElementById("openFineMetric").textContent = `$${child.openFines}`;
       document.getElementById("fineRateMetric").textContent = `$${child.fineRate}/day`;
+      document.getElementById("accountMetric").textContent = `$${child.accountBalance}`;
       document.getElementById("fineRateInput").value = child.fineRate;
 
       document.getElementById("streakTasks").innerHTML = routines.map((chore, index) => `
@@ -1510,6 +1585,84 @@
         </div>
       `).join("");
       document.getElementById("fineRateStatus").textContent = `${child.name}'s missed-day fine is $${child.fineRate} unless Dad approves an extension.`;
+    }
+
+    function renderBonusPanel(child) {
+      document.getElementById("bonusName").textContent = child.name;
+      document.getElementById("monthlyStreakMetric").textContent = `${child.monthlyStreak} days`;
+      document.getElementById("overallStreakMetric").textContent = `${child.streak} days`;
+      document.getElementById("bonusBalanceMetric").textContent = `$${child.accountBalance}`;
+      document.getElementById("bonus5").value = bonusRules.monthly.find(rule => rule.days === 5)?.amount ?? 5;
+      document.getElementById("bonus7").value = bonusRules.monthly.find(rule => rule.days === 7)?.amount ?? 10;
+      document.getElementById("bonus30").value = bonusRules.monthly.find(rule => rule.days === 30)?.amount ?? 50;
+      document.getElementById("super100").value = bonusRules.super.find(rule => rule.days === 100)?.amount ?? 100;
+      document.getElementById("bonusLedger").innerHTML = bonusLedger[child.id].map(item => `
+        <div class="ledger-row">
+          <div>
+            <strong>${item.title}</strong>
+            <span>${item.date} · ${item.amount}</span>
+          </div>
+          <div class="${item.paid ? "paid" : "unpaid"}">${item.paid ? "Paid" : "Pending"}</div>
+        </div>
+      `).join("");
+      document.getElementById("bonusStatus").textContent = `Monthly streak resets July 1. Overall streak continues from ${child.streak} days.`;
+    }
+
+    function saveBonusRules() {
+      bonusRules = {
+        monthly: [
+          { days: 5, amount: Math.max(0, Number(document.getElementById("bonus5").value) || 0) },
+          { days: 7, amount: Math.max(0, Number(document.getElementById("bonus7").value) || 0) },
+          { days: 30, amount: Math.max(0, Number(document.getElementById("bonus30").value) || 0) }
+        ],
+        super: [
+          { days: 100, amount: Math.max(0, Number(document.getElementById("super100").value) || 0) }
+        ]
+      };
+      const child = children.find(item => item.id === selectedChildId);
+      renderBonusPanel(child);
+      document.getElementById("bonusStatus").textContent = "Bonus award amounts updated for all children.";
+    }
+
+    function getEligibleBonus(child) {
+      const monthlyEarned = bonusRules.monthly
+        .filter(rule => child.monthlyStreak >= rule.days)
+        .sort((a, b) => b.days - a.days)[0];
+      const superEarned = bonusRules.super
+        .filter(rule => child.streak >= rule.days)
+        .sort((a, b) => b.days - a.days)[0];
+      if (superEarned && (!monthlyEarned || superEarned.amount > monthlyEarned.amount)) {
+        return { type: "super", ...superEarned };
+      }
+      return monthlyEarned ? { type: "monthly", ...monthlyEarned } : null;
+    }
+
+    function awardEligibleBonus() {
+      const child = children.find(item => item.id === selectedChildId);
+      const bonus = getEligibleBonus(child);
+      if (!bonus) {
+        document.getElementById("bonusStatus").textContent = `${child.name} has not reached a bonus milestone yet.`;
+        return;
+      }
+      const title = bonus.type === "super" ? `${bonus.days}-day super bonus` : `${bonus.days}-day monthly streak`;
+      const alreadyAwarded = bonusLedger[child.id].some(item => {
+        if (item.title !== title) return false;
+        return bonus.type === "super" || item.date.includes("Jun");
+      });
+      if (alreadyAwarded) {
+        document.getElementById("bonusStatus").textContent = `${child.name} already received the ${title} for this bonus period.`;
+        return;
+      }
+      child.accountBalance += bonus.amount;
+      bonusLedger[child.id].unshift({
+        title,
+        date: bonus.type === "super" ? "Lifetime" : "Jun 2026",
+        amount: `$${bonus.amount}`,
+        paid: true
+      });
+      renderDaily(child);
+      renderBonusPanel(child);
+      document.getElementById("bonusStatus").textContent = `${child.name}'s chore account was credited $${bonus.amount} for ${title}.`;
     }
 
     function saveFineRate() {
@@ -1671,6 +1824,7 @@
       renderDaily(child);
       renderWeekly(child);
       renderLedger(child);
+      renderBonusPanel(child);
       renderChoreTable();
       renderHelperPay();
       renderIngredients();
@@ -1708,6 +1862,10 @@
     document.getElementById("addChoreBtn").addEventListener("click", addAdminChore);
 
     document.getElementById("saveFineRateBtn").addEventListener("click", saveFineRate);
+
+    document.getElementById("saveBonusRulesBtn").addEventListener("click", saveBonusRules);
+
+    document.getElementById("awardBonusBtn").addEventListener("click", awardEligibleBonus);
 
     document.getElementById("saveTimeCardBtn").addEventListener("click", saveHelperTimeCard);
 
