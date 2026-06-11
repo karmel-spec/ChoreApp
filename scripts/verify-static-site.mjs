@@ -158,6 +158,7 @@ const requiredMarkers = [
   "fairnessList",
   "calculateFairnessSummary",
   "Beta Readiness Checklist",
+  "cannot edit fine rates, bonus rates, pay rates, or award/charge money",
   "Ready to test",
   "Production Web App"
 ];
@@ -180,6 +181,7 @@ const requiredGuideMarkers = [
   "changes only when Brigham approves",
   "approved-for fit",
   "separate 5-day, 7-day, 30-day, and super-bonus milestones",
+  "cannot edit fine rates, bonus rates, pay rates, or award/charge money",
   "photos and Gmail links are cleared",
   "Vanessa Helper Test",
   "Confirm a new week starts a new pay record",
