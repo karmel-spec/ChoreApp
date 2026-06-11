@@ -2236,7 +2236,6 @@
     let selectedChildId = validChildIds.includes(requestedChildId) ? requestedChildId : "thayne";
     let activeView = "daily";
     let shuffleOffset = 0;
-    let approvedDeadline = "12:00 PM";
     let activeViewer = "Karmel";
     let selectedLoginId = "karmel";
     let currentUser = null;
@@ -2279,6 +2278,7 @@
       ]
     };
     let fineAssessments = {};
+    let extensionDeadlines = {};
     let familySettings = {
       defaultDeadline: "12:00 PM",
       reviewReminderTime: "12:00 PM",
@@ -2378,6 +2378,7 @@
         choreLibrary,
         shuffleOffset,
         fineAssessments,
+        extensionDeadlines,
         familySettings,
         betaFeedback
       }));
@@ -2412,6 +2413,7 @@
       if (data.helperBoardTasks) helperBoardTasks = { ...helperBoardTasks, ...data.helperBoardTasks };
       if (Array.isArray(data.ingredientRequests)) ingredientRequests = data.ingredientRequests;
       if (data.fineAssessments) fineAssessments = data.fineAssessments;
+      if (data.extensionDeadlines) extensionDeadlines = data.extensionDeadlines;
       if (data.familySettings) familySettings = { ...familySettings, ...data.familySettings };
       if (Array.isArray(data.betaFeedback)) betaFeedback = data.betaFeedback;
       if (Number.isFinite(Number(data.helperWeeklyHours))) helperWeeklyHours = Number(data.helperWeeklyHours);
@@ -2594,8 +2596,29 @@
       return familySettings.extensionApprover.replace(/-.*/, "") || familySettings.extensionApprover;
     }
 
-    function resetApprovedDeadline() {
-      approvedDeadline = familySettings.defaultDeadline;
+    function extensionDeadlineKey(child, offset = 0) {
+      return `${localDateKey(offset)}|${child.id}`;
+    }
+
+    function approvedDeadlineFor(child, offset = 0) {
+      return extensionDeadlines[extensionDeadlineKey(child, offset)] || familySettings.defaultDeadline;
+    }
+
+    function setApprovedDeadline(child, deadline) {
+      const key = extensionDeadlineKey(child);
+      const cleanDeadline = deadline.trim() || familySettings.defaultDeadline;
+      if (cleanDeadline === familySettings.defaultDeadline) {
+        delete extensionDeadlines[key];
+      } else {
+        extensionDeadlines[key] = cleanDeadline;
+      }
+      persistBetaData();
+      return cleanDeadline;
+    }
+
+    function clearApprovedDeadline(child) {
+      delete extensionDeadlines[extensionDeadlineKey(child)];
+      persistBetaData();
     }
 
     function renderFamilySettings() {
@@ -2621,7 +2644,6 @@
         document.getElementById("familySettingsStatus").textContent = "Only Brigham or Karmel can edit family rule settings.";
         return;
       }
-      const oldDeadline = familySettings.defaultDeadline;
       familySettings = {
         defaultDeadline: document.getElementById("defaultDeadlineInput").value.trim() || "12:00 PM",
         reviewReminderTime: document.getElementById("reviewReminderTimeInput").value.trim() || "12:00 PM",
@@ -2630,7 +2652,6 @@
         reviewRecipient: document.getElementById("reviewRecipientInput").value.trim() || "Mom",
         reviewContact: document.getElementById("reviewContactInput").value.trim() || "Mom text"
       };
-      if (approvedDeadline === oldDeadline) resetApprovedDeadline();
       persistBetaData();
       render();
       document.getElementById("familySettingsStatus").textContent = "Family rules saved for this beta browser.";
@@ -3049,7 +3070,6 @@
         button.addEventListener("click", () => {
           if (currentUser?.role === "child" && currentUser.childId !== button.dataset.child) return;
           selectedChildId = button.dataset.child;
-          resetApprovedDeadline();
           const url = new URL(window.location.href);
           url.searchParams.set("child", selectedChildId);
           window.history.replaceState({}, "", url);
@@ -3137,6 +3157,7 @@
       const rotating = getRotatingChores(child, 0);
       const rotatingMinutes = rotating.reduce((sum, chore) => sum + chore.minutes, 0);
       const routineMinutes = routines.reduce((sum, chore) => sum + chore.minutes, 0);
+      const todayDeadline = approvedDeadlineFor(child);
 
       document.getElementById("dashboardPhoto").outerHTML = renderChildPhoto(child, "profile-photo");
       document.querySelector(".profile-photo").id = "dashboardPhoto";
@@ -3144,8 +3165,8 @@
       document.getElementById("childSubhead").textContent = child.id === "louis"
         ? "Louis has 10 minutes of priority chores, then 26 minutes of rotating chores."
         : `${child.name} has ${routineMinutes} minutes of priority chores, then ${rotatingMinutes} minutes of rotating chores.`;
-      document.getElementById("deadlineTime").textContent = approvedDeadline;
-      document.getElementById("rotatingNote").textContent = `Has until ${approvedDeadline}`;
+      document.getElementById("deadlineTime").textContent = todayDeadline;
+      document.getElementById("rotatingNote").textContent = `Has until ${todayDeadline}`;
       document.getElementById("minutesMetric").textContent = `${rotatingMinutes} min`;
       document.getElementById("streakMetric").textContent = `${child.streak} days`;
       document.getElementById("openFineMetric").textContent = `$${child.openFines}`;
@@ -3182,7 +3203,7 @@
           ${renderChildPhoto(child, "task-person")}
           <div>
             <strong>${escapeHtml(chore.name)}</strong>
-            <span>Difficulty ${chore.difficulty}/10. Estimated ${chore.minutes} minutes. Has until ${escapeHtml(approvedDeadline)}. If incomplete by the deadline without ${escapeHtml(extensionApproverShortName())}’s extension, charge $${child.fineRate}.</span>
+            <span>Difficulty ${chore.difficulty}/10. Estimated ${chore.minutes} minutes. Has until ${escapeHtml(todayDeadline)}. If incomplete by the deadline without ${escapeHtml(extensionApproverShortName())}’s extension, charge $${child.fineRate}.</span>
           </div>
           <div class="task-actions">
             ${renderTaskActions(child, chore, "rotating", warning ? `$${child.fineRate} risk` : "Due", warning)}
@@ -3266,7 +3287,7 @@
         return `
           <div class="day-card ${day === 0 ? "today" : ""}">
             <h4>${formatDate(day)}</h4>
-            <p>${minutes} rotating min, due ${escapeHtml(day === 0 ? approvedDeadline : familySettings.defaultDeadline)}</p>
+            <p>${minutes} rotating min, due ${escapeHtml(day === 0 ? approvedDeadlineFor(child, day) : familySettings.defaultDeadline)}</p>
             ${routines.map(chore => `<span class="mini-task streak">${escapeHtml(chore.name)}</span>`).join("")}
             ${rotating.length ? rotating.map(chore => `<span class="mini-task">${escapeHtml(chore.name)} · ${chore.minutes}m · D${chore.difficulty}</span>`).join("") : `<span class="mini-task">No eligible rotating chores active</span>`}
           </div>
@@ -3998,16 +4019,16 @@
         document.getElementById("extensionStatus").textContent = `Extension not changed. Only ${familySettings.extensionApprover} can approve this request.`;
         return;
       }
+      const child = children.find(item => item.id === selectedChildId);
       if (document.getElementById("approval").value === "Deny") {
-        resetApprovedDeadline();
+        clearApprovedDeadline(child);
         render();
-        document.getElementById("extensionStatus").textContent = `Extension denied. Fine deadline stays ${familySettings.defaultDeadline}.`;
+        document.getElementById("extensionStatus").textContent = `Extension denied for ${child.name}. Fine deadline stays ${familySettings.defaultDeadline}.`;
         return;
       }
-      const child = children.find(item => item.id === selectedChildId);
-      approvedDeadline = document.getElementById("newTime").value || familySettings.defaultDeadline;
+      const newDeadline = setApprovedDeadline(child, document.getElementById("newTime").value);
       render();
-      document.getElementById("extensionStatus").textContent = `${familySettings.extensionApprover}-approved extension saved for ${child.name}: deadline moved to ${approvedDeadline}.`;
+      document.getElementById("extensionStatus").textContent = `${familySettings.extensionApprover}-approved extension saved for ${child.name}: deadline moved to ${newDeadline}.`;
     });
 
     document.getElementById("addChoreBtn").addEventListener("click", addAdminChore);
@@ -4046,7 +4067,6 @@
     document.getElementById("finalizeAllBtn").addEventListener("click", finalizeAllChildrenReview);
 
     hydrateBetaData();
-    resetApprovedDeadline();
     hydrateStoredChildPhotos();
     renderLoginGrid();
     restoreLogin();
