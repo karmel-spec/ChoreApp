@@ -37,14 +37,40 @@ Core web app features:
 Recommended web stack:
 - Responsive PWA-style web app
 - Shared database for family data
-- Admin role for Mom
+- Parent admin roles for Brigham and Karmel
 - Child role for each family member
+- Helper role for Vanessa
 - Scheduled jobs for noon reminders, fines, and rotation generation
 - Photo upload storage for completion proof
 
 Phase 1 should be installable to the phone home screen as a web app before investing in native app-store packaging.
 
 Use `beta-testing-guide.md` during the website beta to test daily chores, parent review, fines, bonuses, Vanessa helper workflows, backups, and known prototype limits.
+
+## Production Web App Gate
+
+Move from website beta to production web app work when the family has completed 2-4 weeks of testing and agrees that:
+
+- Daily priority chores are understood without parent explanation.
+- Rotating chores feel fair across the 7-day view and 30-day forecast.
+- Brigham-only extension approval is clear and rare enough to manage.
+- Parent review, redo, finalization, fines, and paid-fine tracking match family expectations.
+- Monthly bonuses and long-term super bonuses are motivating without causing disputes.
+- Vanessa’s helper time card, pay record, priority board, and ingredient requests match real work patterns.
+- The beta feedback log has no unresolved blocking issues.
+- Export/import backup has been tested on another device.
+
+Production web app requirements:
+
+- Secure cloud database for family, chore, review, fine, bonus, helper, and feedback records
+- Real Google Identity Services login with backend token verification
+- Role-based authorization enforced on the backend, not only in the browser
+- Scheduled notification service for noon review reminders, extensions, and overdue prompts
+- Durable photo proof storage with privacy controls and retention rules
+- Audit history for parent review, fines, bonus awards, extension approvals, and helper pay edits
+- Device-safe backup/export policy for family records
+- Environment-based configuration for secrets, OAuth client IDs, SMS/push providers, and storage
+- Privacy policy and support contact before broader distribution
 
 ## Phase 2: App Store Preparation
 
@@ -84,4 +110,5 @@ Important app-store notes:
 6. Add SMS/push notification reminders.
 7. Add fines and payment tracking.
 8. Run the family on the web app for 2-4 weeks.
-9. Package for iOS/Android only after the workflow is stable.
+9. Resolve all blocking beta feedback and document privacy/support policies.
+10. Package for iOS/Android only after the workflow is stable.

@@ -54,6 +54,7 @@ const appHtml = await readFile("outputs/family-chore-dashboard-prototype.html", 
 const homeHtml = await readFile("outputs/index.html", "utf8");
 const betaGuide = await readFile("outputs/beta-testing-guide.md", "utf8");
 const betaGuideHtml = await readFile("outputs/beta-testing-guide.html", "utf8");
+const phasePlan = await readFile("outputs/chore-app-phase-plan.md", "utf8");
 const manifest = JSON.parse(await readFile("outputs/manifest.webmanifest", "utf8"));
 const serviceWorker = await readFile("outputs/service-worker.js", "utf8");
 const expectedCacheName = "teamwork-chores-beta-2026-06-11";
@@ -180,6 +181,22 @@ for (const marker of requiredGuideMarkers) {
   }
   if (!betaGuideHtml.includes(marker)) {
     throw new Error(`Missing expected beta guide HTML marker: ${marker}`);
+  }
+}
+
+const requiredPhasePlanMarkers = [
+  "Parent admin roles for Brigham and Karmel",
+  "Helper role for Vanessa",
+  "Production Web App Gate",
+  "backend token verification",
+  "Role-based authorization enforced on the backend",
+  "privacy controls and retention rules",
+  "Resolve all blocking beta feedback"
+];
+
+for (const marker of requiredPhasePlanMarkers) {
+  if (!phasePlan.includes(marker)) {
+    throw new Error(`Missing expected phase plan marker: ${marker}`);
   }
 }
 

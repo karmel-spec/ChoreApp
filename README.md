@@ -45,6 +45,10 @@ GitHub Actions verifies the static site and deploys `outputs/` to Netlify.
 
 Use `outputs/beta-testing-guide.md` for the family beta script. It covers daily child testing, parent noon review, Brigham-only extension approval, admin chore rotation and fit checks, bonuses, Vanessa helper role and pay workflows, backups, local data restore checks, known prototype limits, and production-readiness signals.
 
+## Phase Two Gate
+
+Use `outputs/chore-app-phase-plan.md` before app-store prep. Move past website beta only after 2-4 weeks of stable family testing, no blocking beta feedback, verified backup/restore, and agreement on production needs: secure backend storage, real Google login, server-side roles, notifications, hosted photo storage, audit history, privacy policy, and support contact.
+
 ## Google Login Setup
 
 The prototype now includes a Gmail-linked login flow for every family member. It stores the linked Gmail in the browser for demo purposes.
