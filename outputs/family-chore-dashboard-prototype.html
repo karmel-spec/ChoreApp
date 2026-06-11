@@ -1472,6 +1472,10 @@
             <div class="notice-card warn">At 12:00 PM, send Mom a text reminder to physically inspect today’s completed chores before fines are finalized.</div>
             <div class="review-list" id="reviewList"></div>
             <button class="primary-btn" type="button" id="sendReviewBtn">Send Noon Review Text</button>
+            <div class="form-row">
+              <button class="primary-btn" type="button" id="finalizeChildBtn">Finalize Selected Child</button>
+              <button class="ghost-btn" type="button" id="finalizeAllBtn">Finalize All Children</button>
+            </div>
             <div class="admin-status" id="reviewStatus"></div>
           </div>
         </section>
@@ -1986,6 +1990,7 @@
       "Tortillas",
       "Cilantro"
     ];
+    let fineAssessments = {};
     let celebrationTimer = null;
 
     function localDateKey(offset = 0) {
@@ -2037,7 +2042,8 @@
         helperPayRecords,
         ingredientRequests,
         choreLibrary,
-        shuffleOffset
+        shuffleOffset,
+        fineAssessments
       }));
     }
 
@@ -2063,6 +2069,7 @@
       }
       if (Array.isArray(data.helperPayRecords)) helperPayRecords = data.helperPayRecords;
       if (Array.isArray(data.ingredientRequests)) ingredientRequests = data.ingredientRequests;
+      if (data.fineAssessments) fineAssessments = data.fineAssessments;
       if (Number.isFinite(Number(data.helperWeeklyHours))) helperWeeklyHours = Number(data.helperWeeklyHours);
       if (Number.isFinite(Number(data.helperRate))) helperRate = Number(data.helperRate);
       if (Number.isFinite(Number(data.shuffleOffset))) shuffleOffset = Number(data.shuffleOffset);
@@ -2874,16 +2881,95 @@
         return;
       }
       const child = children.find(item => item.id === selectedChildId);
-      child.openFines = Number((child.openFines + child.fineRate).toFixed(2));
+      addFineToLedger(child, "Missed noon deadline", child.fineRate);
+      render();
+      document.getElementById("fineRateStatus").textContent = `${child.name} was charged $${child.fineRate} for a missed deadline.`;
+    }
+
+    function addFineToLedger(child, title, amount) {
+      child.openFines = Number((child.openFines + amount).toFixed(2));
       ledger[child.id].unshift({
-        title: "Missed noon deadline",
+        title,
         date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-        amount: `$${child.fineRate}`,
+        amount: `$${amount}`,
         paid: false
       });
       persistBetaData();
+    }
+
+    function assessmentKey(child) {
+      return `${localDateKey()}|${child.id}`;
+    }
+
+    function getMissedRotatingChores(child) {
+      return getRotatingChores(child, 0).filter(chore => {
+        const record = getChoreRecord(child, chore, "rotating");
+        return record.reviewStatus !== "approved";
+      });
+    }
+
+    function finalizeChildReview(child) {
+      const key = assessmentKey(child);
+      if (fineAssessments[key]?.finalizedAt) {
+        return {
+          child,
+          skipped: true,
+          charged: 0,
+          missed: fineAssessments[key].missed || [],
+          message: `${child.name} was already finalized today.`
+        };
+      }
+
+      const missed = getMissedRotatingChores(child);
+      const amount = missed.length ? child.fineRate : 0;
+      fineAssessments[key] = {
+        childId: child.id,
+        date: localDateKey(),
+        missed: missed.map(chore => chore.name),
+        charged: amount,
+        finalizedBy: currentUser?.name || "Admin",
+        finalizedAt: new Date().toISOString()
+      };
+      if (amount > 0) {
+        addFineToLedger(child, `Noon review: ${missed.length} unfinished rotating chore${missed.length === 1 ? "" : "s"}`, amount);
+      } else {
+        persistBetaData();
+      }
+      return {
+        child,
+        skipped: false,
+        charged: amount,
+        missed: missed.map(chore => chore.name),
+        message: amount > 0 ? `${child.name}: charged $${amount}.` : `${child.name}: all rotating chores cleared.`
+      };
+    }
+
+    function finalizeSelectedChildReview() {
+      if (!isAdmin()) {
+        document.getElementById("reviewStatus").textContent = "Only Brigham or Karmel can finalize noon review.";
+        return;
+      }
+      const child = children.find(item => item.id === selectedChildId);
+      const result = finalizeChildReview(child);
       render();
-      document.getElementById("fineRateStatus").textContent = `${child.name} was charged $${child.fineRate} for a missed deadline.`;
+      document.getElementById("reviewStatus").textContent = result.skipped
+        ? result.message
+        : `${result.message} ${result.missed.length ? `Missed: ${result.missed.join(", ")}.` : "No fine charged."}`;
+    }
+
+    function finalizeAllChildrenReview() {
+      if (!isAdmin()) {
+        document.getElementById("reviewStatus").textContent = "Only Brigham or Karmel can finalize noon review.";
+        return;
+      }
+      const results = children.map(child => finalizeChildReview(child));
+      const chargedTotal = results.reduce((sum, result) => sum + result.charged, 0);
+      const chargedChildren = results.filter(result => result.charged > 0).map(result => `${result.child.name} $${result.charged}`);
+      const skippedCount = results.filter(result => result.skipped).length;
+      render();
+      document.getElementById("reviewStatus").textContent = chargedChildren.length
+        ? `Noon review finalized. Charged ${chargedChildren.join(", ")}. Total $${chargedTotal}. ${skippedCount ? `${skippedCount} already finalized.` : ""}`
+        : `Noon review finalized. No new fines charged. ${skippedCount ? `${skippedCount} already finalized.` : ""}`;
     }
 
     function markFinePaid(child, fineIndex) {
@@ -3186,6 +3272,10 @@
       const child = children.find(item => item.id === selectedChildId);
       document.getElementById("reviewStatus").textContent = `Noon review text queued for Mom: inspect ${child.name}'s chores before fines are finalized.`;
     });
+
+    document.getElementById("finalizeChildBtn").addEventListener("click", finalizeSelectedChildReview);
+
+    document.getElementById("finalizeAllBtn").addEventListener("click", finalizeAllChildrenReview);
 
     hydrateBetaData();
     hydrateStoredChildPhotos();

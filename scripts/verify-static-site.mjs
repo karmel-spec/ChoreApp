@@ -32,7 +32,10 @@ const requiredMarkers = [
   "Charge Missed Deadline Fine",
   "Beta Data Tools",
   "Export Backup",
-  "Import Backup"
+  "Import Backup",
+  "Finalize Selected Child",
+  "Finalize All Children",
+  "fineAssessments"
 ];
 
 for (const marker of requiredMarkers) {
