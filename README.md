@@ -1,4 +1,4 @@
-# Family Chore Dashboard
+# Teamwork Chores
 
 Responsive static prototype for the family chore dashboard.
 

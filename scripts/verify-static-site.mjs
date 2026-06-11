@@ -14,7 +14,7 @@ for (const file of requiredFiles) {
 const appHtml = await readFile("outputs/family-chore-dashboard-prototype.html", "utf8");
 
 const requiredMarkers = [
-  "Family Chore Dashboard",
+  "Teamwork Chores",
   "Mom's Helper",
   "Build Roadmap",
   "Grant Dad-Approved Extension"
