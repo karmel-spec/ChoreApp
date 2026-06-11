@@ -7,11 +7,13 @@ Build this first as a responsive web app that works well on phones, tablets, and
 Core web app features:
 - Family dashboards for Thayne, Brig Jr., Josh, JoJo, Louis, and Brielle
 - Login profiles for Brigham, Karmel, Vanessa, and each child, with role-based access
+- Gmail-linked login for every family member, upgraded to Google Identity Services sign-in for production
 - Daily view and rolling 7-day view
-- Streak chores due before rotating fined chores
+- Daily priority chores due before rotating fined chores
 - Randomized rotating chore assignments
 - Chore difficulty ratings and estimated minutes
 - Under-30-minute daily rotating workload per child
+- All-time streak winners podium for first, second, and third place
 - Admin chore library with on/off rotation toggles
 - Admin chore intake for daily, Monday-only, weekly, monthly, and one-off chores
 - 24-hour notice before new chores enter rotation
@@ -73,9 +75,10 @@ Important app-store notes:
 
 1. Turn the prototype into a real web app with saved data.
 2. Add user accounts, roles, and permissions.
-3. Add the scheduling engine for rotations and 7-day previews.
-4. Add photo proof upload and inspection approval.
-5. Add SMS/push notification reminders.
-6. Add fines and payment tracking.
-7. Run the family on the web app for 2-4 weeks.
-8. Package for iOS/Android only after the workflow is stable.
+3. Connect real Google login with Google Identity Services and a backend token check.
+4. Add the scheduling engine for rotations and 7-day previews.
+5. Add photo proof upload and inspection approval.
+6. Add SMS/push notification reminders.
+7. Add fines and payment tracking.
+8. Run the family on the web app for 2-4 weeks.
+9. Package for iOS/Android only after the workflow is stable.

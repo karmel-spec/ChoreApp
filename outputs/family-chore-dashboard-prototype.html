@@ -748,6 +748,75 @@
       color: #b43b33;
     }
 
+    .podium {
+      display: grid;
+      grid-template-columns: .9fr 1fr .9fr;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .podium-place {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 9px 7px;
+      text-align: center;
+      min-width: 0;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, .06);
+    }
+
+    .podium-place.first {
+      min-height: 138px;
+      border-color: #f5ca67;
+      background: #fff8e6;
+    }
+
+    .podium-place.second {
+      min-height: 116px;
+    }
+
+    .podium-place.third {
+      min-height: 104px;
+    }
+
+    .podium-rank {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .podium-medal {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      margin: 5px auto;
+      border-radius: 8px;
+      background: #eef4ff;
+      font-weight: 900;
+    }
+
+    .podium-place.first .podium-medal {
+      background: #ffe19a;
+    }
+
+    .podium-name {
+      display: block;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 900;
+      overflow-wrap: anywhere;
+    }
+
+    .podium-streak {
+      display: block;
+      color: var(--teal);
+      font-size: 11px;
+      font-weight: 900;
+      margin-top: 3px;
+    }
+
     .admin-form {
       border: 1px solid var(--line);
       border-radius: 8px;
@@ -859,6 +928,13 @@
       font-weight: 800;
     }
 
+    .login-user .gmail-status {
+      color: #08705a;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+
     .login-avatar {
       width: 46px;
       height: 46px;
@@ -877,7 +953,7 @@
 
     .login-actions {
       display: grid;
-      grid-template-columns: 1fr auto;
+      grid-template-columns: 1.2fr .8fr auto auto;
       gap: 10px;
       margin-top: 14px;
       align-items: end;
@@ -906,6 +982,31 @@
       color: var(--teal);
       font-size: 12px;
       font-weight: 900;
+    }
+
+    .login-note {
+      border: 1px solid #d9e5ff;
+      border-radius: 8px;
+      background: #f4f8ff;
+      padding: 10px;
+      color: #23436f;
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.35;
+      margin: 0 0 14px;
+    }
+
+    .google-btn {
+      min-height: 38px;
+      border: 1px solid #d8dee8;
+      border-radius: 7px;
+      background: #fff;
+      color: #263241;
+      padding: 0 12px;
+      font-weight: 900;
+      cursor: pointer;
+      white-space: nowrap;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, .08);
     }
 
     .ledger {
@@ -1219,6 +1320,10 @@
           <button class="ghost-btn" type="button" id="switchLoginBtn">Switch Login</button>
         </div>
         <div class="family-list" id="familyList"></div>
+        <div class="rule-box">
+          <strong>All-Time Streak Podium</strong>
+          <div class="podium" id="streakPodium"></div>
+        </div>
         <div class="rule-box">
           <strong>Assignment Rule</strong>
           <p>Daily priority chores are due first. Rotating fined chores stay under 30 minutes per child and are chosen randomly within each child’s approved difficulty range.</p>
@@ -1604,13 +1709,19 @@
   <div class="login-overlay" id="loginOverlay" aria-live="polite">
     <section class="login-card" aria-label="Sign in to Teamwork Chores">
       <h2>Sign In</h2>
-      <p>Choose your family profile. Admin controls are available only for Brigham and Karmel. PINs are placeholders in this prototype.</p>
+      <p>Choose your family profile. Admin controls are available only for Brigham and Karmel.</p>
+      <div class="login-note">Google login prototype: select a profile and enter the Gmail address that belongs to that person. Production sign-in will use Google Identity Services with a real OAuth client ID after the Netlify URL is ready.</div>
       <div class="login-grid" id="loginGrid"></div>
       <div class="login-actions">
+        <div>
+          <label for="loginEmail">Gmail</label>
+          <input id="loginEmail" type="email" placeholder="name@gmail.com" autocomplete="email">
+        </div>
         <div>
           <label for="loginPin">PIN</label>
           <input id="loginPin" inputmode="numeric" placeholder="Demo PIN optional">
         </div>
+        <button class="google-btn" type="button" id="googleLoginBtn">Continue with Google</button>
         <button class="primary-btn" type="button" id="loginBtn">Enter</button>
       </div>
       <div class="login-status" id="loginStatus"></div>
@@ -1758,16 +1869,17 @@
     const requestedChildId = new URLSearchParams(window.location.search).get("child");
     const photoStoreKey = "choreAppChildPhotos";
     const sessionStoreKey = "teamworkChoresSession";
+    const gmailStoreKey = "teamworkChoresGmailLinks";
     const accounts = [
-      { id: "karmel", name: "Karmel", initials: "K", role: "admin", label: "Mom admin" },
-      { id: "brigham", name: "Brigham", initials: "BR", role: "admin", label: "Dad admin" },
-      { id: "vanessa", name: "Vanessa", initials: "V", role: "helper", label: "Mom's helper" },
-      { id: "thayne", name: "Thayne", initials: "TH", role: "child", childId: "thayne", label: "Age 20" },
-      { id: "brig", name: "Brig Jr.", initials: "BJ", role: "child", childId: "brig", label: "Age 18" },
-      { id: "josh", name: "Josh", initials: "J", role: "child", childId: "josh", label: "Age 16" },
-      { id: "jojo", name: "JoJo", initials: "JJ", role: "child", childId: "jojo", label: "Age 15" },
-      { id: "louis", name: "Louis", initials: "L", role: "child", childId: "louis", label: "Age 12" },
-      { id: "brielle", name: "Brielle", initials: "B", role: "child", childId: "brielle", label: "Age 8" }
+      { id: "karmel", name: "Karmel", initials: "K", role: "admin", label: "Mom admin", gmail: "" },
+      { id: "brigham", name: "Brigham", initials: "BR", role: "admin", label: "Dad admin", gmail: "" },
+      { id: "vanessa", name: "Vanessa", initials: "V", role: "helper", label: "Mom's helper", gmail: "" },
+      { id: "thayne", name: "Thayne", initials: "TH", role: "child", childId: "thayne", label: "Age 20", gmail: "" },
+      { id: "brig", name: "Brig Jr.", initials: "BJ", role: "child", childId: "brig", label: "Age 18", gmail: "" },
+      { id: "josh", name: "Josh", initials: "J", role: "child", childId: "josh", label: "Age 16", gmail: "" },
+      { id: "jojo", name: "JoJo", initials: "JJ", role: "child", childId: "jojo", label: "Age 15", gmail: "" },
+      { id: "louis", name: "Louis", initials: "L", role: "child", childId: "louis", label: "Age 12", gmail: "" },
+      { id: "brielle", name: "Brielle", initials: "B", role: "child", childId: "brielle", label: "Age 8", gmail: "" }
     ];
     let selectedChildId = validChildIds.includes(requestedChildId) ? requestedChildId : "thayne";
     let activeView = "daily";
@@ -1827,6 +1939,30 @@
       return accounts.find(account => account.id === accountId);
     }
 
+    function getStoredGmailLinks() {
+      try {
+        return JSON.parse(localStorage.getItem(gmailStoreKey)) || {};
+      } catch {
+        return {};
+      }
+    }
+
+    function gmailForAccount(account) {
+      const links = getStoredGmailLinks();
+      return links[account.id] || account.gmail || "";
+    }
+
+    function saveGmailForAccount(account, email) {
+      const links = getStoredGmailLinks();
+      links[account.id] = email;
+      localStorage.setItem(gmailStoreKey, JSON.stringify(links));
+    }
+
+    function setLoginEmailForSelectedAccount() {
+      const account = getAccountById(selectedLoginId);
+      document.getElementById("loginEmail").value = account ? gmailForAccount(account) : "";
+    }
+
     function roleLabel(account) {
       if (!account) return "Not signed in";
       if (account.role === "admin") return `${account.name} admin`;
@@ -1840,14 +1976,17 @@
           <span class="login-avatar ${account.childId || account.id}">${account.initials}</span>
           <strong>${account.name}</strong>
           <span>${account.label}</span>
+          <span class="gmail-status">${gmailForAccount(account) ? "Gmail linked" : "Add Gmail"}</span>
         </button>
       `).join("");
       document.querySelectorAll("[data-login-id]").forEach(button => {
         button.addEventListener("click", () => {
           selectedLoginId = button.dataset.loginId;
           renderLoginGrid();
+          setLoginEmailForSelectedAccount();
         });
       });
+      setLoginEmailForSelectedAccount();
     }
 
     function applyAccount(account) {
@@ -1866,8 +2005,9 @@
         window.history.replaceState({}, "", url);
       }
       document.getElementById("loginOverlay").classList.remove("show");
-      document.getElementById("currentUserChip").textContent = roleLabel(account);
-      document.getElementById("loginSummary").textContent = `${roleLabel(account)} is signed in.`;
+      const gmail = gmailForAccount(account);
+      document.getElementById("currentUserChip").textContent = gmail ? `${roleLabel(account)} · Google` : roleLabel(account);
+      document.getElementById("loginSummary").textContent = gmail ? `${roleLabel(account)} is signed in with ${gmail}.` : `${roleLabel(account)} is signed in.`;
       localStorage.setItem(sessionStoreKey, account.id);
     }
 
@@ -1879,6 +2019,26 @@
       }
       applyAccount(account);
       render();
+      document.getElementById("loginStatus").textContent = "Profile login used. Use Continue with Google to link a Gmail address.";
+    }
+
+    function loginWithGoogle() {
+      const account = getAccountById(selectedLoginId);
+      const email = document.getElementById("loginEmail").value.trim().toLowerCase();
+      if (!account) {
+        document.getElementById("loginStatus").textContent = "Choose a family member first.";
+        return;
+      }
+      if (!/^[^\s@]+@gmail\.com$/.test(email)) {
+        document.getElementById("loginStatus").textContent = "Enter that family member's Gmail address first.";
+        return;
+      }
+      saveGmailForAccount(account, email);
+      localStorage.setItem("teamworkChoresAuthProvider", "google");
+      applyAccount(account);
+      renderLoginGrid();
+      render();
+      document.getElementById("loginStatus").textContent = `${account.name} is linked to ${email}.`;
     }
 
     function restoreLogin() {
@@ -2073,6 +2233,39 @@
           if (currentUser?.role === "child" && currentUser.childId !== button.dataset.child) return;
           selectedChildId = button.dataset.child;
           approvedDeadline = "12:00 PM";
+          const url = new URL(window.location.href);
+          url.searchParams.set("child", selectedChildId);
+          window.history.replaceState({}, "", url);
+          render();
+        });
+      });
+    }
+
+    function renderStreakPodium() {
+      const winners = [...children]
+        .sort((a, b) => b.streak - a.streak)
+        .slice(0, 3);
+      const order = [winners[1], winners[0], winners[2]].filter(Boolean);
+      const placeLabels = { 0: "1st", 1: "2nd", 2: "3rd" };
+      const placeClasses = { 0: "first", 1: "second", 2: "third" };
+      const medals = { 0: "1", 1: "2", 2: "3" };
+
+      document.getElementById("streakPodium").innerHTML = order.map(child => {
+        const rank = winners.findIndex(winner => winner.id === child.id);
+        return `
+          <button class="podium-place ${placeClasses[rank]}" type="button" data-podium-child="${child.id}">
+            <span class="podium-rank">${placeLabels[rank]} place</span>
+            <span class="podium-medal">${medals[rank]}</span>
+            <strong class="podium-name">${child.name}</strong>
+            <span class="podium-streak">${child.streak} day streak</span>
+          </button>
+        `;
+      }).join("");
+
+      document.querySelectorAll("[data-podium-child]").forEach(button => {
+        button.addEventListener("click", () => {
+          if (currentUser?.role === "child" && currentUser.childId !== button.dataset.podiumChild) return;
+          selectedChildId = button.dataset.podiumChild;
           const url = new URL(window.location.href);
           url.searchParams.set("child", selectedChildId);
           window.history.replaceState({}, "", url);
@@ -2479,6 +2672,7 @@
     function render() {
       const child = children.find(item => item.id === selectedChildId);
       renderFamilyList();
+      renderStreakPodium();
       renderDaily(child);
       renderWeekly(child);
       renderLedger(child);
@@ -2506,6 +2700,8 @@
     });
 
     document.getElementById("loginBtn").addEventListener("click", loginSelectedAccount);
+
+    document.getElementById("googleLoginBtn").addEventListener("click", loginWithGoogle);
 
     document.getElementById("shuffleBtn").addEventListener("click", () => {
       shuffleOffset += 7;

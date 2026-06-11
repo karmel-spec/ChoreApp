@@ -41,6 +41,20 @@ git push origin main
 
 GitHub Actions verifies the static site and deploys `outputs/` to Netlify.
 
+## Google Login Setup
+
+The prototype now includes a Gmail-linked login flow for every family member. It stores the linked Gmail in the browser for demo purposes.
+
+For production Google login:
+
+- Create a Google OAuth Client ID for a web application.
+- Add authorized JavaScript origins for local preview and the deployed Netlify URL, such as `http://localhost:4174` and your Netlify site origin.
+- Add the Google Identity Services client to the app and replace the prototype button with a real sign-in callback.
+- Verify Google ID tokens on a backend before trusting role access, admin permissions, fines, payments, or child data.
+- Store the Google Client ID as deployment configuration instead of hard-coding secrets in the static app.
+
+Reference: https://developers.google.com/identity/gsi/web/guides/overview
+
 ## Privacy Note
 
 The current prototype contains real names and a phone number. Use a private GitHub repo and Netlify team access, or sanitize the app before making it public.
