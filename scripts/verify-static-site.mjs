@@ -39,6 +39,7 @@ const requiredFiles = [
   "outputs/chore-app-designs.html",
   "outputs/chore-app-phase-plan.md",
   "outputs/beta-testing-guide.md",
+  "outputs/beta-testing-guide.html",
   "outputs/manifest.webmanifest",
   "outputs/service-worker.js",
   "outputs/offline.html",
@@ -52,6 +53,7 @@ for (const file of requiredFiles) {
 const appHtml = await readFile("outputs/family-chore-dashboard-prototype.html", "utf8");
 const homeHtml = await readFile("outputs/index.html", "utf8");
 const betaGuide = await readFile("outputs/beta-testing-guide.md", "utf8");
+const betaGuideHtml = await readFile("outputs/beta-testing-guide.html", "utf8");
 const manifest = JSON.parse(await readFile("outputs/manifest.webmanifest", "utf8"));
 const serviceWorker = await readFile("outputs/service-worker.js", "utf8");
 
@@ -59,6 +61,7 @@ assertUniqueIds(appHtml, "outputs/family-chore-dashboard-prototype.html");
 assertUniqueIds(homeHtml, "outputs/index.html");
 assertScriptParses(appHtml, "outputs/family-chore-dashboard-prototype.html");
 assertScriptParses(homeHtml, "outputs/index.html");
+assertScriptParses(betaGuideHtml, "outputs/beta-testing-guide.html");
 
 const requiredMarkers = [
   "Teamwork Chores",
@@ -110,6 +113,9 @@ for (const marker of requiredGuideMarkers) {
   if (!betaGuide.includes(marker)) {
     throw new Error(`Missing expected beta guide marker: ${marker}`);
   }
+  if (!betaGuideHtml.includes(marker)) {
+    throw new Error(`Missing expected beta guide HTML marker: ${marker}`);
+  }
 }
 
 const requiredAppIds = [
@@ -146,7 +152,15 @@ for (const id of requiredAppIds) {
   }
 }
 
-for (const html of [appHtml, homeHtml]) {
+if (!homeHtml.includes('href="/beta-testing-guide.html"')) {
+  throw new Error("Home hub is missing beta guide link.");
+}
+
+if (!appHtml.includes('href="/beta-testing-guide.html"')) {
+  throw new Error("Dashboard is missing beta guide link.");
+}
+
+for (const html of [appHtml, homeHtml, betaGuideHtml]) {
   if (!html.includes('rel="manifest" href="/manifest.webmanifest"')) {
     throw new Error("Missing PWA manifest link.");
   }
@@ -159,7 +173,7 @@ if (manifest.name !== "Teamwork Chores" || manifest.start_url !== "/app" || mani
   throw new Error("Manifest is missing required app install metadata.");
 }
 
-for (const cachedPath of ["/app", "/offline.html", "/manifest.webmanifest"]) {
+for (const cachedPath of ["/app", "/beta-guide", "/offline.html", "/manifest.webmanifest"]) {
   if (!serviceWorker.includes(cachedPath)) {
     throw new Error(`Service worker is missing cached path: ${cachedPath}`);
   }
@@ -169,6 +183,7 @@ const cachedFiles = {
   "/": "outputs/index.html",
   "/index.html": "outputs/index.html",
   "/family-chore-dashboard-prototype.html": "outputs/family-chore-dashboard-prototype.html",
+  "/beta-testing-guide.html": "outputs/beta-testing-guide.html",
   "/offline.html": "outputs/offline.html",
   "/manifest.webmanifest": "outputs/manifest.webmanifest",
   "/icons/teamwork-chores-icon.svg": "outputs/icons/teamwork-chores-icon.svg"

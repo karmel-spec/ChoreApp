@@ -12,6 +12,11 @@
   to = "/chore-app-designs.html"
   status = 200
 
+[[redirects]]
+  from = "/beta-guide"
+  to = "/beta-testing-guide.html"
+  status = 200
+
 [[headers]]
   for = "/*"
   [headers.values]

@@ -4,6 +4,8 @@ const APP_SHELL = [
   "/",
   "/index.html",
   "/app",
+  "/beta-guide",
+  "/beta-testing-guide.html",
   "/family-chore-dashboard-prototype.html",
   "/offline.html",
   "/manifest.webmanifest",

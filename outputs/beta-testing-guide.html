@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2f6edb">
+  <title>Teamwork Chores Beta Testing Guide</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icons/teamwork-chores-icon.svg" type="image/svg+xml">
+  <style>
+    :root {
+      --ink: #202124;
+      --muted: #667085;
+      --line: #d8dee8;
+      --blue: #2f6edb;
+      --teal: #147c8a;
+      --paper: #f5f7fb;
+      --white: #ffffff;
+      --shadow: 0 18px 52px rgba(24, 49, 63, .13);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: linear-gradient(180deg, #fbfcfe 0%, #eef3f8 100%);
+    }
+
+    header,
+    main {
+      width: min(1040px, 100%);
+      margin: 0 auto;
+      padding: 26px clamp(18px, 4vw, 44px);
+    }
+
+    header {
+      display: grid;
+      gap: 14px;
+    }
+
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    a {
+      display: inline-grid;
+      place-items: center;
+      min-height: 38px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fff;
+      color: var(--ink);
+      text-decoration: none;
+      font-weight: 900;
+    }
+
+    a.primary {
+      color: #fff;
+      border-color: var(--blue);
+      background: var(--blue);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(34px, 6vw, 64px);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .intro {
+      max-width: 820px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.5;
+    }
+
+    .guide-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--white);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .card.full {
+      grid-column: 1 / -1;
+    }
+
+    h2 {
+      margin: 0 0 10px;
+      font-size: 20px;
+    }
+
+    ol,
+    ul {
+      margin: 0;
+      padding-left: 20px;
+      color: var(--muted);
+      line-height: 1.48;
+    }
+
+    li + li {
+      margin-top: 6px;
+    }
+
+    strong {
+      color: var(--ink);
+    }
+
+    .callout {
+      border-color: #b7e8db;
+      background: #e8f7f2;
+      color: #096d58;
+      font-weight: 800;
+    }
+
+    @media (max-width: 760px) {
+      .guide-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="nav">
+      <a class="primary" href="/app">Open Dashboard</a>
+      <a href="/">Home Hub</a>
+      <a href="/beta-testing-guide.md">Markdown Guide</a>
+    </div>
+    <h1>Beta Testing Guide</h1>
+    <p class="intro">Use this guide for the first 2-4 weeks of Teamwork Chores website beta testing before moving toward production web app work or app-store packaging.</p>
+  </header>
+
+  <main>
+    <div class="guide-grid">
+      <section class="card">
+        <h2>Before Testing</h2>
+        <ol>
+          <li>Open the hosted website and install it to a phone home screen if the browser offers that option.</li>
+          <li>Have Brigham or Karmel sign in as an admin.</li>
+          <li>Review Family Rule Settings for deadline, review time, extension approver, and contacts.</li>
+          <li>Add or adjust child profile photos.</li>
+          <li>Export a backup before making major changes.</li>
+        </ol>
+      </section>
+
+      <section class="card">
+        <h2>Daily Child Test</h2>
+        <ol>
+          <li>Sign in with the child profile.</li>
+          <li>Confirm daily priority chores appear first.</li>
+          <li>Complete priority chores and rotating chores.</li>
+          <li>Add at least one photo proof during the week.</li>
+          <li>Check the 7-day view and celebration messages.</li>
+        </ol>
+      </section>
+
+      <section class="card">
+        <h2>Parent Noon Review Test</h2>
+        <ol>
+          <li>Send the noon review text cue.</li>
+          <li>Physically inspect chores.</li>
+          <li>Approve completed chores or send one back for redo.</li>
+          <li>Finalize selected child or all children.</li>
+          <li>Confirm missed rotating chores charge once per day.</li>
+          <li>Mark a fine paid and confirm totals change.</li>
+        </ol>
+      </section>
+
+      <section class="card">
+        <h2>Admin Rotation Test</h2>
+        <ol>
+          <li>Toggle chores on and off in the master chore list.</li>
+          <li>Add one chore with schedule, minutes, difficulty, and approved-for settings.</li>
+          <li>Use Shuffle Preview.</li>
+          <li>Check one younger and one older child in the 30-day forecast.</li>
+          <li>Review 30-Day Fairness for workload balance.</li>
+        </ol>
+      </section>
+
+      <section class="card">
+        <h2>Bonus Test</h2>
+        <ol>
+          <li>Review monthly streak and overall streak.</li>
+          <li>Edit bonus rules as admin.</li>
+          <li>Award an eligible bonus.</li>
+          <li>Confirm the chore account balance changes.</li>
+          <li>Export a backup after bonus changes.</li>
+        </ol>
+      </section>
+
+      <section class="card">
+        <h2>Vanessa Helper Test</h2>
+        <ol>
+          <li>Save arrival and exit time.</li>
+          <li>Confirm weekly hours and paycheck update.</li>
+          <li>Change hourly rate once during beta.</li>
+          <li>Drag tasks into priority order, refresh, and confirm the order stayed saved.</li>
+          <li>Add ingredient requests.</li>
+        </ol>
+      </section>
+
+      <section class="card">
+        <h2>Backup And Device Test</h2>
+        <ol>
+          <li>Export Backup from Beta Data Tools.</li>
+          <li>Save the file privately.</li>
+          <li>Import the backup in another browser or device.</li>
+          <li>Confirm chores, photos, helper tasks, fines, bonuses, and settings restore.</li>
+        </ol>
+      </section>
+
+      <section class="card">
+        <h2>Known Prototype Limits</h2>
+        <ul>
+          <li>Data is saved in the browser during beta, not in a shared cloud database.</li>
+          <li>Google login is a Gmail-linking prototype until real OAuth and backend token verification are connected.</li>
+          <li>Text reminders are queued as prototype messages; real SMS requires a notification service.</li>
+          <li>Photo proof is stored locally in browser data and backups.</li>
+          <li>Walmart opens externally; direct cart integration requires a secure approved integration.</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>What To Track</h2>
+        <ul>
+          <li>Missing chores or wrong difficulty.</li>
+          <li>Chores that take longer than estimated.</li>
+          <li>Confusing wording.</li>
+          <li>Fine or bonus disagreements.</li>
+          <li>Whether the 30-day forecast feels fair.</li>
+          <li>Whether kids understand the dashboard without parent explanation.</li>
+        </ul>
+      </section>
+
+      <section class="card callout full">
+        <h2>Ready For Production When</h2>
+        <ul>
+          <li>The family completes 2-4 weeks with stable rules.</li>
+          <li>Chore assignments feel fair.</li>
+          <li>Fines and bonuses match family expectations.</li>
+          <li>Parents trust the noon review workflow.</li>
+          <li>Vanessa’s helper section reflects real work patterns.</li>
+          <li>The family knows which notifications need to be real SMS or push.</li>
+        </ul>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/service-worker.js").catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
