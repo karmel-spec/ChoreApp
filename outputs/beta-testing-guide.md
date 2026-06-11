@@ -22,7 +22,7 @@ Each child should test:
 2. Confirm their daily priority chores appear first.
 3. Complete priority chores.
 4. Complete rotating chores.
-5. Add at least one photo proof during the week.
+5. Add at least one photo proof during the week and confirm photo-first proof marks the chore ready for review.
 6. Check the 7-day view and notice whether future assignments look understandable.
 7. Watch for celebration messages and whether they feel age-appropriate.
 

@@ -2944,7 +2944,10 @@
           if (!chore) return;
           const reader = new FileReader();
           reader.onload = event => {
+            const existingRecord = getChoreRecord(child, chore, choreType);
             updateChoreRecord(child, chore, choreType, {
+              completedAt: existingRecord.completedAt || new Date().toISOString(),
+              reviewStatus: existingRecord.reviewStatus === "approved" ? "approved" : "waiting",
               proofImage: event.target.result,
               proofName: file.name,
               proofSubmittedAt: new Date().toISOString()

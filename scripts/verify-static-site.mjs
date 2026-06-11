@@ -107,6 +107,7 @@ const requiredMarkers = [
   "isChildReviewFinalized",
   "Selected Child Finalized",
   "review is already finalized for today",
+  "existingRecord.completedAt || new Date().toISOString()",
   "Export Backup",
   "Import Backup",
   "Finalize Selected Child",
@@ -151,6 +152,7 @@ for (const marker of requiredMarkers) {
 const requiredGuideMarkers = [
   "Teamwork Chores Beta Testing Guide",
   "Daily Child Test",
+  "photo-first proof marks the chore ready for review",
   "Parent Noon Review Test",
   "finalized chores lock",
   "actual missed deadline",
