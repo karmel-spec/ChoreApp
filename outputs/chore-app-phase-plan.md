@@ -23,6 +23,7 @@ Core web app features:
 - Admin-editable streak bonus awards such as 5-day, 7-day, and 30-day monthly bonuses
 - Fine rates, bonus rates, and child profile photos editable only by Brigham and Karmel admin accounts
 - Editable child profile images shown on dashboards, family list, and chore tracker rows
+- Age-aware celebration responses when chores are marked complete, including sticker-style, game-style, teen, and mindful gratitude feedback
 - Monthly bonus streaks that restart on the first of each month while overall streaks continue
 - Long-term super bonuses for larger overall streak milestones
 

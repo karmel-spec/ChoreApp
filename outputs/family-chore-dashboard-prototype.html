@@ -511,6 +511,117 @@
       border-color: #ffd0cc;
     }
 
+    .celebration-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      pointer-events: none;
+      background: rgba(15, 23, 42, .16);
+      opacity: 0;
+      transition: opacity .18s ease;
+    }
+
+    .celebration-overlay.show {
+      opacity: 1;
+    }
+
+    .celebration-card {
+      width: min(420px, calc(100vw - 36px));
+      border: 1px solid rgba(255,255,255,.7);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 20px 70px rgba(15, 23, 42, .25);
+      padding: 22px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      transform: translateY(12px) scale(.96);
+      animation: card-pop .42s ease forwards;
+    }
+
+    .celebration-card h3 {
+      margin: 0;
+      font-size: 24px;
+      letter-spacing: 0;
+    }
+
+    .celebration-card p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 14px;
+    }
+
+    .celebration-icon {
+      width: 58px;
+      height: 58px;
+      display: grid;
+      place-items: center;
+      margin: 0 auto 12px;
+      border-radius: 8px;
+      font-size: 34px;
+      background: #fff2cf;
+      color: #7e5900;
+      border: 1px solid #ebce83;
+    }
+
+    .celebration-overlay.brielle .celebration-card {
+      background: #fff9fd;
+      border-color: #ffd2ec;
+    }
+
+    .celebration-overlay.louis .celebration-card {
+      background: #101828;
+      color: #fff;
+      border-color: #6ee7ff;
+    }
+
+    .celebration-overlay.louis .celebration-card p {
+      color: #c8f5ff;
+    }
+
+    .celebration-overlay.thayne .celebration-card {
+      background: linear-gradient(180deg, #fff 0%, #f7fbf8 100%);
+      border-color: #b7e8db;
+    }
+
+    .celebration-burst {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .spark {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      font-size: 22px;
+      transform: translate(-50%, -50%);
+      animation: sparkle .9s ease-out forwards;
+    }
+
+    .spark.pixel {
+      width: 14px;
+      height: 14px;
+      font-size: 0;
+      image-rendering: pixelated;
+      background: #6ee7ff;
+      box-shadow: 14px 0 #facc15, -14px 0 #22c55e, 0 14px #fb7185;
+    }
+
+    @keyframes card-pop {
+      to { transform: translateY(0) scale(1); }
+    }
+
+    @keyframes sparkle {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(.4); }
+      20% { opacity: 1; }
+      100% { opacity: 0; transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))) rotate(var(--r)) scale(1.2); }
+    }
+
     .week-grid {
       display: grid;
       grid-template-columns: repeat(7, minmax(112px, 1fr));
@@ -1367,14 +1478,23 @@
     </div>
   </main>
 
+  <div class="celebration-overlay" id="celebrationOverlay" aria-live="polite">
+    <div class="celebration-card">
+      <div class="celebration-burst" id="celebrationBurst"></div>
+      <div class="celebration-icon" id="celebrationIcon">★</div>
+      <h3 id="celebrationTitle">Nice work</h3>
+      <p id="celebrationMessage">That job is complete.</p>
+    </div>
+  </div>
+
   <script>
     const children = [
-      { id: "thayne", name: "Thayne", initials: "TH", maxDifficulty: 10, targetHard: true, streak: 111, monthlyStreak: 11, openFines: 0, paidFines: 15, fineRate: 5, accountBalance: 45, profileImage: "" },
-      { id: "brig", name: "Brig Jr.", initials: "BJ", maxDifficulty: 10, targetHard: true, streak: 38, monthlyStreak: 8, openFines: 5, paidFines: 10, fineRate: 5, accountBalance: 20, profileImage: "" },
-      { id: "josh", name: "Josh", initials: "J", maxDifficulty: 10, targetHard: true, streak: 64, monthlyStreak: 14, openFines: 0, paidFines: 5, fineRate: 5, accountBalance: 35, profileImage: "" },
-      { id: "jojo", name: "JoJo", initials: "JJ", maxDifficulty: 10, targetHard: true, streak: 5, monthlyStreak: 5, openFines: 10, paidFines: 0, fineRate: 5, accountBalance: 0, profileImage: "" },
-      { id: "louis", name: "Louis", initials: "L", maxDifficulty: 6, targetHard: false, streak: 6, monthlyStreak: 6, openFines: 0, paidFines: 5, fineRate: 3, accountBalance: 5, profileImage: "" },
-      { id: "brielle", name: "Brielle", initials: "B", maxDifficulty: 4, targetHard: false, streak: 9, monthlyStreak: 9, openFines: 0, paidFines: 0, fineRate: 2, accountBalance: 10, profileImage: "" }
+      { id: "thayne", name: "Thayne", age: 20, initials: "TH", maxDifficulty: 10, targetHard: true, streak: 111, monthlyStreak: 11, openFines: 0, paidFines: 15, fineRate: 5, accountBalance: 45, profileImage: "" },
+      { id: "brig", name: "Brig Jr.", age: 18, initials: "BJ", maxDifficulty: 10, targetHard: true, streak: 38, monthlyStreak: 8, openFines: 5, paidFines: 10, fineRate: 5, accountBalance: 20, profileImage: "" },
+      { id: "josh", name: "Josh", age: 16, initials: "J", maxDifficulty: 10, targetHard: true, streak: 64, monthlyStreak: 14, openFines: 0, paidFines: 5, fineRate: 5, accountBalance: 35, profileImage: "" },
+      { id: "jojo", name: "JoJo", age: 15, initials: "JJ", maxDifficulty: 10, targetHard: true, streak: 5, monthlyStreak: 5, openFines: 10, paidFines: 0, fineRate: 5, accountBalance: 0, profileImage: "" },
+      { id: "louis", name: "Louis", age: 12, initials: "L", maxDifficulty: 6, targetHard: false, streak: 6, monthlyStreak: 6, openFines: 0, paidFines: 5, fineRate: 3, accountBalance: 5, profileImage: "" },
+      { id: "brielle", name: "Brielle", age: 8, initials: "B", maxDifficulty: 4, targetHard: false, streak: 9, monthlyStreak: 9, openFines: 0, paidFines: 0, fineRate: 2, accountBalance: 10, profileImage: "" }
     ];
 
     const routineChores = [
@@ -1520,6 +1640,7 @@
       "Tortillas",
       "Cilantro"
     ];
+    let celebrationTimer = null;
 
     function seededIndex(seed, max) {
       const x = Math.sin(seed * 999) * 10000;
@@ -1556,6 +1677,102 @@
         note.className = "locked-note";
         note.textContent = "Locked. Fine rates, bonus rates, and profile photos can only be edited by Brigham or Karmel.";
         form.prepend(note);
+      });
+    }
+
+    function getCelebrationProfile(child, choreName) {
+      const profiles = {
+        brielle: {
+          theme: "brielle",
+          icon: "★",
+          sparks: ["★", "♥", "✦", "✧"],
+          title: "Sparkly job, Brielle!",
+          message: `You finished ${choreName}. That is a bright little win for the whole house.`
+        },
+        louis: {
+          theme: "louis",
+          icon: "🏆",
+          sparks: ["pixel"],
+          title: "Quest complete!",
+          message: `${choreName} cleared. XP earned, streak protected, next level loading.`
+        },
+        jojo: {
+          theme: "teen",
+          icon: "★",
+          sparks: ["★", "✦", "◆"],
+          title: "Solid work, JoJo",
+          message: `You handled ${choreName}. That follow-through matters.`
+        },
+        josh: {
+          theme: "teen",
+          icon: "🏆",
+          sparks: ["★", "✦", "◆"],
+          title: "Strong finish, Josh",
+          message: `${choreName} is done. Reliable effort like that changes the day.`
+        },
+        brig: {
+          theme: "teen",
+          icon: "🏆",
+          sparks: ["★", "✦", "◆"],
+          title: "Thank you, Brig Jr.",
+          message: `You completed ${choreName}. That kind of leadership is noticed.`
+        },
+        thayne: {
+          theme: "thayne",
+          icon: "✦",
+          sparks: ["✦", "·", "★"],
+          title: "Grateful for your care, Thayne",
+          message: `Thank you for bringing attention and intention to ${choreName}. Small mindful acts make the home feel steadier.`
+        }
+      };
+      return profiles[child.id] || {
+        theme: "default",
+        icon: "★",
+        sparks: ["★", "✦"],
+        title: `Thank you, ${child.name}`,
+        message: `${choreName} is complete.`
+      };
+    }
+
+    function showCelebration(child, choreName) {
+      const profile = getCelebrationProfile(child, choreName);
+      const overlay = document.getElementById("celebrationOverlay");
+      const burst = document.getElementById("celebrationBurst");
+      document.getElementById("celebrationIcon").textContent = profile.icon;
+      document.getElementById("celebrationTitle").textContent = profile.title;
+      document.getElementById("celebrationMessage").textContent = profile.message;
+      overlay.className = `celebration-overlay show ${profile.theme}`;
+      burst.innerHTML = "";
+
+      const sparkCount = child.id === "brielle" ? 18 : child.id === "louis" ? 16 : child.id === "thayne" ? 10 : 12;
+      for (let index = 0; index < sparkCount; index += 1) {
+        const spark = document.createElement("span");
+        const token = profile.sparks[index % profile.sparks.length];
+        spark.className = token === "pixel" ? "spark pixel" : "spark";
+        spark.textContent = token === "pixel" ? "" : token;
+        const angle = (Math.PI * 2 * index) / sparkCount;
+        const distance = 90 + (index % 4) * 18;
+        spark.style.setProperty("--x", `${Math.cos(angle) * distance}px`);
+        spark.style.setProperty("--y", `${Math.sin(angle) * distance}px`);
+        spark.style.setProperty("--r", `${index * 28}deg`);
+        spark.style.animationDelay = `${index * 22}ms`;
+        burst.appendChild(spark);
+      }
+
+      clearTimeout(celebrationTimer);
+      celebrationTimer = setTimeout(() => {
+        overlay.className = "celebration-overlay";
+      }, child.id === "thayne" ? 3600 : 2600);
+    }
+
+    function attachCompletionHandlers(child) {
+      document.querySelectorAll(".check-btn[data-chore-name]").forEach(button => {
+        button.addEventListener("click", () => {
+          button.textContent = "Done";
+          button.classList.add("completed");
+          button.disabled = true;
+          showCelebration(child, button.dataset.choreName);
+        });
       });
     }
 
@@ -1636,7 +1853,7 @@
             <span>Estimated ${chore.minutes} minutes. Complete these before rotating fined chores. Mom still reviews at noon.</span>
           </div>
           <div class="task-actions">
-            <button class="check-btn" type="button">Complete</button>
+            <button class="check-btn" type="button" data-chore-name="${chore.name}">Complete</button>
             <button class="proof-btn" type="button">Photo</button>
             <span class="status done">Needs review</span>
           </div>
@@ -1652,7 +1869,7 @@
             <span>Difficulty ${chore.difficulty}/10. Estimated ${chore.minutes} minutes. Has until ${approvedDeadline}. If incomplete by the deadline without Dad’s extension, charge $${child.fineRate}.</span>
           </div>
           <div class="task-actions">
-            <button class="check-btn" type="button">Complete</button>
+            <button class="check-btn" type="button" data-chore-name="${chore.name}">Complete</button>
             <button class="proof-btn" type="button">Photo</button>
             <span class="status ${index === 0 && child.openFines ? "warn" : ""}">${index === 0 && child.openFines ? `$${child.fineRate} risk` : "Due"}</span>
           </div>
@@ -1660,6 +1877,7 @@
       `).join("");
 
       renderReviewList(child, routines, rotating);
+      attachCompletionHandlers(child);
     }
 
     function renderReviewList(child, routines, rotating) {
