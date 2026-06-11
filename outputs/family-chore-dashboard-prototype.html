@@ -3719,6 +3719,10 @@
       document.getElementById("betaDataSummary").textContent = [
         `${Object.keys(choreState).length} chore records`,
         `${activeChores} active chores`,
+        `${Object.keys(betaData.fineAssessments || fineAssessments).length} finalized reviews`,
+        `${Object.keys(betaData.extensionDeadlines || extensionDeadlines).length} active extensions`,
+        `${(betaData.helperPayRecords || helperPayRecords).length} helper pay weeks`,
+        `${(betaData.ingredientRequests || ingredientRequests).length} ingredient requests`,
         `${(betaData.betaFeedback || betaFeedback).length} feedback notes`,
         `${Object.keys(photos).length} child photos`,
         `${Object.keys(gmailLinks).length} Gmail links`,
