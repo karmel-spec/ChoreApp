@@ -3426,7 +3426,8 @@
     function renderLedger(child) {
       document.getElementById("ledgerName").textContent = child.name;
       document.getElementById("fineLedgerSummary").textContent = `${child.name} has $${child.openFines} open fines and $${child.paidFines} marked paid.`;
-      document.getElementById("fineLedger").innerHTML = ledger[child.id].map((item, index) => `
+      const fineRows = ledger[child.id] || [];
+      document.getElementById("fineLedger").innerHTML = fineRows.length ? fineRows.map((item, index) => `
         <div class="ledger-row">
           <div>
             <strong>${escapeHtml(item.title)}</strong>
@@ -3437,7 +3438,7 @@
             ${item.paid ? "" : `<button class="ghost-btn" type="button" data-pay-fine-index="${index}">Mark Paid</button>`}
           </div>
         </div>
-      `).join("");
+      `).join("") : `<div class="notice-card">No fine records for ${escapeHtml(child.name)} yet.</div>`;
       document.querySelectorAll("[data-pay-fine-index]").forEach(button => {
         button.addEventListener("click", () => markFinePaid(child, Number(button.dataset.payFineIndex)));
       });
@@ -3479,7 +3480,7 @@
         .filter(item => !item.paid)
         .reduce((sum, item) => sum + moneyAmount(item.amount), 0);
       document.getElementById("bonusLedgerSummary").textContent = `${child.name}'s chore account balance is $${child.accountBalance}. $${creditedBonusTotal} credited bonuses and $${pendingBonusTotal} pending bonus records.`;
-      document.getElementById("bonusLedger").innerHTML = bonusRows.map(item => `
+      document.getElementById("bonusLedger").innerHTML = bonusRows.length ? bonusRows.map(item => `
         <div class="ledger-row">
           <div>
             <strong>${escapeHtml(item.title)}</strong>
@@ -3487,7 +3488,7 @@
           </div>
           <div class="${item.paid ? "paid" : "unpaid"}">${item.paid ? "Paid" : "Pending"}</div>
         </div>
-      `).join("");
+      `).join("") : `<div class="notice-card">No bonus records for ${escapeHtml(child.name)} yet. Award an eligible streak bonus when a milestone is reached.</div>`;
       document.getElementById("bonusStatus").textContent = `Monthly bonus streak resets ${nextBonusResetLabel()}. Overall streak continues from ${child.streak} days.`;
     }
 
@@ -3971,12 +3972,12 @@
     }
 
     function renderIngredients() {
-      document.getElementById("ingredientList").innerHTML = ingredientRequests.map(item => `
+      document.getElementById("ingredientList").innerHTML = ingredientRequests.length ? ingredientRequests.map(item => `
         <div class="ingredient-item">
           <span>${escapeHtml(item)}</span>
           <span>Requested</span>
         </div>
-      `).join("");
+      `).join("") : `<div class="notice-card">No ingredient requests yet. Vanessa can add cooking needs here for Mom to approve.</div>`;
     }
 
     function addIngredientRequest() {
