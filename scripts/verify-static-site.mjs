@@ -45,7 +45,10 @@ const requiredMarkers = [
   "saveHelperBoardOrder",
   "30-Day Fairness",
   "fairnessList",
-  "calculateFairnessSummary"
+  "calculateFairnessSummary",
+  "Beta Readiness Checklist",
+  "Ready to test",
+  "Production Web App"
 ];
 
 for (const marker of requiredMarkers) {

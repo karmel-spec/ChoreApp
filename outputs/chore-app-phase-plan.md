@@ -32,6 +32,7 @@ Core web app features:
 - Age-aware celebration responses when chores are marked complete, including sticker-style, game-style, teen, and mindful gratitude feedback
 - Monthly bonus streaks that restart on the first of each month while overall streaks continue
 - Long-term super bonuses for larger overall streak milestones
+- In-app beta readiness checklist that separates ready-to-test website features from production backend and app-store requirements
 
 Recommended web stack:
 - Responsive PWA-style web app
