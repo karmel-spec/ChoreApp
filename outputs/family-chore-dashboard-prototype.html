@@ -2804,6 +2804,10 @@
     function attachCompletionHandlers(child) {
       document.querySelectorAll(".check-btn[data-chore-name]").forEach(button => {
         button.addEventListener("click", () => {
+          if (isChildReviewFinalized(child)) {
+            document.getElementById("reviewStatus").textContent = `${child.name}'s review is already finalized for today.`;
+            return;
+          }
           const choreName = decodeURIComponent(button.dataset.choreName);
           const choreType = button.dataset.choreType;
           const chore = findTodayChore(child, choreName, choreType);
@@ -2819,6 +2823,10 @@
 
       document.querySelectorAll(".proof-btn[data-chore-name]").forEach(button => {
         button.addEventListener("click", () => {
+          if (isChildReviewFinalized(child)) {
+            document.getElementById("reviewStatus").textContent = `${child.name}'s review is already finalized for today.`;
+            return;
+          }
           const input = document.querySelector(`.proof-input[data-proof-key="${button.dataset.proofKey}"]`);
           if (input) input.click();
         });
@@ -2826,6 +2834,10 @@
 
       document.querySelectorAll(".proof-input[data-chore-name]").forEach(input => {
         input.addEventListener("change", () => {
+          if (isChildReviewFinalized(child)) {
+            document.getElementById("reviewStatus").textContent = `${child.name}'s review is already finalized for today.`;
+            return;
+          }
           const file = input.files[0];
           if (!file) return;
           const choreName = decodeURIComponent(input.dataset.choreName);
@@ -2982,14 +2994,17 @@
       const encodedName = encodeURIComponent(chore.name);
       const proofKey = encodeURIComponent(choreKey(child, chore, choreType));
       const completed = Boolean(record.completedAt);
+      const finalized = isChildReviewFinalized(child);
       const statusClass = choreStatusClass(record, warning);
       const proofThumb = record.proofImage ? `<img class="proof-thumb" src="${escapeHtml(record.proofImage)}" alt="${escapeHtml(chore.name)} proof photo">` : "";
+      const completionDisabled = completed || finalized;
+      const statusText = finalized && !completed && record.reviewStatus !== "approved" ? "Review finalized" : choreStatusText(record, fallbackStatus);
       return `
-        <button class="check-btn ${completed ? "completed" : ""}" type="button" data-chore-type="${choreType}" data-chore-name="${encodedName}" ${completed ? "disabled" : ""}>${completed ? "Done" : "Complete"}</button>
-        <button class="proof-btn" type="button" data-proof-key="${proofKey}" data-chore-type="${choreType}" data-chore-name="${encodedName}">${record.proofImage ? "Photo saved" : "Photo"}</button>
+        <button class="check-btn ${completed ? "completed" : ""}" type="button" data-chore-type="${choreType}" data-chore-name="${encodedName}" ${completionDisabled ? "disabled" : ""}>${completed ? "Done" : finalized ? "Locked" : "Complete"}</button>
+        <button class="proof-btn" type="button" data-proof-key="${proofKey}" data-chore-type="${choreType}" data-chore-name="${encodedName}" ${finalized ? "disabled" : ""}>${record.proofImage ? "Photo saved" : "Photo"}</button>
         <input class="proof-input" type="file" accept="image/*" data-proof-key="${proofKey}" data-chore-type="${choreType}" data-chore-name="${encodedName}">
         ${proofThumb}
-        <span class="status ${statusClass}">${escapeHtml(choreStatusText(record, fallbackStatus))}</span>
+        <span class="status ${statusClass}">${escapeHtml(statusText)}</span>
       `;
     }
 
@@ -3013,6 +3028,9 @@
       document.getElementById("fineRateMetric").textContent = `$${child.fineRate}/day`;
       document.getElementById("accountMetric").textContent = `$${child.accountBalance}`;
       document.getElementById("fineRateInput").value = child.fineRate;
+      const reviewFinalized = isChildReviewFinalized(child);
+      document.getElementById("finalizeChildBtn").disabled = reviewFinalized;
+      document.getElementById("finalizeChildBtn").textContent = reviewFinalized ? "Selected Child Finalized" : "Finalize Selected Child";
 
       document.getElementById("streakTasks").innerHTML = routines.map((chore, index) => {
         const record = getChoreRecord(child, chore, "priority");
@@ -3054,6 +3072,7 @@
     }
 
     function renderReviewList(child, routines, rotating) {
+      const finalized = isChildReviewFinalized(child);
       const reviewItems = [
         ...routines.map(chore => ({ ...chore, reviewType: "priority", typeLabel: "Priority" })),
         ...rotating.map(chore => ({ ...chore, reviewType: "rotating", typeLabel: "Rotating" }))
@@ -3077,9 +3096,9 @@
           </div>
           <div class="review-actions">
             ${proofThumb}
-            <button class="ghost-btn" type="button" data-review-action="redo" data-review-type="${chore.reviewType}" data-review-name="${encodedName}">Redo</button>
-            <button class="primary-btn" type="button" data-review-action="approve" data-review-type="${chore.reviewType}" data-review-name="${encodedName}" ${record.completedAt ? "" : "disabled"}>Approve</button>
-            <span class="status ${choreStatusClass(record, false)}">${escapeHtml(choreStatusText(record, "Inspect"))}</span>
+            <button class="ghost-btn" type="button" data-review-action="redo" data-review-type="${chore.reviewType}" data-review-name="${encodedName}" ${finalized ? "disabled" : ""}>Redo</button>
+            <button class="primary-btn" type="button" data-review-action="approve" data-review-type="${chore.reviewType}" data-review-name="${encodedName}" ${record.completedAt && !finalized ? "" : "disabled"}>Approve</button>
+            <span class="status ${choreStatusClass(record, false)}">${escapeHtml(finalized && record.reviewStatus !== "approved" ? "Finalized" : choreStatusText(record, "Inspect"))}</span>
           </div>
         </div>
       `;
@@ -3089,6 +3108,10 @@
         button.addEventListener("click", () => {
           if (!isAdmin()) {
             document.getElementById("reviewStatus").textContent = "Only Brigham or Karmel can approve inspected chores.";
+            return;
+          }
+          if (isChildReviewFinalized(child)) {
+            document.getElementById("reviewStatus").textContent = `${child.name}'s review is already finalized for today. Export a backup before resetting beta data if you need to rerun the day.`;
             return;
           }
           const choreName = decodeURIComponent(button.dataset.reviewName);
@@ -3346,6 +3369,10 @@
 
     function assessmentKey(child) {
       return `${localDateKey()}|${child.id}`;
+    }
+
+    function isChildReviewFinalized(child) {
+      return Boolean(fineAssessments[assessmentKey(child)]?.finalizedAt);
     }
 
     function getMissedRotatingChores(child) {
