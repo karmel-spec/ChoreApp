@@ -1807,7 +1807,7 @@
           </div>
           <div class="side-body">
             <div class="notice-card">New chores can be added as daily, Monday-only, weekly, monthly, or one-off. By default, they enter the random rotation after 24 hours so kids get notice before assignments switch.</div>
-            <div class="admin-form">
+            <div class="admin-form admin-only" id="choreAdminForm">
               <label for="adminChoreName">Chore Name</label>
               <input id="adminChoreName" value="Clean backyard cushions">
               <div class="form-row three">
@@ -2755,7 +2755,7 @@
       document.querySelectorAll(".admin-only").forEach(form => {
         const note = document.createElement("div");
         note.className = "locked-note";
-        note.textContent = "Locked. Fine rates, bonus rates, and profile photos can only be edited by Brigham or Karmel.";
+        note.textContent = "Locked. Fine rates, bonus rates, chore rotation, and profile photos can only be edited by Brigham or Karmel.";
         form.prepend(note);
       });
     }
@@ -3656,11 +3656,15 @@
           <td><span class="difficulty">${chore.difficulty}</span></td>
           <td>${escapeHtml(chore.frequency || "Daily")}</td>
           <td>${escapeHtml(chore.fit)}</td>
-          <td><button class="toggle-btn ${chore.active === false ? "off" : ""}" type="button" data-chore-index="${index}">${chore.active === false ? "Off" : "On"}</button></td>
+          <td><button class="toggle-btn ${chore.active === false ? "off" : ""}" type="button" data-chore-index="${index}" ${isAdmin() ? "" : "disabled"}>${chore.active === false ? "Off" : "On"}</button></td>
         </tr>
       `).join("");
       document.querySelectorAll("[data-chore-index]").forEach(button => {
         button.addEventListener("click", () => {
+          if (!isAdmin()) {
+            document.getElementById("adminStatus").textContent = "Only Brigham or Karmel can change the master chore rotation.";
+            return;
+          }
           const chore = choreLibrary[Number(button.dataset.choreIndex)];
           chore.active = chore.active === false;
           shuffleOffset += 5;
@@ -3858,6 +3862,10 @@
     }
 
     function addAdminChore() {
+      if (!isAdmin()) {
+        document.getElementById("adminStatus").textContent = "Only Brigham or Karmel can add chores to the master rotation.";
+        return;
+      }
       const name = document.getElementById("adminChoreName").value.trim();
       const frequency = document.getElementById("adminFrequency").value;
       const minutes = Math.max(1, Number(document.getElementById("adminMinutes").value) || 1);
