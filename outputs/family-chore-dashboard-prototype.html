@@ -708,6 +708,44 @@
       white-space: nowrap;
     }
 
+    .fairness-list {
+      display: grid;
+      gap: 7px;
+    }
+
+    .fairness-row {
+      display: grid;
+      grid-template-columns: minmax(86px, 1fr) auto auto auto;
+      gap: 8px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 8px;
+    }
+
+    .fairness-row strong {
+      font-size: 13px;
+    }
+
+    .fairness-stat {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .fairness-note {
+      border: 1px solid #d9e5ff;
+      border-radius: 8px;
+      background: #f4f8ff;
+      color: #23436f;
+      padding: 9px;
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.4;
+    }
+
     .day-card {
       min-height: 176px;
       border: 1px solid var(--line);
@@ -1391,7 +1429,7 @@
   <header>
     <div>
       <h1>Teamwork Chores</h1>
-      <p class="intro">A Design 2 prototype with priority routines first, randomized rotating chores second, noon fines, extension petitions, child dashboards, seven-day planning, 30-day forecasts, and an admin-maintained chore library.</p>
+      <p class="intro">A Design 2 prototype with priority routines first, randomized rotating chores second, noon fines, extension petitions, child dashboards, seven-day planning, 30-day forecasts, fairness checks, and an admin-maintained chore library.</p>
     </div>
     <div class="admin-chip" id="currentUserChip">Not signed in</div>
   </header>
@@ -1676,6 +1714,17 @@
           <div class="side-body">
             <div class="notice-card">A month-out planning preview for the selected child. It uses the current chore library, active toggles, difficulty limits, and random rotation seed.</div>
             <div class="forecast-list" id="forecastList"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h3>30-Day Fairness</h3>
+            <span>All kids</span>
+          </div>
+          <div class="side-body">
+            <div class="fairness-note" id="fairnessNote">Comparing rotating chore load across the next 30 days.</div>
+            <div class="fairness-list" id="fairnessList"></div>
           </div>
         </section>
 
@@ -2923,6 +2972,41 @@
       }).join("");
     }
 
+    function calculateFairnessSummary() {
+      return children.map(child => {
+        const days = Array.from({ length: 30 }).map((_, day) => getRotatingChores(child, day));
+        const totalMinutes = days.flat().reduce((sum, chore) => sum + chore.minutes, 0);
+        const difficultyPoints = days.flat().reduce((sum, chore) => sum + chore.difficulty, 0);
+        const hardest = days.flat().reduce((max, chore) => Math.max(max, chore.difficulty), 0);
+        return {
+          child,
+          totalMinutes,
+          averageMinutes: totalMinutes / 30,
+          difficultyPoints,
+          hardest
+        };
+      }).sort((a, b) => b.totalMinutes - a.totalMinutes);
+    }
+
+    function renderFairnessSummary() {
+      const summary = calculateFairnessSummary();
+      const totals = summary.map(item => item.totalMinutes);
+      const spread = Math.max(...totals) - Math.min(...totals);
+      const heaviest = summary[0];
+      const lightest = summary[summary.length - 1];
+      document.getElementById("fairnessNote").textContent = spread <= 90
+        ? `Next 30 days look balanced: ${heaviest.child.name} has ${spread} more rotating minutes than ${lightest.child.name}.`
+        : `Watch workload balance: ${heaviest.child.name} has ${spread} more rotating minutes than ${lightest.child.name} over the next 30 days.`;
+      document.getElementById("fairnessList").innerHTML = summary.map(item => `
+        <div class="fairness-row">
+          <strong>${item.child.name}</strong>
+          <span class="fairness-stat">${item.totalMinutes} min</span>
+          <span class="fairness-stat">${item.averageMinutes.toFixed(1)}/day</span>
+          <span class="fairness-stat">D${item.difficultyPoints} · max ${item.hardest}</span>
+        </div>
+      `).join("");
+    }
+
     function renderLedger(child) {
       document.getElementById("ledgerName").textContent = child.name;
       document.getElementById("fineLedger").innerHTML = ledger[child.id].map((item, index) => `
@@ -3404,6 +3488,7 @@
       renderDaily(child);
       renderWeekly(child);
       renderForecast(child);
+      renderFairnessSummary();
       renderLedger(child);
       renderBonusPanel(child);
       renderProfilePanel(child);

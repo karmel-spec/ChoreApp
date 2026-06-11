@@ -42,7 +42,10 @@ const requiredMarkers = [
   "familySettings",
   "Save Family Rules",
   "helperBoardTasks",
-  "saveHelperBoardOrder"
+  "saveHelperBoardOrder",
+  "30-Day Fairness",
+  "fairnessList",
+  "calculateFairnessSummary"
 ];
 
 for (const marker of requiredMarkers) {
