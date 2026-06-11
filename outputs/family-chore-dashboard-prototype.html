@@ -3930,6 +3930,8 @@
         });
       });
       document.querySelectorAll(".priority-column").forEach(column => {
+        if (column.dataset.dragBound === "true") return;
+        column.dataset.dragBound = "true";
         column.addEventListener("dragover", event => {
           if (!canUseHelperWorkspace()) return;
           event.preventDefault();
@@ -3993,13 +3995,13 @@
       renderProfilePanel(child);
       renderBetaDataSummary();
       renderChoreTable();
+      renderAdminLocks();
+      renderHelperLocks();
       renderHelperPay();
       renderHelperBoard();
       renderIngredients();
       renderFeedbackLog();
       renderView();
-      renderAdminLocks();
-      renderHelperLocks();
     }
 
     document.getElementById("dailyBtn").addEventListener("click", () => {
@@ -4084,7 +4086,6 @@
     renderLoginGrid();
     restoreLogin();
     render();
-    setupHelperDragDrop();
   </script>
 </body>
 </html>

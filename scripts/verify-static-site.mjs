@@ -124,6 +124,7 @@ const requiredMarkers = [
   "Only Brigham or Karmel can change the master chore rotation",
   "helperBoardTasks",
   "saveHelperBoardOrder",
+  "dragBound",
   "canUseHelperWorkspace",
   "renderHelperLocks",
   "Pay rate is parent-admin controlled",
