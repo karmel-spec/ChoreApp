@@ -98,6 +98,7 @@ Once per week:
 5. Confirm chores, photos, helper tasks, fines, bonuses, and settings restore.
 6. Reset test data only after exporting a backup, and confirm photos and Gmail links are cleared with the rest of the local beta data.
 7. Check the local beta data summary counts for chore records, finalized reviews, extensions, helper pay weeks, ingredient requests, photos, Gmail links, and last export/import/reset timestamps.
+8. After a new GitHub/Netlify publish, reload the installed web app and confirm the latest dashboard changes appear while offline fallback still opens when the network is unavailable.
 
 ## Known Prototype Limits
 

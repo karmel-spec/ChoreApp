@@ -33,19 +33,31 @@ self.addEventListener("activate", event => {
 self.addEventListener("fetch", event => {
   if (event.request.method !== "GET") return;
 
-  event.respondWith(
-    caches.match(event.request)
-      .then(cached => cached || fetch(event.request)
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request)
         .then(response => {
           const copy = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
           return response;
         })
-        .catch(() => {
-          if (event.request.mode === "navigate") {
-            return caches.match("/offline.html");
+        .catch(() => caches.match(event.request).then(cached => cached || caches.match("/offline.html")))
+    );
+    return;
+  }
+
+  event.respondWith(
+    caches.match(event.request).then(cached => {
+      const refresh = fetch(event.request)
+        .then(response => {
+          if (response.ok && new URL(event.request.url).origin === self.location.origin) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
           }
-          return undefined;
-        }))
+          return response;
+        })
+        .catch(() => cached);
+      return cached || refresh;
+    })
   );
 });

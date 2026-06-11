@@ -193,6 +193,7 @@ const requiredGuideMarkers = [
   "Confirm a new week starts a new pay record",
   "local beta data summary",
   "finalized reviews, extensions, helper pay weeks, ingredient requests",
+  "After a new GitHub/Netlify publish",
   "Beta Feedback Log",
   "Anyone can add feedback",
   "Known Prototype Limits",
@@ -339,6 +340,21 @@ for (const cachedPath of ["/app", "/beta-guide", "/offline.html", "/manifest.web
 
 if (!serviceWorker.includes(`const CACHE_NAME = "${expectedCacheName}"`)) {
   throw new Error(`Service worker cache name must be ${expectedCacheName}.`);
+}
+
+const requiredServiceWorkerMarkers = [
+  'event.request.mode === "navigate"',
+  "fetch(event.request)",
+  'caches.match("/offline.html")',
+  "response.ok",
+  "new URL(event.request.url).origin === self.location.origin",
+  "cached || refresh"
+];
+
+for (const marker of requiredServiceWorkerMarkers) {
+  if (!serviceWorker.includes(marker)) {
+    throw new Error(`Service worker is missing beta cache behavior: ${marker}`);
+  }
 }
 
 const cachedFiles = {
