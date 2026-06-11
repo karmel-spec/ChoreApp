@@ -24,7 +24,7 @@ const requiredMarkers = [
   "Teamwork Chores",
   "Mom's Helper",
   "Build Roadmap",
-  "Grant Dad-Approved Extension",
+  "Grant Approved Extension",
   "Continue with Google",
   "All-Time Streak Podium",
   "teamworkChoresChoreState",
@@ -37,7 +37,10 @@ const requiredMarkers = [
   "Finalize All Children",
   "fineAssessments",
   "30-Day Forecast",
-  "forecastList"
+  "forecastList",
+  "Family Rule Settings",
+  "familySettings",
+  "Save Family Rules"
 ];
 
 for (const marker of requiredMarkers) {

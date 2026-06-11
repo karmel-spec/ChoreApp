@@ -1476,8 +1476,51 @@
       <aside class="side-stack">
         <section class="panel">
           <div class="panel-head">
+            <h3>Family Rule Settings</h3>
+            <span>Admin</span>
+          </div>
+          <div class="side-body">
+            <div class="admin-form admin-only" id="familySettingsForm">
+              <div class="form-row">
+                <div>
+                  <label for="defaultDeadlineInput">Default Rotating Deadline</label>
+                  <input id="defaultDeadlineInput" value="12:00 PM">
+                </div>
+                <div>
+                  <label for="reviewReminderTimeInput">Review Reminder Time</label>
+                  <input id="reviewReminderTimeInput" value="12:00 PM">
+                </div>
+              </div>
+              <div class="form-row">
+                <div>
+                  <label for="extensionApproverInput">Extension Approver</label>
+                  <input id="extensionApproverInput" value="Brigham-dad">
+                </div>
+                <div>
+                  <label for="extensionContactInput">Extension Contact</label>
+                  <input id="extensionContactInput" value="801-830-0011">
+                </div>
+              </div>
+              <div class="form-row">
+                <div>
+                  <label for="reviewRecipientInput">Review Recipient</label>
+                  <input id="reviewRecipientInput" value="Mom">
+                </div>
+                <div>
+                  <label for="reviewContactInput">Review Contact</label>
+                  <input id="reviewContactInput" value="Mom text">
+                </div>
+              </div>
+              <button class="primary-btn" type="button" id="saveFamilySettingsBtn">Save Family Rules</button>
+              <div class="admin-status" id="familySettingsStatus"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
             <h3>Extension Petition</h3>
-            <span>Text Dad</span>
+            <span id="extensionPanelLabel">Text Dad</span>
           </div>
           <div class="side-body">
             <div class="request-card">
@@ -1491,17 +1534,17 @@
                 <div>
                   <label for="approval">Admin Action</label>
                   <select id="approval">
-                    <option>Approved by Brigham-dad</option>
+                    <option id="approvalOption">Approved by Brigham-dad</option>
                     <option>Deny</option>
                     <option>Approved with warning</option>
                   </select>
                 </div>
               </div>
-              <button class="primary-btn" type="button" id="approveBtn">Grant Dad-Approved Extension</button>
+              <button class="primary-btn" type="button" id="approveBtn">Grant Approved Extension</button>
             </div>
             <div class="rule-box" style="margin:0;">
               <strong>How it works</strong>
-              <p>The child sends a text-style petition to Brigham-dad at 801-830-0011. Only Dad can approve an extension; if approved, the deadline moves from 12:00 PM to the approved time for that child only.</p>
+              <p id="extensionRuleText">The child sends a text-style petition to Brigham-dad at 801-830-0011. Only Dad can approve an extension; if approved, the deadline moves from 12:00 PM to the approved time for that child only.</p>
             </div>
           </div>
         </section>
@@ -1509,10 +1552,10 @@
         <section class="panel">
           <div class="panel-head">
             <h3>Noon Review</h3>
-            <span>Text Mom</span>
+            <span id="reviewPanelLabel">Text Mom</span>
           </div>
           <div class="side-body">
-            <div class="notice-card warn">At 12:00 PM, send Mom a text reminder to physically inspect today’s completed chores before fines are finalized.</div>
+            <div class="notice-card warn" id="reviewReminderText">At 12:00 PM, send Mom a text reminder to physically inspect today’s completed chores before fines are finalized.</div>
             <div class="review-list" id="reviewList"></div>
             <button class="primary-btn" type="button" id="sendReviewBtn">Send Noon Review Text</button>
             <div class="form-row">
@@ -2045,6 +2088,14 @@
       "Cilantro"
     ];
     let fineAssessments = {};
+    let familySettings = {
+      defaultDeadline: "12:00 PM",
+      reviewReminderTime: "12:00 PM",
+      extensionApprover: "Brigham-dad",
+      extensionContact: "801-830-0011",
+      reviewRecipient: "Mom",
+      reviewContact: "Mom text"
+    };
     let celebrationTimer = null;
 
     function localDateKey(offset = 0) {
@@ -2097,7 +2148,8 @@
         ingredientRequests,
         choreLibrary,
         shuffleOffset,
-        fineAssessments
+        fineAssessments,
+        familySettings
       }));
     }
 
@@ -2124,6 +2176,7 @@
       if (Array.isArray(data.helperPayRecords)) helperPayRecords = data.helperPayRecords;
       if (Array.isArray(data.ingredientRequests)) ingredientRequests = data.ingredientRequests;
       if (data.fineAssessments) fineAssessments = data.fineAssessments;
+      if (data.familySettings) familySettings = { ...familySettings, ...data.familySettings };
       if (Number.isFinite(Number(data.helperWeeklyHours))) helperWeeklyHours = Number(data.helperWeeklyHours);
       if (Number.isFinite(Number(data.helperRate))) helperRate = Number(data.helperRate);
       if (Number.isFinite(Number(data.shuffleOffset))) shuffleOffset = Number(data.shuffleOffset);
@@ -2290,6 +2343,48 @@
       if (account.role === "admin") return `${account.name} admin`;
       if (account.role === "helper") return "Vanessa helper";
       return `${account.name} child login`;
+    }
+
+    function extensionApproverShortName() {
+      return familySettings.extensionApprover.replace(/-.*/, "") || familySettings.extensionApprover;
+    }
+
+    function resetApprovedDeadline() {
+      approvedDeadline = familySettings.defaultDeadline;
+    }
+
+    function renderFamilySettings() {
+      document.getElementById("defaultDeadlineInput").value = familySettings.defaultDeadline;
+      document.getElementById("reviewReminderTimeInput").value = familySettings.reviewReminderTime;
+      document.getElementById("extensionApproverInput").value = familySettings.extensionApprover;
+      document.getElementById("extensionContactInput").value = familySettings.extensionContact;
+      document.getElementById("reviewRecipientInput").value = familySettings.reviewRecipient;
+      document.getElementById("reviewContactInput").value = familySettings.reviewContact;
+      document.getElementById("extensionPanelLabel").textContent = `Text ${extensionApproverShortName()}`;
+      document.getElementById("reviewPanelLabel").textContent = `Text ${familySettings.reviewRecipient}`;
+      document.getElementById("approvalOption").textContent = `Approved by ${familySettings.extensionApprover}`;
+      document.getElementById("extensionRuleText").textContent = `The child sends a text-style petition to ${familySettings.extensionApprover} at ${familySettings.extensionContact}. Only ${extensionApproverShortName()} can approve an extension; if approved, the deadline moves from ${familySettings.defaultDeadline} to the approved time for that child only.`;
+      document.getElementById("reviewReminderText").textContent = `At ${familySettings.reviewReminderTime}, send ${familySettings.reviewRecipient} a text reminder at ${familySettings.reviewContact} to physically inspect today’s completed chores before fines are finalized.`;
+    }
+
+    function saveFamilySettings() {
+      if (!isAdmin()) {
+        document.getElementById("familySettingsStatus").textContent = "Only Brigham or Karmel can edit family rule settings.";
+        return;
+      }
+      const oldDeadline = familySettings.defaultDeadline;
+      familySettings = {
+        defaultDeadline: document.getElementById("defaultDeadlineInput").value.trim() || "12:00 PM",
+        reviewReminderTime: document.getElementById("reviewReminderTimeInput").value.trim() || "12:00 PM",
+        extensionApprover: document.getElementById("extensionApproverInput").value.trim() || "Brigham-dad",
+        extensionContact: document.getElementById("extensionContactInput").value.trim() || "801-830-0011",
+        reviewRecipient: document.getElementById("reviewRecipientInput").value.trim() || "Mom",
+        reviewContact: document.getElementById("reviewContactInput").value.trim() || "Mom text"
+      };
+      if (approvedDeadline === oldDeadline) resetApprovedDeadline();
+      persistBetaData();
+      render();
+      document.getElementById("familySettingsStatus").textContent = "Family rules saved for this beta browser.";
     }
 
     function renderLoginGrid() {
@@ -2589,7 +2684,7 @@
         button.addEventListener("click", () => {
           if (currentUser?.role === "child" && currentUser.childId !== button.dataset.child) return;
           selectedChildId = button.dataset.child;
-          approvedDeadline = "12:00 PM";
+          resetApprovedDeadline();
           const url = new URL(window.location.href);
           url.searchParams.set("child", selectedChildId);
           window.history.replaceState({}, "", url);
@@ -2697,7 +2792,7 @@
           ${renderChildPhoto(child, "task-person")}
           <div>
             <strong>${chore.name}</strong>
-            <span>Estimated ${chore.minutes} minutes. Complete these before rotating fined chores. Mom still reviews at noon.</span>
+            <span>Estimated ${chore.minutes} minutes. Complete these before rotating fined chores. ${familySettings.reviewRecipient} still reviews at ${familySettings.reviewReminderTime}.</span>
           </div>
           <div class="task-actions">
             ${renderTaskActions(child, chore, "priority", "Needs review")}
@@ -2715,7 +2810,7 @@
           ${renderChildPhoto(child, "task-person")}
           <div>
             <strong>${chore.name}</strong>
-            <span>Difficulty ${chore.difficulty}/10. Estimated ${chore.minutes} minutes. Has until ${approvedDeadline}. If incomplete by the deadline without Dad’s extension, charge $${child.fineRate}.</span>
+            <span>Difficulty ${chore.difficulty}/10. Estimated ${chore.minutes} minutes. Has until ${approvedDeadline}. If incomplete by the deadline without ${extensionApproverShortName()}’s extension, charge $${child.fineRate}.</span>
           </div>
           <div class="task-actions">
             ${renderTaskActions(child, chore, "rotating", warning ? `$${child.fineRate} risk` : "Due", warning)}
@@ -2794,7 +2889,7 @@
         return `
           <div class="day-card ${day === 0 ? "today" : ""}">
             <h4>${formatDate(day)}</h4>
-            <p>${minutes} rotating min, due ${day === 0 ? approvedDeadline : "12:00 PM"}</p>
+            <p>${minutes} rotating min, due ${day === 0 ? approvedDeadline : familySettings.defaultDeadline}</p>
             ${routines.map(chore => `<span class="mini-task streak">${chore.name}</span>`).join("")}
             ${rotating.map(chore => `<span class="mini-task">${chore.name} · ${chore.minutes}m · D${chore.difficulty}</span>`).join("")}
           </div>
@@ -2835,7 +2930,7 @@
       document.querySelectorAll("[data-pay-fine-index]").forEach(button => {
         button.addEventListener("click", () => markFinePaid(child, Number(button.dataset.payFineIndex)));
       });
-      document.getElementById("fineRateStatus").textContent = `${child.name}'s missed-day fine is $${child.fineRate} unless Dad approves an extension.`;
+      document.getElementById("fineRateStatus").textContent = `${child.name}'s missed-day fine is $${child.fineRate} unless ${familySettings.extensionApprover} approves an extension.`;
     }
 
     function renderBonusPanel(child) {
@@ -3264,6 +3359,7 @@
 
     function render() {
       const child = children.find(item => item.id === selectedChildId);
+      renderFamilySettings();
       renderFamilyList();
       renderStreakPodium();
       renderDaily(child);
@@ -3293,6 +3389,8 @@
       document.getElementById("loginOverlay").classList.add("show");
     });
 
+    document.getElementById("saveFamilySettingsBtn").addEventListener("click", saveFamilySettings);
+
     document.getElementById("loginBtn").addEventListener("click", loginSelectedAccount);
 
     document.getElementById("googleLoginBtn").addEventListener("click", loginWithGoogle);
@@ -3304,14 +3402,14 @@
 
     document.getElementById("approveBtn").addEventListener("click", () => {
       if (document.getElementById("approval").value === "Deny") {
-        approvedDeadline = "12:00 PM";
-        document.getElementById("reviewStatus").textContent = "Extension denied. Fine deadline stays 12:00 PM.";
+        resetApprovedDeadline();
+        document.getElementById("reviewStatus").textContent = `Extension denied. Fine deadline stays ${familySettings.defaultDeadline}.`;
         render();
         return;
       }
       const child = children.find(item => item.id === selectedChildId);
-      approvedDeadline = document.getElementById("newTime").value || "12:00 PM";
-      document.getElementById("reviewStatus").textContent = `Dad-approved extension saved for ${child.name}: deadline moved to ${approvedDeadline}.`;
+      approvedDeadline = document.getElementById("newTime").value || familySettings.defaultDeadline;
+      document.getElementById("reviewStatus").textContent = `${familySettings.extensionApprover}-approved extension saved for ${child.name}: deadline moved to ${approvedDeadline}.`;
       render();
     });
 
@@ -3341,7 +3439,7 @@
 
     document.getElementById("sendReviewBtn").addEventListener("click", () => {
       const child = children.find(item => item.id === selectedChildId);
-      document.getElementById("reviewStatus").textContent = `Noon review text queued for Mom: inspect ${child.name}'s chores before fines are finalized.`;
+      document.getElementById("reviewStatus").textContent = `${familySettings.reviewReminderTime} review text queued for ${familySettings.reviewRecipient} at ${familySettings.reviewContact}: inspect ${child.name}'s chores before fines are finalized.`;
     });
 
     document.getElementById("finalizeChildBtn").addEventListener("click", finalizeSelectedChildReview);
@@ -3349,6 +3447,7 @@
     document.getElementById("finalizeAllBtn").addEventListener("click", finalizeAllChildrenReview);
 
     hydrateBetaData();
+    resetApprovedDeadline();
     hydrateStoredChildPhotos();
     renderLoginGrid();
     restoreLogin();
