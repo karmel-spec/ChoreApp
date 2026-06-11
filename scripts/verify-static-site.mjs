@@ -125,6 +125,7 @@ const requiredMarkers = [
   "30-Day Forecast",
   "forecastList",
   "noticeAllowsChore",
+  "noticeLabel",
   "frequencyAllowsChore",
   "fitAllowsChild",
   "tieBreak",

@@ -1770,6 +1770,7 @@
                   <th>Diff</th>
                   <th>When</th>
                   <th>Best Fit</th>
+                  <th>Notice</th>
                   <th>Rotation</th>
                 </tr>
               </thead>
@@ -3024,6 +3025,18 @@
       return dateForOffset(dayOffset) >= availableDate;
     }
 
+    function noticeLabel(chore) {
+      if (!chore.notice) return "Always available";
+      if (chore.notice === "Start today") return "Starts today";
+      const created = choreCreatedDate(chore);
+      if (!created) return chore.notice;
+      const availableDate = new Date(created);
+      availableDate.setHours(0, 0, 0, 0);
+      if (chore.notice === "Start next week") availableDate.setDate(availableDate.getDate() + 7);
+      if (chore.notice === "Starts after 24 hours") availableDate.setDate(availableDate.getDate() + 1);
+      return `${chore.notice}: ${availableDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
+    }
+
     function frequencyAllowsChore(chore, dayOffset) {
       const frequency = chore.frequency || "Daily";
       const date = dateForOffset(dayOffset);
@@ -3742,6 +3755,7 @@
           <td><span class="difficulty">${chore.difficulty}</span></td>
           <td>${escapeHtml(chore.frequency || "Daily")}</td>
           <td>${escapeHtml(chore.fit)}</td>
+          <td>${escapeHtml(noticeLabel(chore))}</td>
           <td><button class="toggle-btn ${chore.active === false ? "off" : ""}" type="button" data-chore-index="${index}" ${isAdmin() ? "" : "disabled"}>${chore.active === false ? "Off" : "On"}</button></td>
         </tr>
       `).join("");
