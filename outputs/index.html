@@ -3,7 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2f6edb">
   <title>Teamwork Chores</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icons/teamwork-chores-icon.svg" type="image/svg+xml">
   <style>
     :root {
       --ink: #202124;
@@ -539,6 +542,12 @@
   </main>
 
   <script>
+    if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/service-worker.js").catch(() => {});
+      });
+    }
+
     const thoughts = [
       {
         quote: "Contribution turns a house into a home.",

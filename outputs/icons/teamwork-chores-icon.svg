@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Teamwork Chores app icon</title>
+  <desc id="desc">A blue rounded square with a gold star, checklist, and teamwork dots.</desc>
+  <rect width="512" height="512" rx="96" fill="#2f6edb"/>
+  <circle cx="144" cy="136" r="34" fill="#ffffff" opacity=".92"/>
+  <circle cx="256" cy="104" r="34" fill="#ffffff" opacity=".92"/>
+  <circle cx="368" cy="136" r="34" fill="#ffffff" opacity=".92"/>
+  <path fill="#ffffff" opacity=".18" d="M108 214c0-42 34-76 76-76h144c42 0 76 34 76 76v148c0 42-34 76-76 76H184c-42 0-76-34-76-76V214z"/>
+  <rect x="142" y="214" width="228" height="168" rx="28" fill="#ffffff"/>
+  <path fill="#147c8a" d="M199 270l32 32 77-80 26 25-103 107-59-59 27-25z"/>
+  <path fill="#d69c21" d="M352 300l14 31 34 4-25 23 7 34-30-17-30 17 7-34-25-23 34-4 14-31z"/>
+</svg>

@@ -3,7 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2f6edb">
   <title>Teamwork Chores Prototype</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icons/teamwork-chores-icon.svg" type="image/svg+xml">
   <style>
     :root {
       --ink: #202124;
@@ -1804,6 +1807,12 @@
   </div>
 
   <script>
+    if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/service-worker.js").catch(() => {});
+      });
+    }
+
     const children = [
       { id: "thayne", name: "Thayne", age: 20, initials: "TH", maxDifficulty: 10, targetHard: true, streak: 111, monthlyStreak: 11, openFines: 0, paidFines: 15, fineRate: 5, accountBalance: 45, profileImage: "" },
       { id: "brig", name: "Brig Jr.", age: 18, initials: "BJ", maxDifficulty: 10, targetHard: true, streak: 38, monthlyStreak: 8, openFines: 5, paidFines: 10, fineRate: 5, accountBalance: 20, profileImage: "" },
