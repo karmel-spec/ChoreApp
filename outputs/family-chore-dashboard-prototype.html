@@ -964,11 +964,32 @@
       margin-top: 3px;
     }
 
+    .podium-gap {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1.25;
+      margin-top: 4px;
+    }
+
     .podium-summary {
       margin: 8px 0 0;
       color: var(--muted);
       font-size: 11px;
       line-height: 1.35;
+    }
+
+    .podium-lead-note {
+      border: 1px solid #b7e8db;
+      background: #f5fffb;
+      color: #08705a;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 850;
+      line-height: 1.35;
+      margin-top: 8px;
+      padding: 8px;
     }
 
     .admin-form {
@@ -1520,6 +1541,7 @@
           <strong>All-Time Streak Podium</strong>
           <p class="podium-summary">Best overall lead for lifetime streaks. Tap a winner to open their dashboard.</p>
           <div class="podium" id="streakPodium"></div>
+          <div class="podium-lead-note" id="podiumLeadNote">All-time leader loading...</div>
         </div>
         <div class="rule-box">
           <strong>Assignment Rule</strong>
@@ -3120,9 +3142,15 @@
       const placeLabels = { 0: "1st", 1: "2nd", 2: "3rd" };
       const placeClasses = { 0: "first", 1: "second", 2: "third" };
       const medals = { 0: "1", 1: "2", 2: "3" };
+      const leader = winners[0];
+      const runnerUp = winners[1];
+      const leaderGap = runnerUp ? leader.streak - runnerUp.streak : leader.streak;
 
       document.getElementById("streakPodium").innerHTML = order.map(child => {
         const rank = winners.findIndex(winner => winner.id === child.id);
+        const gapText = rank === 0
+          ? (leaderGap > 0 ? `Leading by ${leaderGap} days` : "Tied for the lead")
+          : `${Math.max(0, leader.streak - child.streak)} days behind`;
         return `
           <button class="podium-place ${placeClasses[rank]} ${child.id === selectedChildId ? "active" : ""}" type="button" data-podium-child="${child.id}" aria-label="Open ${escapeHtml(child.name)}'s dashboard, ${placeLabels[rank]} place with ${child.streak} all-time streak days">
             <span class="podium-rank">${placeLabels[rank]} place</span>
@@ -3130,9 +3158,13 @@
             ${renderChildPhoto(child, "podium-photo")}
             <strong class="podium-name">${escapeHtml(child.name)}</strong>
             <span class="podium-streak">${child.streak} all-time days</span>
+            <span class="podium-gap">${escapeHtml(gapText)}</span>
           </button>
         `;
       }).join("");
+      document.getElementById("podiumLeadNote").textContent = leaderGap > 0
+        ? `${leader.name} has the best overall all-time streak lead with ${leader.streak} days, ${leaderGap} days ahead of ${runnerUp.name}.`
+        : `${leader.name} and ${runnerUp.name} are tied for the best overall all-time streak at ${leader.streak} days.`;
 
       document.querySelectorAll("[data-podium-child]").forEach(button => {
         button.addEventListener("click", () => {
