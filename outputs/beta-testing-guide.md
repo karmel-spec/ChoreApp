@@ -36,7 +36,16 @@ Each day, Brigham or Karmel should test:
 4. Send one chore back for redo during beta to test the loop.
 5. Finalize the selected child or all children.
 6. Confirm missed rotating chores charge a fine only once for the day.
-7. Mark a fine paid and confirm the open fine total changes.
+7. Confirm finalized chores lock against late edits.
+8. Mark a fine paid and confirm the open fine total changes.
+
+## Extension Test
+
+Once during beta:
+
+1. Sign in as Karmel and confirm extension approval is locked.
+2. Sign in as Brigham and approve or deny an extension.
+3. Confirm the selected child’s rotating chore deadline changes only when Brigham approves.
 
 ## Admin Rotation Test
 
@@ -44,9 +53,11 @@ At least twice per week:
 
 1. Toggle chores on and off in the master chore list.
 2. Add one new chore with schedule, minutes, difficulty, and approved-for settings.
-3. Use Shuffle Preview.
-4. Check the 30-day forecast for one younger child and one older child.
-5. Check 30-Day Fairness and note if one child seems overloaded.
+3. Confirm non-admin logins cannot edit the master chore list.
+4. Use Shuffle Preview.
+5. Check the 30-day forecast for one younger child and one older child.
+6. Confirm schedule, notice timing, approved-for fit, and difficulty rules look right.
+7. Check 30-Day Fairness and note if one child seems overloaded.
 
 ## Bonus Test
 
@@ -64,10 +75,13 @@ Each helper workday:
 
 1. Save arrival and exit time.
 2. Confirm weekly hours and paycheck update.
-3. Change the hourly rate once during beta to confirm it works.
-4. Drag tasks into priority order.
-5. Refresh the page and confirm task order stayed saved.
-6. Add ingredient requests.
+3. Confirm a new week starts a new pay record.
+4. Sign in as Vanessa and confirm she can save time, reorder priorities, and request ingredients.
+5. Confirm Vanessa cannot edit her hourly rate.
+6. Change the hourly rate once as Brigham or Karmel to confirm it works.
+7. Drag tasks into priority order.
+8. Refresh the page and confirm task order stayed saved.
+9. Add ingredient requests.
 
 ## Backup And Device Test
 
@@ -76,7 +90,9 @@ Once per week:
 1. Export Backup from Beta Data Tools.
 2. Save the file privately.
 3. Import the backup in another browser or device.
-4. Confirm chores, photos, helper tasks, fines, bonuses, and settings restore.
+4. Confirm the import warning appears before replacing local beta data.
+5. Confirm chores, photos, helper tasks, fines, bonuses, and settings restore.
+6. Check the local beta data summary counts and last export/import/reset timestamps.
 
 ## Known Prototype Limits
 
@@ -93,6 +109,7 @@ Use the in-app Beta Feedback Log or a shared note to record:
 - Missing chores
 - Chores with wrong difficulty
 - Chores that take longer than estimated
+- Schedule, notice timing, or approved-for fit surprises
 - Confusing wording
 - Any fine or bonus disagreement
 - Whether the 30-day forecast feels fair

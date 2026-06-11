@@ -43,7 +43,7 @@ GitHub Actions verifies the static site and deploys `outputs/` to Netlify.
 
 ## Website Beta Testing
 
-Use `outputs/beta-testing-guide.md` for the family beta script. It covers daily child testing, parent noon review, admin chore rotation, bonuses, Vanessa helper workflows, backups, known prototype limits, and production-readiness signals.
+Use `outputs/beta-testing-guide.md` for the family beta script. It covers daily child testing, parent noon review, Brigham-only extension approval, admin chore rotation and fit checks, bonuses, Vanessa helper role and pay workflows, backups, local data restore checks, known prototype limits, and production-readiness signals.
 
 ## Google Login Setup
 

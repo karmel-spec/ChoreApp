@@ -139,7 +139,13 @@ const requiredGuideMarkers = [
   "Teamwork Chores Beta Testing Guide",
   "Daily Child Test",
   "Parent Noon Review Test",
+  "finalized chores lock",
+  "Extension Test",
+  "changes only when Brigham approves",
+  "approved-for fit",
   "Vanessa Helper Test",
+  "Confirm a new week starts a new pay record",
+  "local beta data summary",
   "Beta Feedback Log",
   "Known Prototype Limits",
   "Ready For Production When"
