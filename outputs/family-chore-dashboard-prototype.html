@@ -1615,7 +1615,9 @@
       ]
     };
 
-    let selectedChildId = "thayne";
+    const validChildIds = ["thayne", "brig", "josh", "jojo", "louis", "brielle"];
+    const requestedChildId = new URLSearchParams(window.location.search).get("child");
+    let selectedChildId = validChildIds.includes(requestedChildId) ? requestedChildId : "thayne";
     let activeView = "daily";
     let shuffleOffset = 0;
     let approvedDeadline = "12:00 PM";
@@ -1820,6 +1822,9 @@
         button.addEventListener("click", () => {
           selectedChildId = button.dataset.child;
           approvedDeadline = "12:00 PM";
+          const url = new URL(window.location.href);
+          url.searchParams.set("child", selectedChildId);
+          window.history.replaceState({}, "", url);
           render();
         });
       });

@@ -261,6 +261,81 @@
       font-size: 22px;
     }
 
+    .child-entry {
+      border-top: 1px solid var(--line);
+      padding: 16px;
+      background: #fff;
+    }
+
+    .child-entry-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    .child-entry-head h2 {
+      margin: 0;
+      font-size: 17px;
+    }
+
+    .child-entry-head span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .child-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .child-card {
+      min-height: 118px;
+      padding: 10px 8px;
+      display: grid;
+      justify-items: center;
+      align-content: center;
+      gap: 8px;
+      text-align: center;
+      border-radius: 8px;
+      background: #fbfcff;
+      transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+    }
+
+    .child-card:hover {
+      transform: translateY(-2px);
+      border-color: #bfd2fb;
+      box-shadow: 0 10px 24px rgba(47, 110, 219, .12);
+    }
+
+    .child-photo {
+      width: 58px;
+      height: 58px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-size: 18px;
+      font-weight: 900;
+      overflow: hidden;
+    }
+
+    .child-card small {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .thayne { background: var(--blue); }
+    .brig { background: var(--teal); }
+    .josh { background: #7250c7; }
+    .jojo { background: var(--gold); color: #2d2100; }
+    .louis { background: var(--coral); }
+    .brielle { background: var(--mint); }
+
     @media (max-width: 920px) {
       .home-grid {
         grid-template-columns: 1fr;
@@ -275,6 +350,15 @@
         min-height: 620px;
       }
       .ticker {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .child-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 430px) {
+      .child-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
@@ -301,6 +385,44 @@
             </div>
           </div>
         </div>
+        <section class="child-entry" aria-label="Open a child dashboard">
+          <div class="child-entry-head">
+            <h2>Choose A Dashboard</h2>
+            <span>Tap a child photo</span>
+          </div>
+          <div class="child-grid">
+            <a class="child-card" href="/family-chore-dashboard-prototype.html?child=thayne">
+              <span class="child-photo thayne">TH</span>
+              <strong>Thayne</strong>
+              <small>thoughtful steady care</small>
+            </a>
+            <a class="child-card" href="/family-chore-dashboard-prototype.html?child=brig">
+              <span class="child-photo brig">BJ</span>
+              <strong>Brig Jr.</strong>
+              <small>leadership chores</small>
+            </a>
+            <a class="child-card" href="/family-chore-dashboard-prototype.html?child=josh">
+              <span class="child-photo josh">J</span>
+              <strong>Josh</strong>
+              <small>strong follow-through</small>
+            </a>
+            <a class="child-card" href="/family-chore-dashboard-prototype.html?child=jojo">
+              <span class="child-photo jojo">JJ</span>
+              <strong>JoJo</strong>
+              <small>streak superstar</small>
+            </a>
+            <a class="child-card" href="/family-chore-dashboard-prototype.html?child=louis">
+              <span class="child-photo louis">L</span>
+              <strong>Louis</strong>
+              <small>quest tracker</small>
+            </a>
+            <a class="child-card" href="/family-chore-dashboard-prototype.html?child=brielle">
+              <span class="child-photo brielle">B</span>
+              <strong>Brielle</strong>
+              <small>sparkly wins</small>
+            </a>
+          </div>
+        </section>
       </div>
 
       <div class="side">
