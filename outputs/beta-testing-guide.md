@@ -77,7 +77,7 @@ At least twice per week:
 4. Confirm master chore rows show who added or last changed rotation settings and when, plus any training notes.
 5. Confirm non-admin logins cannot edit the master chore list.
 6. Delete a test chore and confirm it leaves future rotation.
-7. Add or temporarily edit one over-30-minute chore and confirm it does not appear in a child’s rotating assignment unless that child’s fairness target allows it.
+7. Add or temporarily edit one over-30-minute chore and confirm it does not appear in a child’s rotating assignment unless that child’s fairness target is raised high enough to allow that individual chore.
 8. Use Shuffle Preview.
 9. Check the 30-day forecast for one younger child and one older child.
 10. Confirm schedule, notice timing, approved-for fit, and difficulty rules look right.

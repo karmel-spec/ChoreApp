@@ -3989,7 +3989,7 @@
         .filter(chore => fitAllowsChild(chore, child))
         .filter(chore => chore.difficulty <= child.maxDifficulty)
         .filter(chore => child.targetHard || chore.difficulty <= 4)
-        .filter(chore => chore.minutes <= rotatingDailyMinuteCap)
+        .filter(chore => chore.minutes <= dailyTarget)
         .map((chore, index) => ({
           chore,
           tieBreak: seededIndex((dayOffset + 1) * (index + 3) + shuffleOffset + child.name.length, 10000)
