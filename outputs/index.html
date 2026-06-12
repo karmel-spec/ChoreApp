@@ -669,6 +669,10 @@
           renderStoredPhotos();
           document.getElementById("homePhotoStatus").textContent = "Family photo saved from this device.";
         };
+        reader.onerror = () => {
+          document.getElementById("homePhotoStatus").textContent = "The browser could not read that family photo. Try a smaller image or choose a different file.";
+          document.getElementById("familyPhotoFile").value = "";
+        };
         reader.readAsDataURL(file);
         return;
       }
@@ -701,6 +705,10 @@
         reader.onload = event => {
           setChildPhoto(childId, event.target.result);
           document.getElementById("homePhotoStatus").textContent = "Child photo saved from this device.";
+        };
+        reader.onerror = () => {
+          document.getElementById("homePhotoStatus").textContent = "The browser could not read that child photo. Try a smaller image or choose a different file.";
+          document.getElementById("homeChildPhotoFile").value = "";
         };
         reader.readAsDataURL(file);
         return;

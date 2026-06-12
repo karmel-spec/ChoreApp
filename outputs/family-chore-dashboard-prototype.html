@@ -2800,6 +2800,9 @@
           document.getElementById("backupFileSummary").textContent = `Selected backup: ${file.name}. ${error.message}`;
         }
       };
+      reader.onerror = () => {
+        document.getElementById("backupFileSummary").textContent = `Selected backup: ${file.name}. The browser could not read this file.`;
+      };
       reader.readAsText(file);
     }
 
@@ -2827,6 +2830,9 @@
           document.getElementById("betaDataStatus").textContent = error.message;
           updateBackupFileSummary();
         }
+      };
+      reader.onerror = () => {
+        document.getElementById("betaDataStatus").textContent = "The browser could not read that backup file. Try exporting a fresh backup and importing again.";
       };
       reader.readAsText(file);
     }
@@ -3355,6 +3361,10 @@
             });
             render();
             document.getElementById("reviewStatus").textContent = `${child.name}'s photo proof for ${chore.name} was saved and marked ready for ${familySettings.reviewRecipient}'s physical inspection.`;
+          };
+          reader.onerror = () => {
+            document.getElementById("reviewStatus").textContent = "The browser could not read that proof photo. Try a smaller image or take a new photo.";
+            input.value = "";
           };
           reader.readAsDataURL(file);
         });
@@ -4338,6 +4348,10 @@
           saveStoredChildPhoto(child.id, child.profileImage);
           render();
           document.getElementById("profileStatus").textContent = `${child.name}'s profile photo was updated from a local file.`;
+        };
+        reader.onerror = () => {
+          document.getElementById("profileStatus").textContent = "The browser could not read that profile photo. Try a smaller image or choose a different file.";
+          document.getElementById("profilePhotoFile").value = "";
         };
         reader.readAsDataURL(file);
         return;

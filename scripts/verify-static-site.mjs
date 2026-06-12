@@ -181,6 +181,8 @@ const requiredMarkers = [
   "imageFileError",
   "Use an image under 2 MB so beta backups stay reliable",
   "Choose an image file",
+  "The browser could not read that proof photo",
+  "The browser could not read that profile photo",
   "Use valid bonus amounts like 5, 10.50, or 100",
   "Use a valid fine amount like 2, 5, or 7.50",
   "Use a valid hourly rate like 17 or 17.50",
@@ -217,6 +219,8 @@ const requiredMarkers = [
   "backupSummary",
   "Reading backup details",
   "Exported ${shortDateTime(backup.exportedAt)} by",
+  "The browser could not read this file",
+  "The browser could not read that backup file",
   "validateBetaBackup",
   "familyPhotoStoreKey",
   "getStoredFamilyPhoto",
@@ -340,6 +344,7 @@ const requiredGuideMarkers = [
   "the family photo, child photos, and Gmail links are cleared",
   "export status lists who exported it and the backup contents summary",
   "preview shows exported date, exported by, and key counts before importing",
+  "backup file cannot be read",
   "family photo, child photos, Gmail links",
   "Vanessa Helper Test",
   "invalid bonus amount and one invalid fine amount",
@@ -458,7 +463,9 @@ const requiredHomeMarkers = [
   "Only Brigham or Karmel can edit family photos",
   "Only Brigham or Karmel can edit child photos",
   "imageFileError",
-  "Use an image under 2 MB so beta backups stay reliable"
+  "Use an image under 2 MB so beta backups stay reliable",
+  "The browser could not read that family photo",
+  "The browser could not read that child photo"
 ];
 
 for (const marker of requiredHomeMarkers) {

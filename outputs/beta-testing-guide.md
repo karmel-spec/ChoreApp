@@ -15,7 +15,8 @@ Use this guide for the first 2-4 weeks of website beta testing before moving tow
 5. Save Family Rule Settings once and confirm the panel shows who saved the rules and when.
 6. Add or adjust child profile photos as Brigham or Karmel, including confirming the home page photo tools stay locked for non-admin sessions.
 7. Try a non-image or oversized photo and confirm the app asks for an image under 2 MB.
-8. Export a backup before making major changes.
+8. If a photo file fails to read, confirm the app shows a clear try-again message instead of hanging.
+9. Export a backup before making major changes.
 
 ## Daily Child Test
 
@@ -117,12 +118,13 @@ Once per week:
 2. Confirm the export status lists who exported it and the backup contents summary.
 3. Save the file privately.
 4. Select the backup file and confirm the preview shows exported date, exported by, and key counts before importing.
-5. Import the backup in another browser or device.
-6. Confirm the import warning appears before replacing local beta data.
-7. Confirm chores, the family photo, child photos, helper tasks, fines, bonuses, and settings restore.
-8. Reset test data only after exporting a backup, and confirm the family photo, child photos, and Gmail links are cleared with the rest of the local beta data.
-9. Check the local beta data summary counts for chore records, finalized reviews, extensions, extension audit events, review reminder cues, helper pay weeks, ingredient requests, family photo, child photos, Gmail links, and last export/import/reset timestamps.
-10. After a new GitHub/Netlify publish, reload the installed web app and confirm the latest dashboard changes appear while offline fallback still opens when the network is unavailable.
+5. If a backup file cannot be read, confirm the app shows a clear try-again message.
+6. Import the backup in another browser or device.
+7. Confirm the import warning appears before replacing local beta data.
+8. Confirm chores, the family photo, child photos, helper tasks, fines, bonuses, and settings restore.
+9. Reset test data only after exporting a backup, and confirm the family photo, child photos, and Gmail links are cleared with the rest of the local beta data.
+10. Check the local beta data summary counts for chore records, finalized reviews, extensions, extension audit events, review reminder cues, helper pay weeks, ingredient requests, family photo, child photos, Gmail links, and last export/import/reset timestamps.
+11. After a new GitHub/Netlify publish, reload the installed web app and confirm the latest dashboard changes appear while offline fallback still opens when the network is unavailable.
 
 ## Known Prototype Limits
 
