@@ -1300,7 +1300,7 @@
 
     .chore-table {
       width: 100%;
-      min-width: 720px;
+      min-width: 1120px;
       border-collapse: collapse;
       font-size: 12px;
       background: #fff;
@@ -1344,6 +1344,23 @@
       font-size: 11px;
       font-weight: 700;
       margin-top: 4px;
+    }
+
+    .chore-edit-input,
+    .chore-edit-select,
+    .chore-edit-notes {
+      min-height: 34px;
+      padding: 7px;
+      font-size: 12px;
+    }
+
+    .chore-edit-input.small {
+      width: 62px;
+    }
+
+    .chore-edit-notes {
+      min-width: 210px;
+      min-height: 54px;
     }
 
     .difficulty {
@@ -1959,6 +1976,7 @@
                     <th>Notice</th>
                     <th>Training</th>
                     <th>Rotation</th>
+                    <th>Save</th>
                     <th>Delete</th>
                   </tr>
                 </thead>
@@ -5527,19 +5545,30 @@
       return `${created}${updated}`;
     }
 
+    function choreOptionTags(options, selectedValue) {
+      return options.map(option => `<option${option === selectedValue ? " selected" : ""}>${escapeHtml(option)}</option>`).join("");
+    }
+
     function renderChoreTable() {
       const activeCount = choreLibrary.filter(chore => chore.active !== false).length;
       document.getElementById("choreCountLabel").textContent = `${activeCount} on / ${choreLibrary.length} saved`;
       document.getElementById("choreTable").innerHTML = choreLibrary.map((chore, index) => `
         <tr class="${chore.active === false ? "inactive" : ""}">
-          <td>${escapeHtml(chore.name)}<span class="chore-audit">${escapeHtml(choreAuditDetail(chore))}</span></td>
-          <td>${chore.minutes}</td>
-          <td><span class="difficulty">${chore.difficulty}</span></td>
-          <td>${escapeHtml(chore.frequency || "Daily")}</td>
-          <td>${escapeHtml(chore.fit)}</td>
-          <td>${escapeHtml(noticeLabel(chore))}</td>
-          <td>${escapeHtml(chore.trainingNotes || "No notes yet")}</td>
+          <td>
+            <input class="chore-edit-input" value="${escapeHtml(chore.name)}" data-edit-chore-name="${index}" ${isAdmin() ? "" : "disabled"}>
+            <span class="chore-audit">${escapeHtml(choreAuditDetail(chore))}</span>
+          </td>
+          <td><input class="chore-edit-input small" value="${chore.minutes}" inputmode="numeric" data-edit-chore-minutes="${index}" ${isAdmin() ? "" : "disabled"}></td>
+          <td><input class="chore-edit-input small" value="${chore.difficulty}" inputmode="numeric" data-edit-chore-difficulty="${index}" ${isAdmin() ? "" : "disabled"}></td>
+          <td><select class="chore-edit-select" data-edit-chore-frequency="${index}" ${isAdmin() ? "" : "disabled"}>${choreOptionTags(allowedChoreFrequencies, chore.frequency || "Daily")}</select></td>
+          <td><select class="chore-edit-select" data-edit-chore-fit="${index}" ${isAdmin() ? "" : "disabled"}>${choreOptionTags(allowedChoreFits, chore.fit || "Anyone")}</select></td>
+          <td>
+            <select class="chore-edit-select" data-edit-chore-notice="${index}" ${isAdmin() ? "" : "disabled"}>${choreOptionTags(allowedChoreNotices, chore.notice || "Starts after 24 hours")}</select>
+            <span class="chore-audit">${escapeHtml(noticeLabel(chore))}</span>
+          </td>
+          <td><textarea class="chore-edit-notes" data-edit-chore-training="${index}" ${isAdmin() ? "" : "disabled"}>${escapeHtml(chore.trainingNotes || "")}</textarea></td>
           <td><button class="toggle-btn ${chore.active === false ? "off" : ""}" type="button" data-chore-index="${index}" ${isAdmin() ? "" : "disabled"}>${chore.active === false ? "Off" : "On"}</button></td>
+          <td><button class="primary-btn" type="button" data-save-chore-index="${index}" ${isAdmin() ? "" : "disabled"}>Save</button></td>
           <td><button class="ghost-btn" type="button" data-delete-chore-index="${index}" ${isAdmin() ? "" : "disabled"}>Delete</button></td>
         </tr>
       `).join("");
@@ -5562,6 +5591,65 @@
       document.querySelectorAll("[data-delete-chore-index]").forEach(button => {
         button.addEventListener("click", () => deleteChore(Number(button.dataset.deleteChoreIndex)));
       });
+      document.querySelectorAll("[data-save-chore-index]").forEach(button => {
+        button.addEventListener("click", () => saveChoreEdit(Number(button.dataset.saveChoreIndex)));
+      });
+    }
+
+    function editFieldValue(selector, index) {
+      return document.querySelector(`[${selector}="${index}"]`)?.value || "";
+    }
+
+    function saveChoreEdit(index) {
+      if (!isAdmin()) {
+        document.getElementById("adminStatus").textContent = "Only Brigham or Karmel can edit chores in the master rotation.";
+        return;
+      }
+      const chore = choreLibrary[index];
+      if (!chore) return;
+      const name = editFieldValue("data-edit-chore-name", index).trim().replace(/\s+/g, " ");
+      const minutes = parseWholeNumberValue(editFieldValue("data-edit-chore-minutes", index), 1, 180);
+      const difficulty = parseWholeNumberValue(editFieldValue("data-edit-chore-difficulty", index), 1, 10);
+      const frequency = editFieldValue("data-edit-chore-frequency", index);
+      const fit = editFieldValue("data-edit-chore-fit", index);
+      const notice = editFieldValue("data-edit-chore-notice", index);
+      const trainingNotes = editFieldValue("data-edit-chore-training", index).trim();
+      if (!name) {
+        document.getElementById("adminStatus").textContent = "Chore name cannot be blank.";
+        return;
+      }
+      if (minutes === null) {
+        document.getElementById("adminStatus").textContent = "Use whole minutes from 1 to 180 for chore edits.";
+        return;
+      }
+      if (difficulty === null) {
+        document.getElementById("adminStatus").textContent = "Use a whole difficulty rating from 1 to 10 for chore edits.";
+        return;
+      }
+      if (!allowedChoreFrequencies.includes(frequency) || !allowedChoreFits.includes(fit) || !allowedChoreNotices.includes(notice)) {
+        document.getElementById("adminStatus").textContent = "Choose valid schedule, approved-for, and notice values.";
+        return;
+      }
+      const duplicate = choreLibrary.find((item, duplicateIndex) => duplicateIndex !== index && item.name.trim().toLowerCase() === name.toLowerCase());
+      if (duplicate) {
+        document.getElementById("adminStatus").textContent = `${name} already exists in the master chore list. Keep chore names unique for scheduling and review history.`;
+        return;
+      }
+      Object.assign(chore, {
+        name,
+        minutes,
+        difficulty,
+        frequency,
+        fit,
+        notice,
+        trainingNotes,
+        updatedBy: currentUser?.name || "Admin",
+        updatedAt: new Date().toISOString()
+      });
+      shuffleOffset += 7;
+      persistBetaData();
+      render();
+      document.getElementById("adminStatus").textContent = `${name} updated by ${chore.updatedBy}. Future rotations and fairness previews now use the new settings.`;
     }
 
     function deleteChore(index) {
