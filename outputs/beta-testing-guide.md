@@ -81,10 +81,11 @@ At least twice per week:
 8. Use Shuffle Preview.
 9. Check the 30-day forecast for one younger child and one older child.
 10. Confirm schedule, notice timing, approved-for fit, and difficulty rules look right.
-11. Check 30-Day Fairness, adjust one child’s daily work-minute target, and confirm future assignments respond.
-12. Add a vacation or sick hold and confirm the child is muted in daily, 7-day, and 30-day forecast views with no fine accrual during that hold.
-13. Have a child submit actual minutes/difficulty feedback and confirm it appears in Chore Feedback Approvals for parent accept or deny.
-14. Upload a selfie-style proof photo, confirm generic room-only photos are rejected by the beta prompt, and check that the family feed/points update.
+11. Check 30-Day Fairness, adjust one child’s daily work-minute target for a busy sports season or open summer week, and confirm future assignments respond.
+12. After a few completed chores exist, check the Past 30 Days fairness view and confirm completed rotating minutes compare against each child’s active-day target.
+13. Add a vacation or sick hold and confirm the child is muted in daily, 7-day, and 30-day forecast views with no fine accrual during that hold.
+14. Have a child submit actual minutes/difficulty feedback and confirm it appears in Chore Feedback Approvals for parent accept or deny.
+15. Upload a selfie-style proof photo, confirm generic room-only photos are rejected by the beta prompt, and check that the family feed/points update.
 
 ## Bonus Test
 

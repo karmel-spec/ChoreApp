@@ -732,6 +732,10 @@
       padding: 8px;
     }
 
+    .fairness-target-row {
+      grid-template-columns: minmax(86px, 1fr) auto minmax(96px, 150px) auto;
+    }
+
     .fairness-row strong {
       font-size: 13px;
     }
@@ -1968,7 +1972,10 @@
             <div class="fairness-note" id="fairnessNote">Comparing rotating chore load across the next 30 days.</div>
             <div class="fairness-note" id="fairnessRetroNote">Past 30 days will compare completed chore records after beta data starts flowing.</div>
             <div class="fairness-list" id="fairnessList"></div>
+            <div class="fairness-list" id="fairnessRetroList"></div>
+            <div class="fairness-note">Admins can tune daily work minutes for age, sports seasons, illness, travel, school load, summer break, jobs, or family needs. Availability holds still mute fines and rotating work on unavailable days.</div>
             <div class="fairness-list" id="fairnessTargetList"></div>
+            <div class="admin-status" id="fairnessTargetStatus"></div>
           </div>
         </section>
 
@@ -4561,21 +4568,100 @@
       }).sort((a, b) => b.totalMinutes - a.totalMinutes);
     }
 
+    function choreDetailsForRecord(record) {
+      const child = children.find(item => item.id === record.childId);
+      const routineMatch = child ? getRoutines(child).find(chore => chore.name === record.choreName) : null;
+      const libraryMatch = choreLibrary.find(chore => chore.name === record.choreName);
+      const source = routineMatch || libraryMatch || {};
+      return {
+        minutes: safeStoredNumber(source.minutes, 0),
+        difficulty: safeStoredNumber(source.difficulty, 0)
+      };
+    }
+
+    function isPastThirtyDayRecord(record) {
+      const today = new Date(`${localDateKey()}T00:00:00`);
+      const recordDate = new Date(`${record.date}T00:00:00`);
+      if (Number.isNaN(recordDate.getTime())) return false;
+      const ageInDays = Math.floor((today - recordDate) / 86400000);
+      return ageInDays >= 0 && ageInDays < 30;
+    }
+
+    function targetDaysInPastThirty(child) {
+      return Array.from({ length: 30 }).reduce((count, _, index) => {
+        const offset = -index;
+        return activeHoldFor(child, offset) ? count : count + 1;
+      }, 0);
+    }
+
+    function calculateFairnessRetrospective() {
+      const records = Object.values(getStoredChoreState())
+        .filter(record => record.choreType === "rotating")
+        .filter(record => record.completedAt || record.reviewStatus === "approved")
+        .filter(isPastThirtyDayRecord);
+      return children.map(child => {
+        const childRecords = records.filter(record => record.childId === child.id);
+        const totals = childRecords.reduce((sum, record) => {
+          const details = choreDetailsForRecord(record);
+          sum.totalMinutes += details.minutes;
+          sum.difficultyPoints += details.difficulty;
+          sum.hardest = Math.max(sum.hardest, details.difficulty);
+          return sum;
+        }, { totalMinutes: 0, difficultyPoints: 0, hardest: 0 });
+        const targetDays = targetDaysInPastThirty(child);
+        const targetMinutes = targetDays * getDailyMinuteTarget(child);
+        return {
+          child,
+          completedCount: childRecords.length,
+          targetDays,
+          targetMinutes,
+          averageMinutes: totals.totalMinutes / 30,
+          ...totals
+        };
+      }).sort((a, b) => b.totalMinutes - a.totalMinutes);
+    }
+
+    function workTargetLabel(child) {
+      const target = getDailyMinuteTarget(child);
+      if (target <= 15) return "busy-season lighter load";
+      if (target >= 45) return "expanded open-season load";
+      if (child.age <= 12 && target <= 25) return "younger-kid lighter load";
+      if (child.age >= 16 && target >= 35) return "older-kid higher load";
+      return "standard load";
+    }
+
     function renderFairnessSummary() {
       const summary = calculateFairnessSummary();
+      const retrospective = calculateFairnessRetrospective();
       const totals = summary.map(item => item.totalMinutes);
       const spread = Math.max(...totals) - Math.min(...totals);
       const heaviest = summary[0];
       const lightest = summary[summary.length - 1];
+      const retroTotals = retrospective.map(item => item.totalMinutes);
+      const retroSpread = Math.max(...retroTotals) - Math.min(...retroTotals);
+      const retroHeaviest = retrospective[0];
+      const retroLightest = retrospective[retrospective.length - 1];
+      const retroCompleted = retrospective.reduce((sum, item) => sum + item.completedCount, 0);
       document.getElementById("fairnessNote").textContent = spread <= 90
         ? `Next 30 days look balanced: ${heaviest.child.name} has ${spread} more rotating minutes than ${lightest.child.name}.`
         : `Watch workload balance: ${heaviest.child.name} has ${spread} more rotating minutes than ${lightest.child.name} over the next 30 days.`;
+      document.getElementById("fairnessRetroNote").textContent = retroCompleted
+        ? `Past 30 days: ${retroHeaviest.child.name} has ${retroSpread} more completed rotating minutes than ${retroLightest.child.name}, based on ${retroCompleted} completed chore records.`
+        : "Past 30 days will compare completed rotating chore records after beta data starts flowing.";
       document.getElementById("fairnessList").innerHTML = summary.map(item => `
         <div class="fairness-row">
           <strong>${escapeHtml(item.child.name)}</strong>
           <span class="fairness-stat">${item.totalMinutes} min</span>
           <span class="fairness-stat">${item.averageMinutes.toFixed(1)}/day</span>
           <span class="fairness-stat">D${item.difficultyPoints} · max ${item.hardest}</span>
+        </div>
+      `).join("");
+      document.getElementById("fairnessRetroList").innerHTML = retrospective.map(item => `
+        <div class="fairness-row">
+          <strong>${escapeHtml(item.child.name)}</strong>
+          <span class="fairness-stat">${item.totalMinutes}/${item.targetMinutes} min</span>
+          <span class="fairness-stat">${item.completedCount} done</span>
+          <span class="fairness-stat">D${item.difficultyPoints} · ${item.targetDays} active days</span>
         </div>
       `).join("");
       renderFairnessTargets();
@@ -5287,9 +5373,9 @@
 
     function renderFairnessTargets() {
       document.getElementById("fairnessTargetList").innerHTML = children.map(child => `
-        <div class="fairness-row">
+        <div class="fairness-row fairness-target-row">
           <strong>${escapeHtml(child.name)}</strong>
-          <span class="fairness-stat">target ${getDailyMinuteTarget(child)} min/day</span>
+          <span class="fairness-stat">${escapeHtml(workTargetLabel(child))}</span>
           <input aria-label="${escapeHtml(child.name)} daily target minutes" data-work-target="${child.id}" value="${getDailyMinuteTarget(child)}" inputmode="numeric" ${isAdmin() ? "" : "disabled"}>
           <button class="ghost-btn" type="button" data-save-work-target="${child.id}" ${isAdmin() ? "" : "disabled"}>Save</button>
         </div>
@@ -5303,6 +5389,8 @@
           childWorkTargets[childId] = value;
           persistBetaData();
           render();
+          const child = children.find(item => item.id === childId);
+          document.getElementById("fairnessTargetStatus").textContent = `${child?.name || "Child"} daily rotating work target set to ${value} minutes.`;
         });
       });
     }
