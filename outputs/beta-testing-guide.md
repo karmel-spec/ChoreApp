@@ -101,13 +101,15 @@ Each helper workday:
 Once per week:
 
 1. Export Backup from Beta Data Tools.
-2. Save the file privately.
-3. Import the backup in another browser or device.
-4. Confirm the import warning appears before replacing local beta data.
-5. Confirm chores, the family photo, child photos, helper tasks, fines, bonuses, and settings restore.
-6. Reset test data only after exporting a backup, and confirm the family photo, child photos, and Gmail links are cleared with the rest of the local beta data.
-7. Check the local beta data summary counts for chore records, finalized reviews, extensions, extension audit events, review reminder cues, helper pay weeks, ingredient requests, family photo, child photos, Gmail links, and last export/import/reset timestamps.
-8. After a new GitHub/Netlify publish, reload the installed web app and confirm the latest dashboard changes appear while offline fallback still opens when the network is unavailable.
+2. Confirm the export status lists who exported it and the backup contents summary.
+3. Save the file privately.
+4. Select the backup file and confirm the preview shows exported date, exported by, and key counts before importing.
+5. Import the backup in another browser or device.
+6. Confirm the import warning appears before replacing local beta data.
+7. Confirm chores, the family photo, child photos, helper tasks, fines, bonuses, and settings restore.
+8. Reset test data only after exporting a backup, and confirm the family photo, child photos, and Gmail links are cleared with the rest of the local beta data.
+9. Check the local beta data summary counts for chore records, finalized reviews, extensions, extension audit events, review reminder cues, helper pay weeks, ingredient requests, family photo, child photos, Gmail links, and last export/import/reset timestamps.
+10. After a new GitHub/Netlify publish, reload the installed web app and confirm the latest dashboard changes appear while offline fallback still opens when the network is unavailable.
 
 ## Known Prototype Limits
 

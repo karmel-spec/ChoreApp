@@ -2641,12 +2641,36 @@
         app: "Teamwork Chores",
         version: 1,
         exportedAt: new Date().toISOString(),
+        exportedBy: currentUser?.name || "Admin",
         betaData: getStoredBetaData(),
         choreState: getStoredChoreState(),
         familyPhoto: getStoredFamilyPhoto(),
         childPhotos: getStoredChildPhotos(),
         gmailLinks: getStoredGmailLinks()
       };
+    }
+
+    function backupSummary(backup) {
+      const betaData = backup?.betaData || {};
+      const choreState = backup?.choreState || {};
+      const childPhotos = backup?.childPhotos || {};
+      const gmailLinks = backup?.gmailLinks || {};
+      const activeChores = Array.isArray(betaData.choreLibrary)
+        ? betaData.choreLibrary.filter(chore => chore.active !== false).length
+        : 0;
+      return [
+        `${Object.keys(choreState).length} chore records`,
+        `${activeChores} active chores`,
+        `${Object.keys(betaData.fineAssessments || {}).length} finalized reviews`,
+        `${Object.keys(betaData.extensionDeadlines || {}).length} active extensions`,
+        `${(betaData.extensionAuditLog || []).length} extension audit events`,
+        `${(betaData.reviewReminderLog || []).length} review reminders`,
+        `${(betaData.helperPayRecords || []).length} helper pay weeks`,
+        `${(betaData.ingredientRequests || []).length} ingredient requests`,
+        `${backup?.familyPhoto ? 1 : 0} family photo`,
+        `${Object.keys(childPhotos).length} child photos`,
+        `${Object.keys(gmailLinks).length} Gmail links`
+      ].join(" · ");
     }
 
     function exportBetaData() {
@@ -2664,7 +2688,7 @@
       URL.revokeObjectURL(url);
       saveBetaDataMeta({ lastExportAt: new Date().toISOString() });
       renderBetaDataSummary();
-      document.getElementById("betaDataStatus").textContent = "Backup exported. Keep it private because it can include family photos and chore history.";
+      document.getElementById("betaDataStatus").textContent = `Backup exported by ${backup.exportedBy}. ${backupSummary(backup)}. Keep it private because it can include family photos and chore history.`;
     }
 
     function validateBetaBackup(backup) {
@@ -2706,9 +2730,21 @@
 
     function updateBackupFileSummary() {
       const file = document.getElementById("betaDataFile").files[0];
-      document.getElementById("backupFileSummary").textContent = file
-        ? `Selected backup: ${file.name} (${Math.max(1, Math.round(file.size / 1024))} KB). Import will replace beta data saved in this browser.`
-        : "No backup file selected.";
+      if (!file) {
+        document.getElementById("backupFileSummary").textContent = "No backup file selected.";
+        return;
+      }
+      document.getElementById("backupFileSummary").textContent = `Selected backup: ${file.name} (${Math.max(1, Math.round(file.size / 1024))} KB). Reading backup details...`;
+      const reader = new FileReader();
+      reader.onload = event => {
+        try {
+          const backup = validateBetaBackup(JSON.parse(event.target.result));
+          document.getElementById("backupFileSummary").textContent = `Selected backup: ${file.name} (${Math.max(1, Math.round(file.size / 1024))} KB). Exported ${shortDateTime(backup.exportedAt)} by ${backup.exportedBy || "not recorded"}. ${backupSummary(backup)}. Import will replace beta data saved in this browser.`;
+        } catch (error) {
+          document.getElementById("backupFileSummary").textContent = `Selected backup: ${file.name}. ${error.message}`;
+        }
+      };
+      reader.readAsText(file);
     }
 
     function importBetaData() {
