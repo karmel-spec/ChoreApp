@@ -3324,6 +3324,18 @@
       renderExtensionAuditLog();
     }
 
+    function updateExtensionPetitionState(child) {
+      const textButton = document.getElementById("textExtensionBtn");
+      const extensionStatus = document.getElementById("extensionStatus");
+      if (!textButton || !extensionStatus || !child) return;
+      const canPetition = canManageChildTasks(child);
+      textButton.disabled = !canPetition;
+      textButton.textContent = canPetition ? "Text Extension Request" : "Extension Request Locked";
+      if (!canPetition && !isExtensionApprover()) {
+        extensionStatus.textContent = `Only ${child.name}, Brigham, or Karmel can send ${child.name}'s extension petition.`;
+      }
+    }
+
     function saveFamilySettings() {
       if (!isAdmin()) {
         document.getElementById("familySettingsStatus").textContent = "Only Brigham or Karmel can edit family rule settings.";
@@ -4029,6 +4041,7 @@
         : `${child.name} has ${routineMinutes} minutes of priority chores, then ${rotatingMinutes} minutes of rotating chores.`;
       document.getElementById("deadlineTime").textContent = todayDeadline;
       document.getElementById("rotatingNote").textContent = `Has until ${todayDeadline}`;
+      updateExtensionPetitionState(child);
       document.getElementById("minutesMetric").textContent = `${rotatingMinutes} min`;
       document.getElementById("streakMetric").textContent = `${child.streak} days`;
       document.getElementById("openFineMetric").textContent = `$${child.openFines}`;
@@ -5293,6 +5306,11 @@
 
     document.getElementById("textExtensionBtn").addEventListener("click", () => {
       const child = children.find(item => item.id === selectedChildId);
+      if (!canManageChildTasks(child)) {
+        document.getElementById("extensionStatus").textContent = `Only ${child.name}, Brigham, or Karmel can send ${child.name}'s extension petition.`;
+        updateExtensionPetitionState(child);
+        return;
+      }
       const message = extensionPetitionMessage(child);
       const smsNumber = extensionContactSmsNumber();
       const requestedTime = normalizeClockTime(document.getElementById("newTime").value) || familySettings.defaultDeadline;

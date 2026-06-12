@@ -60,11 +60,12 @@ Each day, Brigham or Karmel should test:
 Once during beta:
 
 1. Sign in as a child and confirm Text Extension Request opens a text draft to Brigham at 801-830-0011.
-2. Sign in as Karmel and confirm extension approval is locked.
-3. Sign in as Brigham and approve or deny an extension.
-4. Try an invalid extension time and confirm Brigham cannot save it until the time is valid.
-5. Confirm the Extension Petition panel logs the request and Brigham's approval or denial.
-6. Confirm the selected child’s rotating chore deadline changes only when Brigham approves.
+2. Sign in as Vanessa and confirm Extension Request Locked prevents sending a child’s extension petition.
+3. Sign in as Karmel and confirm extension approval is locked, while parent petition sending still works.
+4. Sign in as Brigham and approve or deny an extension.
+5. Try an invalid extension time and confirm Brigham cannot save it until the time is valid.
+6. Confirm the Extension Petition panel logs the request and Brigham's approval or denial.
+7. Confirm the selected child’s rotating chore deadline changes only when Brigham approves.
 
 ## Admin Rotation Test
 
