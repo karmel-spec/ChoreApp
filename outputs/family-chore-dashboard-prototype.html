@@ -3490,6 +3490,7 @@
       document.getElementById("betaDataFile").value = "";
       updateBackupFileSummary();
       saveBetaDataMeta({ lastResetAt: new Date().toISOString() });
+      sessionStorage.setItem(betaDataPendingStatusKey, "Local beta data reset complete. The dashboard reloaded to a clean testing state.");
       window.location.reload();
     }
 
