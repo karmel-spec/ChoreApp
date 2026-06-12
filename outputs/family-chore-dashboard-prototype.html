@@ -1707,6 +1707,7 @@
                   </select>
                 </div>
               </div>
+              <button class="ghost-btn" type="button" id="textExtensionBtn">Text Extension Request</button>
               <button class="primary-btn" type="button" id="approveBtn">Grant Approved Extension</button>
               <div class="admin-status" id="extensionStatus"></div>
             </div>
@@ -2469,6 +2470,17 @@
 
     function noonReviewMessage(child) {
       return `${familySettings.reviewReminderTime} reminder: please physically inspect ${child.name}'s chores before fines are finalized.`;
+    }
+
+    function extensionContactSmsNumber() {
+      const digits = String(familySettings.extensionContact || "").replace(/\D/g, "");
+      return digits.length === 10 ? digits : "";
+    }
+
+    function extensionPetitionMessage(child) {
+      const requestedTime = document.getElementById("newTime").value.trim() || familySettings.defaultDeadline;
+      const reason = document.getElementById("reason").value.trim() || "I need more time to finish my chores.";
+      return `${child.name} requests a chore deadline extension until ${requestedTime}. Reason: ${reason}`;
     }
 
     function hydrateBetaData() {
@@ -4236,6 +4248,16 @@
     document.getElementById("shuffleBtn").addEventListener("click", () => {
       shuffleOffset += 7;
       render();
+    });
+
+    document.getElementById("textExtensionBtn").addEventListener("click", () => {
+      const child = children.find(item => item.id === selectedChildId);
+      const message = extensionPetitionMessage(child);
+      const smsNumber = extensionContactSmsNumber();
+      document.getElementById("extensionStatus").textContent = `Extension request ready for ${familySettings.extensionApprover} at ${familySettings.extensionContact}: ${message}`;
+      if (smsNumber) {
+        window.location.href = `sms:${smsNumber}?&body=${encodeURIComponent(message)}`;
+      }
     });
 
     document.getElementById("approveBtn").addEventListener("click", () => {
