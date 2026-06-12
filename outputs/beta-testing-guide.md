@@ -83,7 +83,7 @@ Once per week:
 Each helper workday:
 
 1. Save arrival and exit time.
-2. Confirm weekly hours and paycheck update.
+2. Confirm weekly hours, paycheck, and the shift entry audit update.
 3. Confirm a new week starts a new pay record.
 4. Sign in as Vanessa and confirm she can save time, reorder priorities, and request ingredients.
 5. Confirm Vanessa cannot edit her hourly rate.

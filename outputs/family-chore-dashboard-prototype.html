@@ -4218,9 +4218,10 @@
       const week = currentWeekLabel();
       let record = helperPayRecords.find(item => item.week === week);
       if (!record) {
-        record = { week, hours: 0, rate: helperRate, paid: false };
+        record = { week, hours: 0, rate: helperRate, paid: false, shifts: [] };
         helperPayRecords.push(record);
       }
+      record.shifts = record.shifts || [];
       helperWeeklyHours = Number(record.hours) || 0;
       helperRate = Number(record.rate) || helperRate || 17;
       return record;
@@ -4244,6 +4245,7 @@
           <div>
             <strong>${escapeHtml(record.week)}</strong>
             <span>${record.hours.toFixed(2)} hours x $${record.rate.toFixed(2)}/hr = $${(record.hours * record.rate).toFixed(2)}</span>
+            ${(record.shifts || []).slice(-3).reverse().map(shift => `<span>${escapeHtml(shift.date)} · ${escapeHtml(shift.arrival)}-${escapeHtml(shift.exit)} · ${Number(shift.hours || 0).toFixed(2)} hours · saved by ${escapeHtml(shift.savedBy || "Vanessa")}</span>`).join("")}
           </div>
           <div class="${record.paid ? "paid" : "unpaid"}">${record.paid ? "Paid" : "Due"}</div>
         </div>
@@ -4267,6 +4269,15 @@
       currentRecord.hours = helperWeeklyHours;
       currentRecord.rate = rate;
       currentRecord.paid = false;
+      currentRecord.shifts = currentRecord.shifts || [];
+      currentRecord.shifts.push({
+        date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+        arrival: document.getElementById("helperArrival").value.trim(),
+        exit: document.getElementById("helperExit").value.trim(),
+        hours,
+        savedBy: currentUser?.name || "Vanessa",
+        savedAt: new Date().toISOString()
+      });
       persistBetaData();
       document.getElementById("timeCardStatus").textContent = `Saved ${hours.toFixed(2)} hours for Vanessa today.`;
       renderHelperPay();
