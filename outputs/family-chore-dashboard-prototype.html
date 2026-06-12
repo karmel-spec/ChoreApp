@@ -2856,7 +2856,7 @@
       if (Array.isArray(data.choreLibrary)) {
         choreLibrary.splice(0, choreLibrary.length, ...data.choreLibrary.map(normalizeChoreRecord));
       }
-      if (Array.isArray(data.helperPayRecords)) helperPayRecords = data.helperPayRecords;
+      if (Array.isArray(data.helperPayRecords)) helperPayRecords = data.helperPayRecords.map(normalizeHelperPayRecord).slice(0, 80);
       if (data.helperBoardTasks) helperBoardTasks = normalizeHelperBoardTasks(data.helperBoardTasks);
       if (Array.isArray(data.ingredientRequests)) ingredientRequests = data.ingredientRequests.map(normalizeIngredientRequest);
       if (data.familySettings) familySettings = { ...familySettings, ...data.familySettings };
@@ -2866,8 +2866,8 @@
       if (Array.isArray(data.extensionAuditLog)) extensionAuditLog = data.extensionAuditLog.map(normalizeExtensionAuditRecord).slice(0, 80);
       if (Array.isArray(data.reviewReminderLog)) reviewReminderLog = data.reviewReminderLog.map(normalizeReviewReminderRecord).slice(0, 60);
       if (Array.isArray(data.betaFeedback)) betaFeedback = data.betaFeedback.map(normalizeFeedbackRecord).slice(0, 120);
-      if (Number.isFinite(Number(data.helperWeeklyHours))) helperWeeklyHours = Number(data.helperWeeklyHours);
-      if (Number.isFinite(Number(data.helperRate))) helperRate = Number(data.helperRate);
+      if (Number.isFinite(Number(data.helperWeeklyHours))) helperWeeklyHours = Math.max(0, Number(data.helperWeeklyHours));
+      if (Number.isFinite(Number(data.helperRate))) helperRate = Math.max(0, Number(data.helperRate));
       if (Number.isFinite(Number(data.shuffleOffset))) shuffleOffset = Number(data.shuffleOffset);
     }
 
@@ -4828,18 +4828,26 @@
     }
 
     function normalizeHelperPayRecord(record) {
-      const safeRate = Number.isFinite(Number(record?.rate)) ? Number(record.rate) : helperRate || 17;
-      const safeHours = Number.isFinite(Number(record?.hours)) ? Number(record.hours) : 0;
+      const recordData = record && typeof record === "object" ? record : {};
+      const safeRate = Number.isFinite(Number(recordData.rate)) ? Number(recordData.rate) : helperRate || 17;
+      const safeHours = Number.isFinite(Number(recordData.hours)) ? Number(recordData.hours) : 0;
       return {
-        ...record,
-        week: record?.week || currentWeekLabel(),
+        ...recordData,
+        week: String(recordData.week || currentWeekLabel()).trim() || currentWeekLabel(),
         hours: Math.max(0, safeHours),
         rate: Math.max(0, safeRate),
-        paid: Boolean(record?.paid),
-        shifts: Array.isArray(record?.shifts)
-          ? record.shifts.map(shift => ({
-            ...shift,
-            hours: Number.isFinite(Number(shift?.hours)) ? Math.max(0, Number(shift.hours)) : 0
+        paid: Boolean(recordData.paid),
+        paidBy: recordData.paid ? String(recordData.paidBy || "Admin").trim() || "Admin" : "",
+        paidAt: recordData.paid ? normalizeOptionalTimestamp(recordData.paidAt) : "",
+        shifts: Array.isArray(recordData.shifts)
+          ? recordData.shifts.map((shift, index) => ({
+            ...(shift && typeof shift === "object" ? shift : {}),
+            date: String(shift?.date || `Imported shift ${index + 1}`).trim() || `Imported shift ${index + 1}`,
+            arrival: String(shift?.arrival || "Not recorded").trim() || "Not recorded",
+            exit: String(shift?.exit || "Not recorded").trim() || "Not recorded",
+            hours: Number.isFinite(Number(shift?.hours)) ? Math.max(0, Number(shift.hours)) : 0,
+            savedBy: String(shift?.savedBy || "Vanessa").trim() || "Vanessa",
+            savedAt: normalizeOptionalTimestamp(shift?.savedAt)
           }))
           : []
       };
