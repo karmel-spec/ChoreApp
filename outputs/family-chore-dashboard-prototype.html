@@ -3007,18 +3007,41 @@
       return `$${Number(amount.toFixed(2)).toString()}`;
     }
 
+    function cleanAuditText(value, fallback = "") {
+      return String(value || fallback).trim().replace(/\s+/g, " ");
+    }
+
     function normalizeLedgerRecord(record, index = 0, kind = "fine") {
       const recordData = record && typeof record === "object" ? record : {};
       const rawTitle = String(recordData.title || (typeof record === "string" ? record : "")).trim().replace(/\s+/g, " ");
       const rawDate = String(recordData.date || "").trim().replace(/\s+/g, " ");
       const defaultTitle = kind === "bonus" ? `Imported bonus ${index + 1}` : `Imported fine ${index + 1}`;
-      return {
+      const paid = Boolean(recordData.paid);
+      const normalized = {
         ...recordData,
         title: rawTitle || defaultTitle,
         date: rawDate || "Date not recorded",
         amount: normalizedLedgerAmount(recordData.amount),
-        paid: Boolean(recordData.paid)
+        paid,
+        paidBy: paid ? cleanAuditText(recordData.paidBy, "Admin") : "",
+        paidAt: paid ? normalizeOptionalTimestamp(recordData.paidAt) : ""
       };
+      if (kind === "fine") {
+        normalized.chargedBy = cleanAuditText(recordData.chargedBy);
+        normalized.chargedAt = normalizeOptionalTimestamp(recordData.chargedAt);
+        normalized.deadline = normalizeClockTime(recordData.deadline) || cleanAuditText(recordData.deadline);
+        normalized.dateKey = normalizeDateKey(recordData.dateKey, "") || "";
+      }
+      if (kind === "bonus") {
+        normalized.awardedBy = cleanAuditText(recordData.awardedBy, paid ? normalized.paidBy : "");
+        normalized.awardedAt = normalizeOptionalTimestamp(recordData.awardedAt || recordData.paidAt);
+        normalized.period = cleanAuditText(recordData.period);
+        normalized.type = cleanAuditText(recordData.type);
+        normalized.days = recordData.days === undefined ? undefined : Math.round(safeStoredNumber(recordData.days, 0));
+        normalized.rank = recordData.rank === undefined ? undefined : Math.round(safeStoredNumber(recordData.rank, 0));
+        normalized.points = recordData.points === undefined ? undefined : Math.round(safeStoredNumber(recordData.points, 0));
+      }
+      return normalized;
     }
 
     function normalizeChildLedgerSet(recordsByChild, kind = "fine") {
