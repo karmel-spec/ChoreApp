@@ -2714,6 +2714,93 @@
       };
     }
 
+    function normalizeDateKey(value, fallback = localDateKey()) {
+      const text = String(value || "").trim();
+      return /^\d{4}-\d{2}-\d{2}$/.test(text) ? text : fallback;
+    }
+
+    function normalizeTimestamp(value) {
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
+    }
+
+    function normalizeChildId(value, fallback = selectedChildId) {
+      return validChildIds.includes(value) ? value : fallback;
+    }
+
+    function normalizeExtensionDeadlines(savedDeadlines) {
+      return Object.entries(savedDeadlines || {}).reduce((normalized, [key, deadline]) => {
+        const [date, childId] = String(key).split("|");
+        const cleanChildId = normalizeChildId(childId, "");
+        const cleanDeadline = normalizeClockTime(deadline);
+        if (!cleanChildId || !cleanDeadline || cleanDeadline === familySettings.defaultDeadline) return normalized;
+        normalized[`${normalizeDateKey(date)}|${cleanChildId}`] = cleanDeadline;
+        return normalized;
+      }, {});
+    }
+
+    function normalizeFineAssessments(savedAssessments) {
+      return Object.entries(savedAssessments || {}).reduce((normalized, [key, assessment]) => {
+        if (!assessment || typeof assessment !== "object") return normalized;
+        const [keyDate, keyChildId] = String(key).split("|");
+        const childId = normalizeChildId(assessment.childId || keyChildId, "");
+        if (!childId) return normalized;
+        const date = normalizeDateKey(assessment.date || keyDate);
+        normalized[`${date}|${childId}`] = {
+          ...assessment,
+          childId,
+          date,
+          deadline: normalizeClockTime(assessment.deadline) || familySettings.defaultDeadline,
+          missed: Array.isArray(assessment.missed) ? assessment.missed.map(item => String(item || "").trim()).filter(Boolean) : [],
+          charged: safeStoredNumber(assessment.charged, 0),
+          streakCredited: Boolean(assessment.streakCredited),
+          finalizedBy: String(assessment.finalizedBy || "Admin").trim() || "Admin",
+          finalizedAt: normalizeTimestamp(assessment.finalizedAt)
+        };
+        return normalized;
+      }, {});
+    }
+
+    function normalizeExtensionAuditRecord(record, index = 0) {
+      const recordData = record && typeof record === "object" ? record : {};
+      const childId = normalizeChildId(recordData.childId, selectedChildId);
+      const child = children.find(item => item.id === childId) || children[0];
+      const action = ["requested", "approved", "denied"].includes(recordData.action) ? recordData.action : "requested";
+      return {
+        ...recordData,
+        id: recordData.id || `imported-extension-${index + 1}`,
+        date: normalizeDateKey(recordData.date),
+        childId,
+        childName: String(recordData.childName || child.name).trim() || child.name,
+        action,
+        deadline: normalizeClockTime(recordData.deadline) || familySettings.defaultDeadline,
+        requestedBy: String(recordData.requestedBy || child.name).trim() || child.name,
+        approver: String(recordData.approver || familySettings.extensionApprover).trim() || familySettings.extensionApprover,
+        contact: recordData.contact || familySettings.extensionContact,
+        recordedAt: normalizeTimestamp(recordData.recordedAt),
+        message: String(recordData.message || "").trim()
+      };
+    }
+
+    function normalizeReviewReminderRecord(record, index = 0) {
+      const recordData = record && typeof record === "object" ? record : {};
+      const childId = normalizeChildId(recordData.childId, selectedChildId);
+      const child = children.find(item => item.id === childId) || children[0];
+      return {
+        ...recordData,
+        id: recordData.id || `imported-review-reminder-${index + 1}`,
+        date: normalizeDateKey(recordData.date),
+        childId,
+        childName: String(recordData.childName || child.name).trim() || child.name,
+        recipient: String(recordData.recipient || familySettings.reviewRecipient).trim() || familySettings.reviewRecipient,
+        contact: tenDigitPhone(recordData.contact) || familySettings.reviewContact,
+        reminderTime: normalizeClockTime(recordData.reminderTime) || familySettings.reviewReminderTime,
+        sentBy: String(recordData.sentBy || "Family").trim() || "Family",
+        sentAt: normalizeTimestamp(recordData.sentAt),
+        message: String(recordData.message || "").trim()
+      };
+    }
+
     function hydrateBetaData() {
       const data = getStoredBetaData();
       if (data.childSettings) {
@@ -2742,12 +2829,12 @@
       if (Array.isArray(data.helperPayRecords)) helperPayRecords = data.helperPayRecords;
       if (data.helperBoardTasks) helperBoardTasks = normalizeHelperBoardTasks(data.helperBoardTasks);
       if (Array.isArray(data.ingredientRequests)) ingredientRequests = data.ingredientRequests.map(normalizeIngredientRequest);
-      if (data.fineAssessments) fineAssessments = data.fineAssessments;
-      if (data.extensionDeadlines) extensionDeadlines = data.extensionDeadlines;
-      if (Array.isArray(data.extensionAuditLog)) extensionAuditLog = data.extensionAuditLog;
-      if (Array.isArray(data.reviewReminderLog)) reviewReminderLog = data.reviewReminderLog;
       if (data.familySettings) familySettings = { ...familySettings, ...data.familySettings };
       normalizeFamilyReviewContact();
+      if (data.fineAssessments) fineAssessments = normalizeFineAssessments(data.fineAssessments);
+      if (data.extensionDeadlines) extensionDeadlines = normalizeExtensionDeadlines(data.extensionDeadlines);
+      if (Array.isArray(data.extensionAuditLog)) extensionAuditLog = data.extensionAuditLog.map(normalizeExtensionAuditRecord).slice(0, 80);
+      if (Array.isArray(data.reviewReminderLog)) reviewReminderLog = data.reviewReminderLog.map(normalizeReviewReminderRecord).slice(0, 60);
       if (Array.isArray(data.betaFeedback)) betaFeedback = data.betaFeedback;
       if (Number.isFinite(Number(data.helperWeeklyHours))) helperWeeklyHours = Number(data.helperWeeklyHours);
       if (Number.isFinite(Number(data.helperRate))) helperRate = Number(data.helperRate);
