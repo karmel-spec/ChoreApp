@@ -2378,6 +2378,7 @@
     const betaDataMetaStoreKey = "teamworkChoresBetaDataMeta";
     const defaultReviewRecipient = "Karmel";
     const defaultReviewContact = "801-427-9293";
+    const rotatingDailyMinuteCap = 30;
     const accounts = [
       { id: "karmel", name: "Karmel", initials: "K", role: "admin", label: "Mom admin", gmail: "" },
       { id: "brigham", name: "Brigham", initials: "BR", role: "admin", label: "Dad admin", gmail: "" },
@@ -3327,6 +3328,7 @@
         .filter(chore => fitAllowsChild(chore, child))
         .filter(chore => chore.difficulty <= child.maxDifficulty)
         .filter(chore => child.targetHard || chore.difficulty <= 4)
+        .filter(chore => chore.minutes <= rotatingDailyMinuteCap)
         .map((chore, index) => ({
           chore,
           tieBreak: seededIndex((dayOffset + 1) * (index + 3) + shuffleOffset + child.name.length, 10000)
@@ -3344,12 +3346,12 @@
       const selected = [];
       let total = 0;
       eligible.forEach(chore => {
-        if (total < 22 && total + chore.minutes <= 30) {
+        if (total < 22 && total + chore.minutes <= rotatingDailyMinuteCap) {
           selected.push(chore);
           total += chore.minutes;
         }
       });
-      return selected.length ? selected : [eligible[0]];
+      return selected;
     }
 
     function formatDate(offset) {
@@ -3648,7 +3650,7 @@
           </div>
         </div>
       `;
-      }).join("") : `<div class="notice-card warn">No eligible rotating chores are active for ${escapeHtml(child.name)}. Turn on chores in the master list or adjust difficulty approvals.</div>`;
+      }).join("") : `<div class="notice-card warn">No eligible rotating chores under ${rotatingDailyMinuteCap} minutes are active for ${escapeHtml(child.name)}. Turn on chores in the master list, lower an estimated time, or adjust difficulty approvals.</div>`;
 
       renderReviewList(child, routines, rotating);
       attachCompletionHandlers(child);
