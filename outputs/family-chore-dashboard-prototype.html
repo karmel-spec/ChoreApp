@@ -3738,6 +3738,25 @@
       });
     }
 
+    function missedReviewDetail(child) {
+      const groups = {
+        notStarted: [],
+        waiting: [],
+        redo: []
+      };
+      getMissedRotatingChores(child).forEach(chore => {
+        const record = getChoreRecord(child, chore, "rotating");
+        if (record.reviewStatus === "redo") groups.redo.push(chore.name);
+        else if (record.completedAt) groups.waiting.push(chore.name);
+        else groups.notStarted.push(chore.name);
+      });
+      return [
+        groups.notStarted.length ? `not marked complete: ${groups.notStarted.join(", ")}` : "",
+        groups.waiting.length ? `waiting for inspection: ${groups.waiting.join(", ")}` : "",
+        groups.redo.length ? `sent back for redo: ${groups.redo.join(", ")}` : ""
+      ].filter(Boolean).join("; ");
+    }
+
     function allTodayChoresApproved(child) {
       const dailyChores = [
         ...getRoutines(child).map(chore => ({ chore, type: "priority" })),
@@ -3771,6 +3790,7 @@
       }
 
       const missed = getMissedRotatingChores(child);
+      const missedDetail = missedReviewDetail(child);
       const deadline = approvedDeadlineFor(child);
       const amount = missed.length ? child.fineRate : 0;
       const streakCredited = creditDailyStreakIfEarned(child);
@@ -3794,6 +3814,7 @@
         skipped: false,
         charged: amount,
         missed: missed.map(chore => chore.name),
+        missedDetail,
         deadline,
         streakCredited,
         message: amount > 0
@@ -3812,7 +3833,7 @@
       render();
       document.getElementById("reviewStatus").textContent = result.skipped
         ? result.message
-        : `${result.message} ${result.missed.length ? `Missed: ${result.missed.join(", ")}.` : "No fine charged."} ${result.streakCredited ? `${child.name}'s monthly and overall streaks increased by 1.` : "Streak credit requires every priority and rotating chore to be approved."}`;
+        : `${result.message} ${result.missed.length ? `Fine reason: ${result.missedDetail}.` : "No fine charged."} ${result.streakCredited ? `${child.name}'s monthly and overall streaks increased by 1.` : "Streak credit requires every priority and rotating chore to be approved."}`;
     }
 
     function finalizeAllChildrenReview() {
@@ -3823,11 +3844,12 @@
       const results = children.map(child => finalizeChildReview(child));
       const chargedTotal = results.reduce((sum, result) => sum + result.charged, 0);
       const chargedChildren = results.filter(result => result.charged > 0).map(result => `${result.child.name} $${result.charged}`);
+      const chargedDetails = results.filter(result => result.charged > 0).map(result => `${result.child.name}: ${result.missedDetail}`);
       const streakChildren = results.filter(result => result.streakCredited && !result.skipped).map(result => result.child.name);
       const skippedCount = results.filter(result => result.skipped).length;
       render();
       document.getElementById("reviewStatus").textContent = chargedChildren.length
-        ? `Noon review finalized. Charged ${chargedChildren.join(", ")}. Total $${chargedTotal}. ${streakChildren.length ? `Streaks credited: ${streakChildren.join(", ")}.` : ""} ${skippedCount ? `${skippedCount} already finalized.` : ""}`
+        ? `Noon review finalized. Charged ${chargedChildren.join(", ")}. Total $${chargedTotal}. Reasons: ${chargedDetails.join(" | ")}. ${streakChildren.length ? `Streaks credited: ${streakChildren.join(", ")}.` : ""} ${skippedCount ? `${skippedCount} already finalized.` : ""}`
         : `Noon review finalized. No new fines charged. ${streakChildren.length ? `Streaks credited: ${streakChildren.join(", ")}.` : ""} ${skippedCount ? `${skippedCount} already finalized.` : ""}`;
     }
 
