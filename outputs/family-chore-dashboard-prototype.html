@@ -3602,8 +3602,8 @@
     }
 
     function renderReviewReminderLog() {
-      const recent = reviewReminderLog.slice(0, 4);
-      document.getElementById("reviewReminderLog").innerHTML = recent.length ? recent.map(item => `
+      const todaysReminders = reviewReminderLog.filter(item => item.date === localDateKey()).slice(0, 4);
+      document.getElementById("reviewReminderLog").innerHTML = todaysReminders.length ? todaysReminders.map(item => `
         <div class="review-row">
           <div>
             <strong>${escapeHtml(item.childName)} reminder cue</strong>
@@ -3611,7 +3611,7 @@
           </div>
           <span class="status done">Text cue</span>
         </div>
-      `).join("") : `<div class="notice-card">No noon reminder cues logged yet today. Use Send Noon Review Text when it is time for Karmel to inspect chores.</div>`;
+      `).join("") : `<div class="notice-card">No noon reminder cues logged yet today. Older reminder cues stay in the beta backup, but only today’s cues appear here.</div>`;
     }
 
     function logReviewReminder(child, message) {
