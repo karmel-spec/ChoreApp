@@ -210,6 +210,8 @@ const requiredMarkers = [
   "awardMonthlyPointsBonuses",
   "monthlyPointsWinners",
   "monthlyPointsBonusForRank",
+  "data-points-child",
+  "button.dataset.pointsChild",
   "hasMonthlyPointsBonusAward",
   "place monthly points bonus",
   "Monthly points bonuses awarded",

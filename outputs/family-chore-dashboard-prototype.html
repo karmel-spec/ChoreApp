@@ -4331,13 +4331,23 @@
     function renderPointsPodium() {
       const winners = monthlyPointsWinners();
       document.getElementById("pointsPodium").innerHTML = winners.map(({ child, rank, points, amount }) => `
-        <button class="podium-place ${rank === 1 ? "first" : rank === 2 ? "second" : "third"}" type="button" data-child="${child.id}" aria-label="${escapeHtml(child.name)} has ${points} monthly positivity points and a $${amount} rank bonus">
+        <button class="podium-place ${rank === 1 ? "first" : rank === 2 ? "second" : "third"} ${child.id === selectedChildId ? "active" : ""}" type="button" data-points-child="${child.id}" aria-label="Open ${escapeHtml(child.name)}'s dashboard, ${rankLabel(rank)} place with ${points} monthly positivity points and a $${amount} rank bonus">
           <span class="podium-rank">${rankLabel(rank)}</span>
           ${renderChildPhoto(child, "podium-photo")}
           <strong class="podium-name">${escapeHtml(child.name)}</strong>
           <span class="podium-streak">${points} pts · $${amount}</span>
         </button>
       `).join("");
+      document.querySelectorAll("[data-points-child]").forEach(button => {
+        button.addEventListener("click", () => {
+          if (currentUser?.role === "child" && currentUser.childId !== button.dataset.pointsChild) return;
+          selectedChildId = button.dataset.pointsChild;
+          const url = new URL(window.location.href);
+          url.searchParams.set("child", selectedChildId);
+          window.history.replaceState({}, "", url);
+          render();
+        });
+      });
     }
 
     function addFamilyPhotoPost(child, chore, image) {
