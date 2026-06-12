@@ -76,9 +76,10 @@ Once per week:
 2. Edit bonus rules as admin.
 3. Award an eligible bonus.
 4. Confirm separate 5-day, 7-day, 30-day, and super-bonus milestones do not block each other.
-5. Sign in as a child and Vanessa to confirm they cannot edit fine rates, bonus rates, pay rates, or award/charge money.
-6. Confirm the chore account balance changes only once per awarded milestone.
-7. Export a backup after bonus changes.
+5. Confirm bonus rows show who awarded the money and when it was awarded.
+6. Sign in as a child and Vanessa to confirm they cannot edit fine rates, bonus rates, pay rates, or award/charge money.
+7. Confirm the chore account balance changes only once per awarded milestone.
+8. Export a backup after bonus changes.
 
 ## Vanessa Helper Test
 

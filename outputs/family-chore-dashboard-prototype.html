@@ -3743,6 +3743,12 @@
       return `${item.date}${item.deadline ? ` · deadline ${item.deadline}` : ""} · ${chargedBy}${chargedAt ? ` ${chargedAt}` : ""}${payment}`;
     }
 
+    function bonusAuditDetail(item) {
+      const awardedBy = item.awardedBy || "not recorded";
+      const awardedAt = item.awardedAt ? shortDateTime(item.awardedAt) : "not recorded";
+      return `${item.date}${item.period ? ` · ${item.period}` : ""} · awarded by ${awardedBy} at ${awardedAt}${item.paid ? " · credited" : " · pending"}`;
+    }
+
     function renderAccountActivity(child) {
       const fineRows = (ledger[child.id] || []).map((item, index) => ({
         kind: "debit",
@@ -3756,7 +3762,7 @@
         kind: "credit",
         order: index,
         title: item.title,
-        detail: `${item.date}${item.period ? ` · ${item.period}` : ""}${item.paid ? " · credited" : " · pending"}`,
+        detail: bonusAuditDetail(item),
         amount: moneyAmount(item.amount),
         label: item.paid ? "Credit" : "Pending"
       }));
@@ -3819,7 +3825,7 @@
         <div class="ledger-row">
           <div>
             <strong>${escapeHtml(item.title)}</strong>
-            <span>${escapeHtml(item.date)}${item.period ? ` · ${escapeHtml(item.period)}` : ""} · ${escapeHtml(item.amount)}</span>
+            <span>${escapeHtml(bonusAuditDetail(item))} · ${escapeHtml(item.amount)}</span>
           </div>
           <div class="${item.paid ? "paid" : "unpaid"}">${item.paid ? "Paid" : "Pending"}</div>
         </div>
@@ -3934,7 +3940,9 @@
         date: bonus.type === "super" ? "Lifetime" : bonusMonthLabel,
         period: bonus.type === "super" ? "all-time" : bonusPeriod,
         amount: `$${bonus.amount}`,
-        paid: true
+        paid: true,
+        awardedBy: currentUser?.name || "Admin",
+        awardedAt: new Date().toISOString()
       });
       persistBetaData();
       renderDaily(child);
