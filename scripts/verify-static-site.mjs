@@ -95,6 +95,7 @@ const requiredMarkers = [
   "extensionContactSmsNumber",
   "defaultReviewRecipient",
   "safeStoredNumber",
+  "choreDifficulty",
   "normalizeBonusRules",
   "bonusRules = normalizeBonusRules",
   "normalizeChoreRecord",
@@ -449,6 +450,10 @@ for (const marker of requiredMarkers) {
   if (!appHtml.includes(marker)) {
     throw new Error(`Missing expected app marker: ${marker}`);
   }
+}
+
+if (appHtml.includes('placeholder="D${chore.difficulty}"')) {
+  throw new Error("Priority chore difficulty placeholders must use choreDifficulty() so Dundefined cannot render.");
 }
 
 const requiredGuideMarkers = [
