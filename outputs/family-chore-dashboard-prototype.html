@@ -4530,7 +4530,26 @@
       return `${start.toLocaleDateString("en-US", options)}-${end.toLocaleDateString("en-US", options)}`;
     }
 
+    function normalizeHelperPayRecord(record) {
+      const safeRate = Number.isFinite(Number(record?.rate)) ? Number(record.rate) : helperRate || 17;
+      const safeHours = Number.isFinite(Number(record?.hours)) ? Number(record.hours) : 0;
+      return {
+        ...record,
+        week: record?.week || currentWeekLabel(),
+        hours: Math.max(0, safeHours),
+        rate: Math.max(0, safeRate),
+        paid: Boolean(record?.paid),
+        shifts: Array.isArray(record?.shifts)
+          ? record.shifts.map(shift => ({
+            ...shift,
+            hours: Number.isFinite(Number(shift?.hours)) ? Math.max(0, Number(shift.hours)) : 0
+          }))
+          : []
+      };
+    }
+
     function syncCurrentHelperWeek() {
+      helperPayRecords = helperPayRecords.map(normalizeHelperPayRecord);
       const week = currentWeekLabel();
       let record = helperPayRecords.find(item => item.week === week);
       if (!record) {
@@ -4538,8 +4557,8 @@
         helperPayRecords.push(record);
       }
       record.shifts = record.shifts || [];
-      helperWeeklyHours = Number(record.hours) || 0;
-      helperRate = Number(record.rate) || helperRate || 17;
+      helperWeeklyHours = record.hours;
+      helperRate = record.rate || helperRate || 17;
       return record;
     }
 
@@ -4548,13 +4567,14 @@
       const rate = isAdmin()
         ? Number(document.getElementById("helperRate")?.value || currentRecord.rate || helperRate || 17)
         : Number(currentRecord.rate || helperRate || 17);
-      helperRate = rate;
-      currentRecord.rate = rate;
+      const safeRate = Number.isFinite(rate) ? Math.max(0, rate) : currentRecord.rate || helperRate || 17;
+      helperRate = safeRate;
+      currentRecord.rate = safeRate;
       currentRecord.hours = helperWeeklyHours;
-      if (document.getElementById("helperRate")) document.getElementById("helperRate").value = rate;
-      const pay = helperWeeklyHours * rate;
+      if (document.getElementById("helperRate")) document.getElementById("helperRate").value = safeRate;
+      const pay = helperWeeklyHours * safeRate;
       document.getElementById("helperHours").textContent = helperWeeklyHours.toFixed(2);
-      document.getElementById("helperRateLabel").textContent = `$${rate.toFixed(2)}/hr`;
+      document.getElementById("helperRateLabel").textContent = `$${safeRate.toFixed(2)}/hr`;
       document.getElementById("helperPay").textContent = `$${pay.toFixed(2)}`;
       document.getElementById("payLedger").innerHTML = helperPayRecords.map((record, index) => `
         <div class="ledger-row">
