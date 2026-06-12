@@ -34,16 +34,17 @@ Each day, Brigham or Karmel should test:
 
 1. Send the noon review text cue.
 2. On a phone, confirm the cue opens a text draft to Karmel at 801-427-9293.
-3. Physically inspect chores.
-4. Approve completed chores.
-5. Send one chore back for redo during beta to test the loop.
-6. Have the child tap Redo Done and confirm it returns to waiting for inspection.
-7. Finalize the selected child or all children.
-8. Confirm missed rotating chores charge a fine only once for the day.
-9. Confirm the fine ledger shows the actual missed deadline, including any Brigham-approved extension time.
-10. Confirm fine rows show who charged the fine, when it was charged, and who marked it paid.
-11. Confirm finalized chores lock against late edits.
-12. Mark a fine paid and confirm the open fine total changes.
+3. Confirm the Noon Review panel logs the cue with Karmel's number, the selected child, who queued it, and the time.
+4. Physically inspect chores.
+5. Approve completed chores.
+6. Send one chore back for redo during beta to test the loop.
+7. Have the child tap Redo Done and confirm it returns to waiting for inspection.
+8. Finalize the selected child or all children.
+9. Confirm missed rotating chores charge a fine only once for the day.
+10. Confirm the fine ledger shows the actual missed deadline, including any Brigham-approved extension time.
+11. Confirm fine rows show who charged the fine, when it was charged, and who marked it paid.
+12. Confirm finalized chores lock against late edits.
+13. Mark a fine paid and confirm the open fine total changes.
 
 ## Extension Test
 
@@ -103,7 +104,7 @@ Once per week:
 4. Confirm the import warning appears before replacing local beta data.
 5. Confirm chores, the family photo, child photos, helper tasks, fines, bonuses, and settings restore.
 6. Reset test data only after exporting a backup, and confirm the family photo, child photos, and Gmail links are cleared with the rest of the local beta data.
-7. Check the local beta data summary counts for chore records, finalized reviews, extensions, helper pay weeks, ingredient requests, family photo, child photos, Gmail links, and last export/import/reset timestamps.
+7. Check the local beta data summary counts for chore records, finalized reviews, extensions, review reminder cues, helper pay weeks, ingredient requests, family photo, child photos, Gmail links, and last export/import/reset timestamps.
 8. After a new GitHub/Netlify publish, reload the installed web app and confirm the latest dashboard changes appear while offline fallback still opens when the network is unavailable.
 
 ## Known Prototype Limits

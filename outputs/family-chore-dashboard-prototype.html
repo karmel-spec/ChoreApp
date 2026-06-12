@@ -1761,6 +1761,7 @@
           <div class="side-body">
             <div class="notice-card warn" id="reviewReminderText">At 12:00 PM, send Karmel a text reminder at 801-427-9293 to physically inspect today’s completed chores before fines are finalized.</div>
             <div class="notice-card" id="reviewSummary">Review summary loading...</div>
+            <div class="review-list" id="reviewReminderLog"></div>
             <div class="review-list" id="reviewList"></div>
             <button class="primary-btn" type="button" id="sendReviewBtn">Send Noon Review Text</button>
             <div class="form-row">
@@ -2402,6 +2403,7 @@
     };
     let fineAssessments = {};
     let extensionDeadlines = {};
+    let reviewReminderLog = [];
     let familySettings = {
       defaultDeadline: "12:00 PM",
       reviewReminderTime: "12:00 PM",
@@ -2502,6 +2504,7 @@
         shuffleOffset,
         fineAssessments,
         extensionDeadlines,
+        reviewReminderLog,
         familySettings,
         betaFeedback
       }));
@@ -2566,6 +2569,7 @@
       if (Array.isArray(data.ingredientRequests)) ingredientRequests = data.ingredientRequests;
       if (data.fineAssessments) fineAssessments = data.fineAssessments;
       if (data.extensionDeadlines) extensionDeadlines = data.extensionDeadlines;
+      if (Array.isArray(data.reviewReminderLog)) reviewReminderLog = data.reviewReminderLog;
       if (data.familySettings) familySettings = { ...familySettings, ...data.familySettings };
       normalizeFamilyReviewContact();
       if (Array.isArray(data.betaFeedback)) betaFeedback = data.betaFeedback;
@@ -3417,6 +3421,38 @@
       `;
     }
 
+    function renderReviewReminderLog() {
+      const recent = reviewReminderLog.slice(0, 4);
+      document.getElementById("reviewReminderLog").innerHTML = recent.length ? recent.map(item => `
+        <div class="review-row">
+          <div>
+            <strong>${escapeHtml(item.childName)} reminder cue</strong>
+            <span>${escapeHtml(item.recipient)} at ${escapeHtml(item.contact)} · queued by ${escapeHtml(item.sentBy || "Family")} · ${escapeHtml(shortDateTime(item.sentAt))}</span>
+          </div>
+          <span class="status done">Text cue</span>
+        </div>
+      `).join("") : `<div class="notice-card">No noon reminder cues logged yet today. Use Send Noon Review Text when it is time for Karmel to inspect chores.</div>`;
+    }
+
+    function logReviewReminder(child, message) {
+      reviewReminderLog.unshift({
+        id: `review-reminder-${Date.now()}`,
+        date: localDateKey(),
+        childId: child.id,
+        childName: child.name,
+        recipient: familySettings.reviewRecipient,
+        contact: familySettings.reviewContact,
+        reminderTime: familySettings.reviewReminderTime,
+        sentBy: currentUser?.name || "Family",
+        sentAt: new Date().toISOString(),
+        message
+      });
+      reviewReminderLog = reviewReminderLog.slice(0, 60);
+      persistBetaData();
+      renderReviewReminderLog();
+      renderBetaDataSummary();
+    }
+
     function renderDaily(child) {
       const routines = getRoutines(child);
       const rotating = getRotatingChores(child, 0);
@@ -3553,6 +3589,7 @@
           render();
         });
       });
+      renderReviewReminderLog();
     }
 
     function renderWeekly(child) {
@@ -4105,6 +4142,7 @@
         `${activeChores} active chores`,
         `${Object.keys(betaData.fineAssessments || fineAssessments).length} finalized reviews`,
         `${Object.keys(betaData.extensionDeadlines || extensionDeadlines).length} active extensions`,
+        `${(betaData.reviewReminderLog || reviewReminderLog).length} review reminder cues`,
         `${(betaData.helperPayRecords || helperPayRecords).length} helper pay weeks`,
         `${(betaData.ingredientRequests || ingredientRequests).length} ingredient requests`,
         `${(betaData.betaFeedback || betaFeedback).length} feedback notes`,
@@ -4596,6 +4634,7 @@
       const child = children.find(item => item.id === selectedChildId);
       const message = noonReviewMessage(child);
       const smsNumber = reviewContactSmsNumber();
+      logReviewReminder(child, message);
       document.getElementById("reviewStatus").textContent = `${familySettings.reviewReminderTime} review text ready for ${familySettings.reviewRecipient} at ${familySettings.reviewContact}: ${message}`;
       if (smsNumber) {
         window.location.href = `sms:${smsNumber}?&body=${encodeURIComponent(message)}`;
