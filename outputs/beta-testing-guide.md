@@ -91,12 +91,13 @@ Each helper workday:
 2. Confirm weekly hours, paycheck, and the shift entry audit update.
 3. Confirm a new week starts a new pay record.
 4. Sign in as Vanessa and confirm she can save time, reorder priorities, and request ingredients.
-5. Confirm Vanessa cannot edit her hourly rate.
-6. Change the hourly rate once as Brigham or Karmel to confirm it works.
-7. Mark a helper pay week paid as Brigham or Karmel and confirm paid-by audit details appear.
-8. Drag tasks into priority order, then use the up/down controls to confirm priority order also works on mobile.
-9. Refresh the page and confirm task order stayed saved.
-10. Add ingredient requests and mark one purchased as Brigham or Karmel.
+5. Confirm Vanessa can view child dashboards but cannot mark child chores complete or add proof photos.
+6. Confirm Vanessa cannot edit her hourly rate.
+7. Change the hourly rate once as Brigham or Karmel to confirm it works.
+8. Mark a helper pay week paid as Brigham or Karmel and confirm paid-by audit details appear.
+9. Drag tasks into priority order, then use the up/down controls to confirm priority order also works on mobile.
+10. Refresh the page and confirm task order stayed saved.
+11. Add ingredient requests and mark one purchased as Brigham or Karmel.
 
 ## Backup And Device Test
 
