@@ -2553,6 +2553,28 @@
       if (!familySettings.reviewContact || familySettings.reviewContact === "Mom text") {
         familySettings.reviewContact = defaultReviewContact;
       }
+      familySettings.extensionContact = formatPhoneNumber(familySettings.extensionContact) || "801-830-0011";
+      familySettings.reviewContact = formatPhoneNumber(familySettings.reviewContact) || defaultReviewContact;
+    }
+
+    function normalizeFamilySettingsRecord(settings = {}) {
+      const merged = { ...familySettings, ...(settings && typeof settings === "object" ? settings : {}) };
+      const extensionDigits = tenDigitPhone(merged.extensionContact) || tenDigitPhone(familySettings.extensionContact) || "8018300011";
+      const reviewDigits = tenDigitPhone(merged.reviewContact) || tenDigitPhone(defaultReviewContact) || "8014279293";
+      const normalized = {
+        ...merged,
+        defaultDeadline: normalizeClockTime(merged.defaultDeadline) || familySettings.defaultDeadline || "12:00 PM",
+        reviewReminderTime: normalizeClockTime(merged.reviewReminderTime) || familySettings.reviewReminderTime || "12:00 PM",
+        extensionApprover: String(merged.extensionApprover || "Brigham-dad").trim() || "Brigham-dad",
+        extensionContact: formatPhoneNumber(extensionDigits),
+        reviewRecipient: String(merged.reviewRecipient || defaultReviewRecipient).trim() || defaultReviewRecipient,
+        reviewContact: formatPhoneNumber(reviewDigits),
+        updatedBy: String(merged.updatedBy || "").trim(),
+        updatedAt: normalizeOptionalTimestamp(merged.updatedAt)
+      };
+      if (!normalized.updatedBy) delete normalized.updatedBy;
+      if (!normalized.updatedAt) delete normalized.updatedAt;
+      return normalized;
     }
 
     function reviewContactSmsNumber() {
@@ -2572,6 +2594,11 @@
     function tenDigitPhone(value) {
       const digits = String(value || "").replace(/\D/g, "");
       return digits.length === 10 ? digits : "";
+    }
+
+    function formatPhoneNumber(value) {
+      const digits = tenDigitPhone(value);
+      return digits ? `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}` : "";
     }
 
     function normalizeClockTime(value) {
@@ -2859,7 +2886,7 @@
       if (Array.isArray(data.helperPayRecords)) helperPayRecords = data.helperPayRecords.map(normalizeHelperPayRecord).slice(0, 80);
       if (data.helperBoardTasks) helperBoardTasks = normalizeHelperBoardTasks(data.helperBoardTasks);
       if (Array.isArray(data.ingredientRequests)) ingredientRequests = data.ingredientRequests.map(normalizeIngredientRequest);
-      if (data.familySettings) familySettings = { ...familySettings, ...data.familySettings };
+      if (data.familySettings) familySettings = normalizeFamilySettingsRecord(data.familySettings);
       normalizeFamilyReviewContact();
       if (data.fineAssessments) fineAssessments = normalizeFineAssessments(data.fineAssessments);
       if (data.extensionDeadlines) extensionDeadlines = normalizeExtensionDeadlines(data.extensionDeadlines);
