@@ -2598,18 +2598,24 @@
       return `${child.name} requests a chore deadline extension until ${requestedTime}. Reason: ${reason}`;
     }
 
+    function safeStoredNumber(value, fallback, min = 0) {
+      const number = Number(value);
+      if (!Number.isFinite(number)) return fallback;
+      return Math.max(min, number);
+    }
+
     function hydrateBetaData() {
       const data = getStoredBetaData();
       if (data.childSettings) {
         children.forEach(child => {
           const saved = data.childSettings[child.id];
           if (!saved) return;
-          child.fineRate = Number(saved.fineRate ?? child.fineRate);
-          child.openFines = Number(saved.openFines ?? child.openFines);
-          child.paidFines = Number(saved.paidFines ?? child.paidFines);
-          child.accountBalance = Number(saved.accountBalance ?? child.accountBalance);
-          child.streak = Number(saved.streak ?? child.streak);
-          child.monthlyStreak = Number(saved.monthlyStreak ?? child.monthlyStreak);
+          child.fineRate = safeStoredNumber(saved.fineRate, child.fineRate);
+          child.openFines = safeStoredNumber(saved.openFines, child.openFines);
+          child.paidFines = safeStoredNumber(saved.paidFines, child.paidFines);
+          child.accountBalance = safeStoredNumber(saved.accountBalance, child.accountBalance);
+          child.streak = safeStoredNumber(saved.streak, child.streak);
+          child.monthlyStreak = safeStoredNumber(saved.monthlyStreak, child.monthlyStreak);
           child.monthlyStreakPeriod = saved.monthlyStreakPeriod || currentBonusPeriod();
           if (child.monthlyStreakPeriod !== currentBonusPeriod()) {
             child.monthlyStreak = 0;
