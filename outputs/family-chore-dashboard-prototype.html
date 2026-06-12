@@ -4240,16 +4240,38 @@
       document.getElementById("helperHours").textContent = helperWeeklyHours.toFixed(2);
       document.getElementById("helperRateLabel").textContent = `$${rate.toFixed(2)}/hr`;
       document.getElementById("helperPay").textContent = `$${pay.toFixed(2)}`;
-      document.getElementById("payLedger").innerHTML = helperPayRecords.map(record => `
+      document.getElementById("payLedger").innerHTML = helperPayRecords.map((record, index) => `
         <div class="ledger-row">
           <div>
             <strong>${escapeHtml(record.week)}</strong>
             <span>${record.hours.toFixed(2)} hours x $${record.rate.toFixed(2)}/hr = $${(record.hours * record.rate).toFixed(2)}</span>
+            ${record.paidAt ? `<span>Paid by ${escapeHtml(record.paidBy || "Admin")} · ${escapeHtml(shortDateTime(record.paidAt))}</span>` : ""}
             ${(record.shifts || []).slice(-3).reverse().map(shift => `<span>${escapeHtml(shift.date)} · ${escapeHtml(shift.arrival)}-${escapeHtml(shift.exit)} · ${Number(shift.hours || 0).toFixed(2)} hours · saved by ${escapeHtml(shift.savedBy || "Vanessa")}</span>`).join("")}
           </div>
-          <div class="${record.paid ? "paid" : "unpaid"}">${record.paid ? "Paid" : "Due"}</div>
+          <div class="review-actions">
+            <div class="${record.paid ? "paid" : "unpaid"}">${record.paid ? "Paid" : "Due"}</div>
+            ${record.paid ? "" : `<button class="ghost-btn" type="button" data-helper-pay-index="${index}" ${isAdmin() ? "" : "disabled"}>Mark Paid</button>`}
+          </div>
         </div>
       `).join("");
+      document.querySelectorAll("[data-helper-pay-index]").forEach(button => {
+        button.addEventListener("click", () => markHelperPayPaid(Number(button.dataset.helperPayIndex)));
+      });
+    }
+
+    function markHelperPayPaid(recordIndex) {
+      if (!isAdmin()) {
+        document.getElementById("timeCardStatus").textContent = "Only Brigham or Karmel can mark Vanessa's pay paid.";
+        return;
+      }
+      const record = helperPayRecords[recordIndex];
+      if (!record || record.paid) return;
+      record.paid = true;
+      record.paidBy = currentUser?.name || "Admin";
+      record.paidAt = new Date().toISOString();
+      persistBetaData();
+      renderHelperPay();
+      document.getElementById("timeCardStatus").textContent = `${record.week} pay marked paid by ${record.paidBy}.`;
     }
 
     function saveHelperTimeCard() {

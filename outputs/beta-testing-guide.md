@@ -88,9 +88,10 @@ Each helper workday:
 4. Sign in as Vanessa and confirm she can save time, reorder priorities, and request ingredients.
 5. Confirm Vanessa cannot edit her hourly rate.
 6. Change the hourly rate once as Brigham or Karmel to confirm it works.
-7. Drag tasks into priority order.
-8. Refresh the page and confirm task order stayed saved.
-9. Add ingredient requests.
+7. Mark a helper pay week paid as Brigham or Karmel and confirm paid-by audit details appear.
+8. Drag tasks into priority order.
+9. Refresh the page and confirm task order stayed saved.
+10. Add ingredient requests.
 
 ## Backup And Device Test
 
