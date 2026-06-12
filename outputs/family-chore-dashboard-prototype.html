@@ -5123,6 +5123,7 @@
       persistBetaData();
       renderDaily(child);
       renderBonusPanel(child);
+      renderAccountActivity(child);
       document.getElementById("bonusStatus").textContent = `${child.name}'s chore account was credited $${bonus.amount} for ${title}.`;
     }
 
@@ -5163,6 +5164,7 @@
       const child = children.find(item => item.id === selectedChildId);
       renderDaily(child);
       renderBonusPanel(child);
+      renderAccountActivity(child);
       renderPointsPodium();
       document.getElementById("bonusStatus").textContent = awarded.length
         ? `Monthly points bonuses awarded: ${awarded.join(", ")}.${skipped.length ? ` Already paid this month: ${skipped.join(", ")}.` : ""}`

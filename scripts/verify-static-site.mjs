@@ -283,6 +283,7 @@ const requiredMarkers = [
   "pending bonus records",
   "Chore Account Activity",
   "renderAccountActivity",
+  "renderAccountActivity(child);",
   "accountActivitySummary",
   "Net chore account after open fines",
   "accountActivityLedger",
