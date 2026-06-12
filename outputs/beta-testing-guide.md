@@ -22,10 +22,11 @@ Each child should test:
 2. Confirm their daily priority chores appear first.
 3. Try opening another child’s direct dashboard link and confirm the app returns them to their own dashboard.
 4. Complete priority chores.
-5. Complete rotating chores.
-6. Add at least one photo proof during the week and confirm photo-first proof marks the chore ready for review.
-7. Check the 7-day view and notice whether future assignments look understandable.
-8. Watch for celebration messages and whether they feel age-appropriate.
+5. Use Undo before parent review and confirm the chore returns to incomplete.
+6. Complete rotating chores.
+7. Add at least one photo proof during the week and confirm photo-first proof marks the chore ready for review.
+8. Check the 7-day view and notice whether future assignments look understandable.
+9. Watch for celebration messages and whether they feel age-appropriate.
 
 ## Parent Noon Review Test
 

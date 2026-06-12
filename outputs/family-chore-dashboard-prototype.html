@@ -3100,9 +3100,24 @@
           const choreType = button.dataset.choreType;
           const chore = findTodayChore(child, choreName, choreType);
           if (!chore) return;
+          const existingRecord = getChoreRecord(child, chore, choreType);
+          if (existingRecord.completedAt) {
+            updateChoreRecord(child, chore, choreType, {
+              completedAt: "",
+              reviewStatus: "",
+              proofImage: "",
+              proofName: "",
+              proofSubmittedAt: "",
+              undoneAt: new Date().toISOString()
+            });
+            render();
+            document.getElementById("reviewStatus").textContent = `${child.name}'s ${chore.name} was reopened before final review.`;
+            return;
+          }
           updateChoreRecord(child, chore, choreType, {
             completedAt: new Date().toISOString(),
-            reviewStatus: "waiting"
+            reviewStatus: "waiting",
+            undoneAt: ""
           });
           showCelebration(child, chore.name);
           render();
@@ -3374,10 +3389,10 @@
       const finalized = isChildReviewFinalized(child);
       const statusClass = choreStatusClass(record, warning);
       const proofThumb = record.proofImage ? `<img class="proof-thumb" src="${escapeHtml(record.proofImage)}" alt="${escapeHtml(chore.name)} proof photo">` : "";
-      const completionDisabled = completed || finalized;
+      const completionDisabled = finalized;
       const statusText = finalized && !completed && record.reviewStatus !== "approved" ? "Review finalized" : choreStatusText(record, fallbackStatus);
       return `
-        <button class="check-btn ${completed ? "completed" : ""}" type="button" data-chore-type="${choreType}" data-chore-name="${encodedName}" ${completionDisabled ? "disabled" : ""}>${completed ? "Done" : finalized ? "Locked" : "Complete"}</button>
+        <button class="check-btn ${completed ? "completed" : ""}" type="button" data-chore-type="${choreType}" data-chore-name="${encodedName}" ${completionDisabled ? "disabled" : ""}>${completed ? "Undo" : finalized ? "Locked" : "Complete"}</button>
         <button class="proof-btn" type="button" data-proof-key="${proofKey}" data-chore-type="${choreType}" data-chore-name="${encodedName}" ${finalized ? "disabled" : ""}>${record.proofImage ? "Photo saved" : "Photo"}</button>
         <input class="proof-input" type="file" accept="image/*" data-proof-key="${proofKey}" data-chore-type="${choreType}" data-chore-name="${encodedName}">
         ${proofThumb}
