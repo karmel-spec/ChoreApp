@@ -3867,6 +3867,14 @@
       return Number(Number(normalized).toFixed(2));
     }
 
+    function parseWholeNumberInput(inputId, min, max) {
+      const rawValue = document.getElementById(inputId).value.trim();
+      if (!/^\d+$/.test(rawValue)) return null;
+      const value = Number(rawValue);
+      if (value < min || value > max) return null;
+      return value;
+    }
+
     function fineAuditDate(value) {
       return value ? shortDateTime(value) : "Not recorded";
     }
@@ -4754,12 +4762,20 @@
       }
       const name = document.getElementById("adminChoreName").value.trim().replace(/\s+/g, " ");
       const frequency = document.getElementById("adminFrequency").value;
-      const minutes = Math.max(1, Number(document.getElementById("adminMinutes").value) || 1);
-      const difficulty = Math.min(10, Math.max(1, Number(document.getElementById("adminDifficulty").value) || 1));
+      const minutes = parseWholeNumberInput("adminMinutes", 1, 180);
+      const difficulty = parseWholeNumberInput("adminDifficulty", 1, 10);
       const fit = document.getElementById("adminFit").value;
       const notice = document.getElementById("adminNotice").value;
       if (!name) {
         document.getElementById("adminStatus").textContent = "Add a chore name first.";
+        return;
+      }
+      if (minutes === null) {
+        document.getElementById("adminStatus").textContent = "Use whole minutes from 1 to 180 for new chores.";
+        return;
+      }
+      if (difficulty === null) {
+        document.getElementById("adminStatus").textContent = "Use a whole difficulty rating from 1 to 10.";
         return;
       }
       const duplicate = choreLibrary.find(chore => chore.name.trim().toLowerCase() === name.toLowerCase());
