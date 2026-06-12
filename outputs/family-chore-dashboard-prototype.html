@@ -2724,6 +2724,12 @@
       return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
     }
 
+    function normalizeOptionalTimestamp(value) {
+      if (!value) return "";
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? "" : date.toISOString();
+    }
+
     function normalizeChildId(value, fallback = selectedChildId) {
       return validChildIds.includes(value) ? value : fallback;
     }
@@ -2918,6 +2924,46 @@
       return localStorage.getItem(familyPhotoStoreKey) || "";
     }
 
+    function normalizeProofImage(value) {
+      const text = String(value || "");
+      return text.startsWith("data:image/") && text.length <= 3000000 ? text : "";
+    }
+
+    function normalizeChoreStateRecord(key, record) {
+      const [date, childId, choreType, ...choreNameParts] = String(key).split("|");
+      const cleanDate = normalizeDateKey(date, "");
+      const cleanChildId = normalizeChildId(childId, "");
+      const cleanType = ["priority", "rotating"].includes(choreType) ? choreType : "";
+      const cleanName = choreNameParts.join("|").trim().replace(/\s+/g, " ");
+      const recordData = record && typeof record === "object" ? record : {};
+      const status = ["waiting", "approved", "redo"].includes(recordData.reviewStatus) ? recordData.reviewStatus : "";
+      if (!cleanDate || !cleanChildId || !cleanType || !cleanName) return null;
+      return {
+        key: `${cleanDate}|${cleanChildId}|${cleanType}|${cleanName}`,
+        record: {
+          ...recordData,
+          childId: cleanChildId,
+          choreName: String(recordData.choreName || cleanName).trim().replace(/\s+/g, " ") || cleanName,
+          choreType: cleanType,
+          date: cleanDate,
+          completedAt: normalizeOptionalTimestamp(recordData.completedAt),
+          reviewStatus: status,
+          proofImage: normalizeProofImage(recordData.proofImage),
+          redoneAt: normalizeOptionalTimestamp(recordData.redoneAt),
+          reviewedBy: String(recordData.reviewedBy || "").trim(),
+          reviewedAt: normalizeOptionalTimestamp(recordData.reviewedAt)
+        }
+      };
+    }
+
+    function normalizeChoreState(choreState) {
+      return Object.entries(choreState || {}).reduce((normalized, [key, record]) => {
+        const normalizedRecord = normalizeChoreStateRecord(key, record);
+        if (normalizedRecord) normalized[normalizedRecord.key] = normalizedRecord.record;
+        return normalized;
+      }, {});
+    }
+
     function createBetaBackup() {
       persistBetaData();
       return {
@@ -2996,7 +3042,7 @@
     function applyImportedBackup(backup) {
       const validBackup = validateBetaBackup(backup);
       localStorage.setItem(betaDataStoreKey, JSON.stringify(validBackup.betaData || {}));
-      localStorage.setItem(choreStateStoreKey, JSON.stringify(validBackup.choreState || {}));
+      localStorage.setItem(choreStateStoreKey, JSON.stringify(normalizeChoreState(validBackup.choreState || {})));
       localStorage.setItem(photoStoreKey, JSON.stringify(validBackup.childPhotos || {}));
       if (validBackup.familyPhoto) {
         localStorage.setItem(familyPhotoStoreKey, validBackup.familyPhoto);
