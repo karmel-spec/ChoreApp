@@ -80,12 +80,13 @@ Once per week:
 
 1. Review monthly streak and overall streak.
 2. Edit bonus rules as admin.
-3. Award an eligible bonus.
-4. Confirm separate 5-day, 7-day, 30-day, and super-bonus milestones do not block each other.
-5. Confirm bonus rows show who awarded the money and when it was awarded.
-6. Sign in as a child and Vanessa to confirm they cannot edit fine rates, bonus rates, pay rates, or award/charge money.
-7. Confirm the chore account balance changes only once per awarded milestone.
-8. Export a backup after bonus changes.
+3. Try one invalid bonus amount and one invalid fine amount, then confirm the app blocks saving until both are valid.
+4. Award an eligible bonus.
+5. Confirm separate 5-day, 7-day, 30-day, and super-bonus milestones do not block each other.
+6. Confirm bonus rows show who awarded the money and when it was awarded.
+7. Sign in as a child and Vanessa to confirm they cannot edit fine rates, bonus rates, pay rates, or award/charge money.
+8. Confirm the chore account balance changes only once per awarded milestone.
+9. Export a backup after bonus changes.
 
 ## Vanessa Helper Test
 
@@ -98,10 +99,11 @@ Each helper workday:
 5. Confirm Vanessa can view child dashboards but cannot mark child chores complete or add proof photos.
 6. Confirm Vanessa cannot edit her hourly rate.
 7. Change the hourly rate once as Brigham or Karmel to confirm it works.
-8. Mark a helper pay week paid as Brigham or Karmel and confirm paid-by audit details appear.
-9. Drag tasks into priority order, then use the up/down controls to confirm priority order also works on mobile.
-10. Refresh the page and confirm task order stayed saved.
-11. Add ingredient requests and mark one purchased as Brigham or Karmel.
+8. Try an invalid hourly rate and confirm the app blocks saving the time card until the rate is valid.
+9. Mark a helper pay week paid as Brigham or Karmel and confirm paid-by audit details appear.
+10. Drag tasks into priority order, then use the up/down controls to confirm priority order also works on mobile.
+11. Refresh the page and confirm task order stayed saved.
+12. Add ingredient requests and mark one purchased as Brigham or Karmel.
 
 ## Backup And Device Test
 

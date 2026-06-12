@@ -3860,6 +3860,13 @@
       return Number(String(value).replace(/[^0-9.]/g, "")) || 0;
     }
 
+    function parseCurrencyInput(inputId) {
+      const rawValue = document.getElementById(inputId).value.trim();
+      const normalized = rawValue.replace(/^\$/, "");
+      if (!/^\d+(\.\d{1,2})?$/.test(normalized)) return null;
+      return Number(Number(normalized).toFixed(2));
+    }
+
     function fineAuditDate(value) {
       return value ? shortDateTime(value) : "Not recorded";
     }
@@ -3974,14 +3981,22 @@
         document.getElementById("bonusStatus").textContent = "Only Brigham or Karmel can edit bonus rates.";
         return;
       }
+      const bonus5 = parseCurrencyInput("bonus5");
+      const bonus7 = parseCurrencyInput("bonus7");
+      const bonus30 = parseCurrencyInput("bonus30");
+      const super100 = parseCurrencyInput("super100");
+      if ([bonus5, bonus7, bonus30, super100].some(value => value === null)) {
+        document.getElementById("bonusStatus").textContent = "Use valid bonus amounts like 5, 10.50, or 100.";
+        return;
+      }
       bonusRules = {
         monthly: [
-          { days: 5, amount: Math.max(0, Number(document.getElementById("bonus5").value) || 0) },
-          { days: 7, amount: Math.max(0, Number(document.getElementById("bonus7").value) || 0) },
-          { days: 30, amount: Math.max(0, Number(document.getElementById("bonus30").value) || 0) }
+          { days: 5, amount: bonus5 },
+          { days: 7, amount: bonus7 },
+          { days: 30, amount: bonus30 }
         ],
         super: [
-          { days: 100, amount: Math.max(0, Number(document.getElementById("super100").value) || 0) }
+          { days: 100, amount: super100 }
         ]
       };
       const child = children.find(item => item.id === selectedChildId);
@@ -4086,8 +4101,12 @@
         return;
       }
       const child = children.find(item => item.id === selectedChildId);
-      const newRate = Math.max(0, Number(document.getElementById("fineRateInput").value) || 0);
-      child.fineRate = Number(newRate.toFixed(2));
+      const newRate = parseCurrencyInput("fineRateInput");
+      if (newRate === null) {
+        document.getElementById("fineRateStatus").textContent = "Use a valid fine amount like 2, 5, or 7.50.";
+        return;
+      }
+      child.fineRate = newRate;
       persistBetaData();
       render();
       document.getElementById("fineRateStatus").textContent = `${child.name}'s daily fine rate is now $${child.fineRate}.`;
@@ -4536,9 +4555,13 @@
         return;
       }
       const hours = calculateHelperShiftHours();
-      const rate = isAdmin() ? Number(document.getElementById("helperRate").value || 17) : helperRate;
+      const rate = isAdmin() ? parseCurrencyInput("helperRate") : helperRate;
       if (hours === null) {
         document.getElementById("timeCardStatus").textContent = "Use times like 8:30 AM and 1:15 PM.";
+        return;
+      }
+      if (!Number.isFinite(rate) || rate < 0) {
+        document.getElementById("timeCardStatus").textContent = "Use a valid hourly rate like 17 or 17.50.";
         return;
       }
       const currentRecord = syncCurrentHelperWeek();
