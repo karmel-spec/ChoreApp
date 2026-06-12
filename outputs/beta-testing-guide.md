@@ -11,9 +11,10 @@ Use this guide for the first 2-4 weeks of website beta testing before moving tow
    - Review reminder time
    - Extension approver and contact
    - Review recipient and contact
-4. Save Family Rule Settings once and confirm the panel shows who saved the rules and when.
-5. Add or adjust child profile photos as Brigham or Karmel, including confirming the home page photo tools stay locked for non-admin sessions.
-6. Export a backup before making major changes.
+4. Try one invalid rule time and one invalid text number, then confirm the app blocks saving until both are valid.
+5. Save Family Rule Settings once and confirm the panel shows who saved the rules and when.
+6. Add or adjust child profile photos as Brigham or Karmel, including confirming the home page photo tools stay locked for non-admin sessions.
+7. Export a backup before making major changes.
 
 ## Daily Child Test
 

@@ -2569,6 +2569,11 @@
       return digits.length === 10 ? digits : "";
     }
 
+    function tenDigitPhone(value) {
+      const digits = String(value || "").replace(/\D/g, "");
+      return digits.length === 10 ? digits : "";
+    }
+
     function normalizeClockTime(value) {
       const cleanValue = String(value || "").trim().toUpperCase().replace(/\s+/g, " ");
       const match = cleanValue.match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?$/);
@@ -2978,13 +2983,25 @@
         document.getElementById("familySettingsStatus").textContent = "Only Brigham or Karmel can edit family rule settings.";
         return;
       }
+      const defaultDeadline = normalizeClockTime(document.getElementById("defaultDeadlineInput").value);
+      const reviewReminderTime = normalizeClockTime(document.getElementById("reviewReminderTimeInput").value);
+      const extensionContact = document.getElementById("extensionContactInput").value.trim() || "801-830-0011";
+      const reviewContact = document.getElementById("reviewContactInput").value.trim() || defaultReviewContact;
+      if (!defaultDeadline || !reviewReminderTime) {
+        document.getElementById("familySettingsStatus").textContent = "Use valid rule times like 12:00 PM or 13:30.";
+        return;
+      }
+      if (!tenDigitPhone(extensionContact) || !tenDigitPhone(reviewContact)) {
+        document.getElementById("familySettingsStatus").textContent = "Use 10-digit text numbers for Dad extensions and Mom Karmel review reminders.";
+        return;
+      }
       familySettings = {
-        defaultDeadline: document.getElementById("defaultDeadlineInput").value.trim() || "12:00 PM",
-        reviewReminderTime: document.getElementById("reviewReminderTimeInput").value.trim() || "12:00 PM",
+        defaultDeadline,
+        reviewReminderTime,
         extensionApprover: document.getElementById("extensionApproverInput").value.trim() || "Brigham-dad",
-        extensionContact: document.getElementById("extensionContactInput").value.trim() || "801-830-0011",
+        extensionContact,
         reviewRecipient: document.getElementById("reviewRecipientInput").value.trim() || defaultReviewRecipient,
-        reviewContact: document.getElementById("reviewContactInput").value.trim() || defaultReviewContact,
+        reviewContact,
         updatedBy: currentUser?.name || "Admin",
         updatedAt: new Date().toISOString()
       };
