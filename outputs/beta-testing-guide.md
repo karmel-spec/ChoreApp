@@ -53,7 +53,8 @@ Once during beta:
 1. Sign in as a child and confirm Text Extension Request opens a text draft to Brigham at 801-830-0011.
 2. Sign in as Karmel and confirm extension approval is locked.
 3. Sign in as Brigham and approve or deny an extension.
-4. Confirm the selected child’s rotating chore deadline changes only when Brigham approves.
+4. Confirm the Extension Petition panel logs the request and Brigham's approval or denial.
+5. Confirm the selected child’s rotating chore deadline changes only when Brigham approves.
 
 ## Admin Rotation Test
 
@@ -104,7 +105,7 @@ Once per week:
 4. Confirm the import warning appears before replacing local beta data.
 5. Confirm chores, the family photo, child photos, helper tasks, fines, bonuses, and settings restore.
 6. Reset test data only after exporting a backup, and confirm the family photo, child photos, and Gmail links are cleared with the rest of the local beta data.
-7. Check the local beta data summary counts for chore records, finalized reviews, extensions, review reminder cues, helper pay weeks, ingredient requests, family photo, child photos, Gmail links, and last export/import/reset timestamps.
+7. Check the local beta data summary counts for chore records, finalized reviews, extensions, extension audit events, review reminder cues, helper pay weeks, ingredient requests, family photo, child photos, Gmail links, and last export/import/reset timestamps.
 8. After a new GitHub/Netlify publish, reload the installed web app and confirm the latest dashboard changes appear while offline fallback still opens when the network is unavailable.
 
 ## Known Prototype Limits

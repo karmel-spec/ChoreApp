@@ -1746,6 +1746,7 @@
               <button class="primary-btn" type="button" id="approveBtn">Grant Approved Extension</button>
               <div class="admin-status" id="extensionStatus"></div>
             </div>
+            <div class="review-list" id="extensionAuditLog"></div>
             <div class="rule-box" style="margin:0;">
               <strong>How it works</strong>
               <p id="extensionRuleText">The child sends a text-style petition to Brigham-dad at 801-830-0011. Only Dad can approve an extension; if approved, the deadline moves from 12:00 PM to the approved time for that child only.</p>
@@ -2403,6 +2404,7 @@
     };
     let fineAssessments = {};
     let extensionDeadlines = {};
+    let extensionAuditLog = [];
     let reviewReminderLog = [];
     let familySettings = {
       defaultDeadline: "12:00 PM",
@@ -2504,6 +2506,7 @@
         shuffleOffset,
         fineAssessments,
         extensionDeadlines,
+        extensionAuditLog,
         reviewReminderLog,
         familySettings,
         betaFeedback
@@ -2569,6 +2572,7 @@
       if (Array.isArray(data.ingredientRequests)) ingredientRequests = data.ingredientRequests;
       if (data.fineAssessments) fineAssessments = data.fineAssessments;
       if (data.extensionDeadlines) extensionDeadlines = data.extensionDeadlines;
+      if (Array.isArray(data.extensionAuditLog)) extensionAuditLog = data.extensionAuditLog;
       if (Array.isArray(data.reviewReminderLog)) reviewReminderLog = data.reviewReminderLog;
       if (data.familySettings) familySettings = { ...familySettings, ...data.familySettings };
       normalizeFamilyReviewContact();
@@ -2821,6 +2825,45 @@
       persistBetaData();
     }
 
+    function extensionAuditLabel(action) {
+      if (action === "approved") return "Approved";
+      if (action === "denied") return "Denied";
+      return "Requested";
+    }
+
+    function logExtensionAudit(child, action, deadline, message = "") {
+      extensionAuditLog.unshift({
+        id: `extension-${Date.now()}`,
+        date: localDateKey(),
+        childId: child.id,
+        childName: child.name,
+        action,
+        deadline,
+        requestedBy: currentUser?.name || child.name,
+        approver: action === "requested" ? familySettings.extensionApprover : currentUser?.name || "Admin",
+        contact: familySettings.extensionContact,
+        recordedAt: new Date().toISOString(),
+        message
+      });
+      extensionAuditLog = extensionAuditLog.slice(0, 80);
+      persistBetaData();
+      renderExtensionAuditLog();
+      renderBetaDataSummary();
+    }
+
+    function renderExtensionAuditLog() {
+      const recent = extensionAuditLog.slice(0, 4);
+      document.getElementById("extensionAuditLog").innerHTML = recent.length ? recent.map(item => `
+        <div class="review-row">
+          <div>
+            <strong>${escapeHtml(item.childName)} extension ${escapeHtml(extensionAuditLabel(item.action).toLowerCase())}</strong>
+            <span>${escapeHtml(extensionAuditLabel(item.action))} for ${escapeHtml(item.deadline || familySettings.defaultDeadline)} · ${escapeHtml(item.approver || familySettings.extensionApprover)} · ${escapeHtml(shortDateTime(item.recordedAt))}</span>
+          </div>
+          <span class="status ${item.action === "denied" ? "warn" : "done"}">${escapeHtml(extensionAuditLabel(item.action))}</span>
+        </div>
+      `).join("") : `<div class="notice-card">No extension requests logged yet. Text requests and Brigham decisions will appear here for beta review.</div>`;
+    }
+
     function renderFamilySettings() {
       document.getElementById("defaultDeadlineInput").value = familySettings.defaultDeadline;
       document.getElementById("reviewReminderTimeInput").value = familySettings.reviewReminderTime;
@@ -2837,6 +2880,7 @@
       document.getElementById("extensionStatus").textContent = isExtensionApprover()
         ? `${familySettings.extensionApprover} is signed in and can approve extension petitions.`
         : `Only ${familySettings.extensionApprover} can approve extension petitions.`;
+      renderExtensionAuditLog();
     }
 
     function saveFamilySettings() {
@@ -4142,6 +4186,7 @@
         `${activeChores} active chores`,
         `${Object.keys(betaData.fineAssessments || fineAssessments).length} finalized reviews`,
         `${Object.keys(betaData.extensionDeadlines || extensionDeadlines).length} active extensions`,
+        `${(betaData.extensionAuditLog || extensionAuditLog).length} extension audit events`,
         `${(betaData.reviewReminderLog || reviewReminderLog).length} review reminder cues`,
         `${(betaData.helperPayRecords || helperPayRecords).length} helper pay weeks`,
         `${(betaData.ingredientRequests || ingredientRequests).length} ingredient requests`,
@@ -4579,6 +4624,8 @@
       const child = children.find(item => item.id === selectedChildId);
       const message = extensionPetitionMessage(child);
       const smsNumber = extensionContactSmsNumber();
+      const requestedTime = document.getElementById("newTime").value.trim() || familySettings.defaultDeadline;
+      logExtensionAudit(child, "requested", requestedTime, message);
       document.getElementById("extensionStatus").textContent = `Extension request ready for ${familySettings.extensionApprover} at ${familySettings.extensionContact}: ${message}`;
       if (smsNumber) {
         window.location.href = `sms:${smsNumber}?&body=${encodeURIComponent(message)}`;
@@ -4593,11 +4640,13 @@
       const child = children.find(item => item.id === selectedChildId);
       if (document.getElementById("approval").value === "Deny") {
         clearApprovedDeadline(child);
+        logExtensionAudit(child, "denied", familySettings.defaultDeadline, `Extension denied. Fine deadline stays ${familySettings.defaultDeadline}.`);
         render();
         document.getElementById("extensionStatus").textContent = `Extension denied for ${child.name}. Fine deadline stays ${familySettings.defaultDeadline}.`;
         return;
       }
       const newDeadline = setApprovedDeadline(child, document.getElementById("newTime").value);
+      logExtensionAudit(child, "approved", newDeadline, `Deadline moved to ${newDeadline}.`);
       render();
       document.getElementById("extensionStatus").textContent = `${familySettings.extensionApprover}-approved extension saved for ${child.name}: deadline moved to ${newDeadline}.`;
     });
