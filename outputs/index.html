@@ -485,6 +485,7 @@
         </section>
         <section class="photo-tools" aria-label="Edit family and child photos">
           <h2>Edit Photos</h2>
+          <div class="photo-status" id="homePhotoAdminStatus">Photo tools are available after Brigham or Karmel signs in on the chore dashboard.</div>
           <div>
             <label for="familyPhotoUrl">Family Photo URL</label>
             <input id="familyPhotoUrl" placeholder="Paste a family photo URL">
@@ -594,6 +595,22 @@
     let thoughtIndex = 0;
     const photoStoreKey = "choreAppChildPhotos";
     const familyPhotoKey = "choreAppFamilyPhoto";
+    const sessionStoreKey = "teamworkChoresSession";
+    const adminAccountIds = ["brigham", "karmel"];
+
+    function isHomePhotoAdmin() {
+      return adminAccountIds.includes(localStorage.getItem(sessionStoreKey));
+    }
+
+    function renderHomePhotoLocks() {
+      const locked = !isHomePhotoAdmin();
+      document.querySelectorAll(".photo-tools input, .photo-tools select, .photo-tools button").forEach(control => {
+        control.disabled = locked;
+      });
+      document.getElementById("homePhotoAdminStatus").textContent = locked
+        ? "Photo tools are locked until Brigham or Karmel signs in on the chore dashboard."
+        : "Photo tools unlocked for Brigham/Karmel admin session.";
+    }
 
     function getChildPhotos() {
       try {
@@ -625,6 +642,11 @@
     }
 
     function saveFamilyPhoto() {
+      if (!isHomePhotoAdmin()) {
+        renderHomePhotoLocks();
+        document.getElementById("homePhotoStatus").textContent = "Only Brigham or Karmel can edit family photos.";
+        return;
+      }
       const file = document.getElementById("familyPhotoFile").files[0];
       const url = document.getElementById("familyPhotoUrl").value.trim();
       if (file) {
@@ -647,6 +669,11 @@
     }
 
     function saveHomeChildPhoto() {
+      if (!isHomePhotoAdmin()) {
+        renderHomePhotoLocks();
+        document.getElementById("homePhotoStatus").textContent = "Only Brigham or Karmel can edit child photos.";
+        return;
+      }
       const childId = document.getElementById("homeChildSelect").value;
       const file = document.getElementById("homeChildPhotoFile").files[0];
       const url = document.getElementById("homeChildPhotoUrl").value.trim();
@@ -694,6 +721,7 @@
     renderThought();
     renderFeed();
     renderStoredPhotos();
+    renderHomePhotoLocks();
     document.getElementById("saveFamilyPhotoBtn").addEventListener("click", saveFamilyPhoto);
     document.getElementById("saveChildPhotoBtn").addEventListener("click", saveHomeChildPhoto);
     setInterval(renderThought, 5200);

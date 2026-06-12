@@ -416,6 +416,21 @@ if (!homeHtml.includes('href="/beta-testing-guide.html"')) {
   throw new Error("Home hub is missing beta guide link.");
 }
 
+const requiredHomeMarkers = [
+  "homePhotoAdminStatus",
+  "teamworkChoresSession",
+  "isHomePhotoAdmin",
+  "Photo tools are locked until Brigham or Karmel signs in",
+  "Only Brigham or Karmel can edit family photos",
+  "Only Brigham or Karmel can edit child photos"
+];
+
+for (const marker of requiredHomeMarkers) {
+  if (!homeHtml.includes(marker)) {
+    throw new Error(`Missing expected home hub marker: ${marker}`);
+  }
+}
+
 if (!appHtml.includes('href="/beta-testing-guide.html"')) {
   throw new Error("Dashboard is missing beta guide link.");
 }
