@@ -1441,6 +1441,7 @@
     .ingredient-item {
       display: flex;
       justify-content: space-between;
+      align-items: center;
       gap: 10px;
       border: 1px solid var(--line);
       border-radius: 7px;
@@ -1448,6 +1449,18 @@
       padding: 8px;
       font-size: 12px;
       font-weight: 800;
+    }
+
+    .ingredient-item strong,
+    .ingredient-item span span {
+      display: block;
+    }
+
+    .ingredient-item span span {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      margin-top: 2px;
     }
 
     .feedback-list {
@@ -1743,10 +1756,10 @@
         <section class="panel">
           <div class="panel-head">
             <h3>Noon Review</h3>
-            <span id="reviewPanelLabel">Text Mom</span>
+            <span id="reviewPanelLabel">Text Karmel</span>
           </div>
           <div class="side-body">
-            <div class="notice-card warn" id="reviewReminderText">At 12:00 PM, send Mom a text reminder to physically inspect today’s completed chores before fines are finalized.</div>
+            <div class="notice-card warn" id="reviewReminderText">At 12:00 PM, send Karmel a text reminder at 801-427-9293 to physically inspect today’s completed chores before fines are finalized.</div>
             <div class="notice-card" id="reviewSummary">Review summary loading...</div>
             <div class="review-list" id="reviewList"></div>
             <button class="primary-btn" type="button" id="sendReviewBtn">Send Noon Review Text</button>
@@ -2509,7 +2522,7 @@
     }
 
     function noonReviewMessage(child) {
-      return `${familySettings.reviewReminderTime} reminder: please physically inspect ${child.name}'s chores before fines are finalized.`;
+      return `${familySettings.reviewReminderTime} reminder for ${familySettings.reviewRecipient}: please physically inspect ${child.name}'s chores before fines are finalized.`;
     }
 
     function extensionContactSmsNumber() {
@@ -4308,10 +4321,50 @@
     function renderIngredients() {
       document.getElementById("ingredientList").innerHTML = ingredientRequests.length ? ingredientRequests.map(item => `
         <div class="ingredient-item">
-          <span>${escapeHtml(item)}</span>
-          <span>Requested</span>
+          <span>
+            <strong>${escapeHtml(typeof item === "string" ? item : item.name)}</strong>
+            <span>${escapeHtml(ingredientRequestDetail(item))}</span>
+          </span>
+          ${ingredientRequestPurchased(item)
+            ? `<span>Purchased</span>`
+            : `<button class="ghost-btn" type="button" data-ingredient-name="${encodeURIComponent(typeof item === "string" ? item : item.name)}" ${isAdmin() ? "" : "disabled"}>Mark Purchased</button>`}
         </div>
       `).join("") : `<div class="notice-card">No ingredient requests yet. Vanessa can add cooking needs here for Mom to approve.</div>`;
+      document.querySelectorAll("[data-ingredient-name]").forEach(button => {
+        button.addEventListener("click", () => markIngredientPurchased(decodeURIComponent(button.dataset.ingredientName)));
+      });
+    }
+
+    function ingredientRequestPurchased(item) {
+      return typeof item === "object" && Boolean(item.purchasedAt);
+    }
+
+    function ingredientRequestDetail(item) {
+      if (typeof item === "string") return "Requested before request tracking was added.";
+      const requested = item.requestedAt ? shortDateTime(item.requestedAt) : item.date || "date not recorded";
+      const base = `Requested by ${item.requestedBy || "Vanessa"} · ${requested}`;
+      return item.purchasedAt
+        ? `${base} · purchased by ${item.purchasedBy || "Admin"} · ${shortDateTime(item.purchasedAt)}`
+        : base;
+    }
+
+    function markIngredientPurchased(name) {
+      if (!isAdmin()) {
+        document.getElementById("timeCardStatus").textContent = "Only Brigham or Karmel can mark ingredient requests purchased.";
+        return;
+      }
+      ingredientRequests = ingredientRequests.map(item => {
+        const itemName = typeof item === "string" ? item : item.name;
+        if (itemName !== name) return item;
+        return {
+          ...(typeof item === "string" ? { name: item } : item),
+          purchasedBy: currentUser?.name || "Admin",
+          purchasedAt: new Date().toISOString()
+        };
+      });
+      persistBetaData();
+      renderIngredients();
+      document.getElementById("timeCardStatus").textContent = `${name} marked purchased by ${currentUser?.name || "Admin"}.`;
     }
 
     function addIngredientRequest() {
@@ -4322,11 +4375,19 @@
       const raw = document.getElementById("ingredientRequest").value.trim();
       if (!raw) return;
       raw.split(",").map(item => item.trim()).filter(Boolean).forEach(item => {
-        if (!ingredientRequests.includes(item)) ingredientRequests.push(item);
+        const exists = ingredientRequests.some(existing => (typeof existing === "string" ? existing : existing.name).toLowerCase() === item.toLowerCase());
+        if (!exists) {
+          ingredientRequests.push({
+            name: item,
+            requestedBy: currentUser?.name || "Vanessa",
+            requestedAt: new Date().toISOString()
+          });
+        }
       });
       document.getElementById("ingredientRequest").value = "";
       persistBetaData();
       renderIngredients();
+      document.getElementById("timeCardStatus").textContent = "Ingredient request list updated.";
     }
 
     function renderHelperBoard() {

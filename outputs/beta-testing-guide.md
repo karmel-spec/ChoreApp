@@ -91,7 +91,7 @@ Each helper workday:
 7. Mark a helper pay week paid as Brigham or Karmel and confirm paid-by audit details appear.
 8. Drag tasks into priority order.
 9. Refresh the page and confirm task order stayed saved.
-10. Add ingredient requests.
+10. Add ingredient requests and mark one purchased as Brigham or Karmel.
 
 ## Backup And Device Test
 
