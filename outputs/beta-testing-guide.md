@@ -34,8 +34,8 @@ Each child should test:
 Each day, Brigham or Karmel should test:
 
 1. Send the noon review text cue.
-2. On a phone, confirm the cue opens a text draft to Karmel at 801-427-9293.
-3. Confirm the Noon Review panel logs the cue with Karmel's number, the selected child, who queued it, and the time.
+2. On a phone, confirm the cue opens a text draft to Mom Karmel at 801-427-9293.
+3. Confirm the Noon Review panel logs Mom Karmel's number, the selected child, who queued it, and the time.
 4. Physically inspect chores.
 5. Approve completed chores.
 6. Send one chore back for redo during beta to test the loop.
@@ -55,8 +55,9 @@ Once during beta:
 1. Sign in as a child and confirm Text Extension Request opens a text draft to Brigham at 801-830-0011.
 2. Sign in as Karmel and confirm extension approval is locked.
 3. Sign in as Brigham and approve or deny an extension.
-4. Confirm the Extension Petition panel logs the request and Brigham's approval or denial.
-5. Confirm the selected child’s rotating chore deadline changes only when Brigham approves.
+4. Try an invalid extension time and confirm Brigham cannot save it until the time is valid.
+5. Confirm the Extension Petition panel logs the request and Brigham's approval or denial.
+6. Confirm the selected child’s rotating chore deadline changes only when Brigham approves.
 
 ## Admin Rotation Test
 

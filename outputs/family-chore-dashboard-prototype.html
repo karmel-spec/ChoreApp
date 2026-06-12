@@ -1736,7 +1736,7 @@
               <div class="form-row">
                 <div>
                   <label for="reviewRecipientInput">Review Recipient</label>
-                  <input id="reviewRecipientInput" value="Karmel">
+                  <input id="reviewRecipientInput" value="Mom Karmel">
                 </div>
                 <div>
                   <label for="reviewContactInput">Review Contact</label>
@@ -1788,10 +1788,10 @@
         <section class="panel">
           <div class="panel-head">
             <h3>Noon Review</h3>
-            <span id="reviewPanelLabel">Text Karmel</span>
+            <span id="reviewPanelLabel">Text Mom Karmel</span>
           </div>
           <div class="side-body">
-            <div class="notice-card warn" id="reviewReminderText">At 12:00 PM, send Karmel a text reminder at 801-427-9293 to physically inspect today’s completed chores before fines are finalized.</div>
+            <div class="notice-card warn" id="reviewReminderText">At 12:00 PM, send Mom Karmel a text reminder at 801-427-9293 to physically inspect today’s completed chores before fines are finalized.</div>
             <div class="notice-card" id="reviewSummary">Review summary loading...</div>
             <div class="review-list" id="reviewReminderLog"></div>
             <div class="review-list" id="reviewList"></div>
@@ -2376,7 +2376,7 @@
     const choreStateStoreKey = "teamworkChoresChoreState";
     const betaDataStoreKey = "teamworkChoresBetaData";
     const betaDataMetaStoreKey = "teamworkChoresBetaDataMeta";
-    const defaultReviewRecipient = "Karmel";
+    const defaultReviewRecipient = "Mom Karmel";
     const defaultReviewContact = "801-427-9293";
     const rotatingDailyMinuteCap = 30;
     const accounts = [
@@ -2547,7 +2547,7 @@
     }
 
     function normalizeFamilyReviewContact() {
-      if (!familySettings.reviewRecipient || familySettings.reviewRecipient === "Mom") {
+      if (!familySettings.reviewRecipient || familySettings.reviewRecipient === "Mom" || familySettings.reviewRecipient === "Karmel") {
         familySettings.reviewRecipient = defaultReviewRecipient;
       }
       if (!familySettings.reviewContact || familySettings.reviewContact === "Mom text") {
@@ -2569,8 +2569,26 @@
       return digits.length === 10 ? digits : "";
     }
 
+    function normalizeClockTime(value) {
+      const cleanValue = String(value || "").trim().toUpperCase().replace(/\s+/g, " ");
+      const match = cleanValue.match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?$/);
+      if (!match) return "";
+      let hour = Number(match[1]);
+      const minute = Number(match[2] || "0");
+      const meridiem = match[3] || "";
+      if (minute < 0 || minute > 59) return "";
+      if (meridiem) {
+        if (hour < 1 || hour > 12) return "";
+        return `${hour}:${String(minute).padStart(2, "0")} ${meridiem}`;
+      }
+      if (hour < 0 || hour > 23) return "";
+      const normalizedMeridiem = hour >= 12 ? "PM" : "AM";
+      hour = hour % 12 || 12;
+      return `${hour}:${String(minute).padStart(2, "0")} ${normalizedMeridiem}`;
+    }
+
     function extensionPetitionMessage(child) {
-      const requestedTime = document.getElementById("newTime").value.trim() || familySettings.defaultDeadline;
+      const requestedTime = normalizeClockTime(document.getElementById("newTime").value) || familySettings.defaultDeadline;
       const reason = document.getElementById("reason").value.trim() || "I need more time to finish my chores.";
       return `${child.name} requests a chore deadline extension until ${requestedTime}. Reason: ${reason}`;
     }
@@ -2879,7 +2897,7 @@
 
     function setApprovedDeadline(child, deadline) {
       const key = extensionDeadlineKey(child);
-      const cleanDeadline = deadline.trim() || familySettings.defaultDeadline;
+      const cleanDeadline = normalizeClockTime(deadline) || familySettings.defaultDeadline;
       if (cleanDeadline === familySettings.defaultDeadline) {
         delete extensionDeadlines[key];
       } else {
@@ -4789,7 +4807,7 @@
       const child = children.find(item => item.id === selectedChildId);
       const message = extensionPetitionMessage(child);
       const smsNumber = extensionContactSmsNumber();
-      const requestedTime = document.getElementById("newTime").value.trim() || familySettings.defaultDeadline;
+      const requestedTime = normalizeClockTime(document.getElementById("newTime").value) || familySettings.defaultDeadline;
       logExtensionAudit(child, "requested", requestedTime, message);
       document.getElementById("extensionStatus").textContent = `Extension request ready for ${familySettings.extensionApprover} at ${familySettings.extensionContact}: ${message}`;
       if (smsNumber) {
@@ -4810,7 +4828,13 @@
         document.getElementById("extensionStatus").textContent = `Extension denied for ${child.name}. Fine deadline stays ${familySettings.defaultDeadline}.`;
         return;
       }
-      const newDeadline = setApprovedDeadline(child, document.getElementById("newTime").value);
+      const rawDeadline = document.getElementById("newTime").value.trim();
+      const normalizedDeadline = normalizeClockTime(rawDeadline);
+      if (rawDeadline && !normalizedDeadline) {
+        document.getElementById("extensionStatus").textContent = "Use a valid extension time like 1:30 PM or 13:30.";
+        return;
+      }
+      const newDeadline = setApprovedDeadline(child, normalizedDeadline || familySettings.defaultDeadline);
       logExtensionAudit(child, "approved", newDeadline, `Deadline moved to ${newDeadline}.`);
       render();
       document.getElementById("extensionStatus").textContent = `${familySettings.extensionApprover}-approved extension saved for ${child.name}: deadline moved to ${newDeadline}.`;
