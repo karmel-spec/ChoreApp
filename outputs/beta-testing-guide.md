@@ -42,10 +42,11 @@ Each day, Brigham or Karmel should test:
 7. Have the child tap Redo Done and confirm it returns to waiting for inspection.
 8. Finalize the selected child or all children.
 9. Confirm missed rotating chores charge a fine only once for the day.
-10. Confirm the fine ledger shows the actual missed deadline, including any Brigham-approved extension time.
-11. Confirm fine rows show who charged the fine, when it was charged, and who marked it paid.
-12. Confirm finalized chores lock against late edits.
-13. Mark a fine paid and confirm the open fine total changes.
+10. Try Charge Missed Deadline Fine twice for the same child and confirm the second click is blocked for that day.
+11. Confirm the fine ledger shows the actual missed deadline, including any Brigham-approved extension time.
+12. Confirm fine rows show who charged the fine, when it was charged, and who marked it paid.
+13. Confirm finalized chores lock against late edits.
+14. Mark a fine paid and confirm the open fine total changes.
 
 ## Extension Test
 

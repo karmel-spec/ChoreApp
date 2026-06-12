@@ -4065,7 +4065,16 @@
       }
       const child = children.find(item => item.id === selectedChildId);
       const deadline = approvedDeadlineFor(child);
-      addFineToLedger(child, `Missed ${deadline} deadline`, child.fineRate, deadline);
+      const title = `Missed ${deadline} deadline`;
+      const todayKey = localDateKey();
+      const alreadyCharged = (ledger[child.id] || []).some(item => (
+        item.title === title && item.deadline === deadline && (item.dateKey === todayKey || (!item.dateKey && item.date === new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })))
+      ));
+      if (alreadyCharged) {
+        document.getElementById("fineRateStatus").textContent = `${child.name} already has a manual missed-deadline fine for ${deadline} today.`;
+        return;
+      }
+      addFineToLedger(child, title, child.fineRate, deadline);
       render();
       document.getElementById("fineRateStatus").textContent = `${child.name} was charged $${child.fineRate} for a missed ${deadline} deadline.`;
     }
@@ -4074,6 +4083,7 @@
       child.openFines = Number((child.openFines + amount).toFixed(2));
       ledger[child.id].unshift({
         title,
+        dateKey: localDateKey(),
         date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" }),
         deadline,
         amount: `$${amount}`,
