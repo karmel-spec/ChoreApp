@@ -1902,6 +1902,7 @@
           <div class="side-body">
             <div class="notice-card">Photos earn 10 positivity points, likes earn 5, and encouraging comments earn 10. Secret service photos for another sibling can be marked for double points in beta review.</div>
             <div class="feedback-list" id="familyPhotoFeed"></div>
+            <div class="admin-status" id="familyFeedStatus"></div>
           </div>
         </section>
 
@@ -2844,6 +2845,83 @@
       };
     }
 
+    function actorKeyForName(value) {
+      return String(value || "family").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "family";
+    }
+
+    function currentActorId() {
+      return currentUser?.id || actorKeyForName(currentUser?.name || activeViewer || "Family");
+    }
+
+    function currentActorName() {
+      return currentUser?.name || activeViewer || "Family";
+    }
+
+    function normalizeFeedLike(like, index = 0) {
+      if (typeof like === "string") {
+        return {
+          actorId: actorKeyForName(like),
+          by: like || "Family",
+          at: ""
+        };
+      }
+      const likeData = like && typeof like === "object" ? like : {};
+      const by = String(likeData.by || likeData.name || "Family").trim() || "Family";
+      return {
+        actorId: String(likeData.actorId || likeData.userId || actorKeyForName(by || `like-${index + 1}`)).trim(),
+        by,
+        at: normalizeOptionalTimestamp(likeData.at)
+      };
+    }
+
+    function normalizeFeedComment(comment, index = 0) {
+      if (typeof comment === "string") {
+        return {
+          actorId: "imported-comment",
+          by: "Family",
+          text: comment || "Great work!",
+          at: ""
+        };
+      }
+      const commentData = comment && typeof comment === "object" ? comment : {};
+      const by = String(commentData.by || commentData.name || "Family").trim() || "Family";
+      return {
+        actorId: String(commentData.actorId || commentData.userId || actorKeyForName(by || `comment-${index + 1}`)).trim(),
+        by,
+        text: String(commentData.text || "Great work!").trim() || "Great work!",
+        at: normalizeOptionalTimestamp(commentData.at)
+      };
+    }
+
+    function normalizeFamilyPhotoPost(post, index = 0) {
+      const postData = post && typeof post === "object" ? post : {};
+      const childId = normalizeChildId(postData.childId, selectedChildId);
+      const child = children.find(item => item.id === childId) || children[0];
+      return {
+        ...postData,
+        id: String(postData.id || `imported-photo-post-${index + 1}`),
+        childId,
+        childName: String(postData.childName || child.name).trim() || child.name,
+        choreName: String(postData.choreName || `Shared chore ${index + 1}`).trim() || `Shared chore ${index + 1}`,
+        image: normalizeProofImage(postData.image),
+        likes: Array.isArray(postData.likes) ? postData.likes.map(normalizeFeedLike) : [],
+        comments: Array.isArray(postData.comments) ? postData.comments.map(normalizeFeedComment) : [],
+        createdAt: normalizeTimestamp(postData.createdAt)
+      };
+    }
+
+    function normalizeMonthlyPoints(points) {
+      return Object.entries(points || {}).reduce((periods, [period, records]) => {
+        if (!/^\d{4}-\d{2}$/.test(period) || !records || typeof records !== "object") return periods;
+        periods[period] = validChildIds.reduce((childPoints, childId) => {
+          const value = safeStoredNumber(records[childId], 0);
+          if (value > 0) childPoints[childId] = value;
+          return childPoints;
+        }, {});
+        return periods;
+      }, {});
+    }
+
     function normalizeAvailabilityHold(record, index = 0) {
       const recordData = record && typeof record === "object" ? record : {};
       const childId = normalizeChildId(recordData.childId, selectedChildId);
@@ -3082,8 +3160,8 @@
       if (Array.isArray(data.reviewReminderLog)) reviewReminderLog = data.reviewReminderLog.map(normalizeReviewReminderRecord).slice(0, 60);
       if (Array.isArray(data.choreFeedbackQueue)) choreFeedbackQueue = data.choreFeedbackQueue.map(normalizeChoreFeedbackRecord).slice(0, 120);
       if (Array.isArray(data.childAvailabilityHolds)) childAvailabilityHolds = data.childAvailabilityHolds.map(normalizeAvailabilityHold).slice(0, 120);
-      if (Array.isArray(data.familyPhotoFeed)) familyPhotoFeed = data.familyPhotoFeed.slice(0, 80);
-      if (data.monthlyPoints) monthlyPoints = data.monthlyPoints;
+      if (Array.isArray(data.familyPhotoFeed)) familyPhotoFeed = data.familyPhotoFeed.map(normalizeFamilyPhotoPost).slice(0, 80);
+      if (data.monthlyPoints) monthlyPoints = normalizeMonthlyPoints(data.monthlyPoints);
       if (data.childWorkTargets) childWorkTargets = normalizeChildWorkTargets(data.childWorkTargets);
       if (Array.isArray(data.betaFeedback)) betaFeedback = data.betaFeedback.map(normalizeFeedbackRecord).slice(0, 120);
       if (Number.isFinite(Number(data.helperWeeklyHours))) helperWeeklyHours = Math.max(0, Number(data.helperWeeklyHours));
@@ -4223,17 +4301,35 @@
       familyPhotoFeed = familyPhotoFeed.slice(0, 80);
     }
 
+    function hasPostLike(post, actorId = currentActorId()) {
+      return (post.likes || []).some(like => {
+        const normalized = normalizeFeedLike(like);
+        return normalized.actorId === actorId || actorKeyForName(normalized.by) === actorId;
+      });
+    }
+
+    function hasPostEncouragement(post, actorId = currentActorId()) {
+      return (post.comments || []).some(comment => {
+        const normalized = normalizeFeedComment(comment);
+        return normalized.actorId === actorId || actorKeyForName(normalized.by) === actorId;
+      });
+    }
+
     function renderFamilyPhotoFeed() {
       document.getElementById("familyPhotoFeed").innerHTML = familyPhotoFeed.length ? familyPhotoFeed.slice(0, 10).map(post => `
         <div class="feedback-item">
           <div>
             <strong>${escapeHtml(post.childName)} shared ${escapeHtml(post.choreName)}</strong>
-            <span>${escapeHtml(shortDateTime(post.createdAt))} · ${post.likes.length} likes · ${post.comments.length} comments</span>
+            <span>${escapeHtml(shortDateTime(post.createdAt))} · ${(post.likes || []).length} likes · ${(post.comments || []).length} comments</span>
             ${post.image ? `<img class="proof-thumb" src="${escapeHtml(post.image)}" alt="${escapeHtml(post.childName)} chore proof">` : ""}
+            ${(post.comments || []).slice(-2).map(comment => {
+              const normalized = normalizeFeedComment(comment);
+              return `<span>${escapeHtml(normalized.by)}: ${escapeHtml(normalized.text)}</span>`;
+            }).join("")}
           </div>
           <div class="review-actions">
-            <button class="ghost-btn" type="button" data-like-post="${post.id}">Like +5</button>
-            <button class="ghost-btn" type="button" data-comment-post="${post.id}">Encourage +10</button>
+            <button class="ghost-btn" type="button" data-like-post="${post.id}" ${hasPostLike(post) ? "disabled" : ""}>${hasPostLike(post) ? "Liked +5" : "Like +5"}</button>
+            <button class="ghost-btn" type="button" data-comment-post="${post.id}" ${hasPostEncouragement(post) ? "disabled" : ""}>${hasPostEncouragement(post) ? "Encouraged +10" : "Encourage +10"}</button>
           </div>
         </div>
       `).join("") : `<div class="notice-card">No proof photos in the family feed yet.</div>`;
@@ -4241,22 +4337,32 @@
         button.addEventListener("click", () => {
           const post = familyPhotoFeed.find(item => item.id === button.dataset.likePost);
           if (!post) return;
-          post.likes.push(currentUser?.name || "Family");
+          if (hasPostLike(post)) {
+            document.getElementById("familyFeedStatus").textContent = "You already liked this photo, so no duplicate points were added.";
+            return;
+          }
+          post.likes.push({ actorId: currentActorId(), by: currentActorName(), at: new Date().toISOString() });
           addMonthlyPoints(post.childId, 5);
           persistBetaData();
           renderFamilyPhotoFeed();
           renderPointsPodium();
+          document.getElementById("familyFeedStatus").textContent = `${currentActorName()} liked ${post.childName}'s photo. ${post.childName} earned 5 positivity points.`;
         });
       });
       document.querySelectorAll("[data-comment-post]").forEach(button => {
         button.addEventListener("click", () => {
           const post = familyPhotoFeed.find(item => item.id === button.dataset.commentPost);
           if (!post) return;
-          post.comments.push({ by: currentUser?.name || "Family", text: "Great work!", at: new Date().toISOString() });
+          if (hasPostEncouragement(post)) {
+            document.getElementById("familyFeedStatus").textContent = "You already encouraged this photo, so no duplicate points were added.";
+            return;
+          }
+          post.comments.push({ actorId: currentActorId(), by: currentActorName(), text: "Great work!", at: new Date().toISOString() });
           addMonthlyPoints(post.childId, 10);
           persistBetaData();
           renderFamilyPhotoFeed();
           renderPointsPodium();
+          document.getElementById("familyFeedStatus").textContent = `${currentActorName()} encouraged ${post.childName}. ${post.childName} earned 10 positivity points.`;
         });
       });
     }

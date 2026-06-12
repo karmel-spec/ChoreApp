@@ -99,7 +99,7 @@ Once per week:
 6. Confirm bonus rows show who awarded the money and when it was awarded.
 7. Sign in as a child and Vanessa to confirm they cannot edit fine rates, bonus rates, pay rates, or award/charge money.
 8. Confirm the chore account balance changes only once per awarded milestone.
-9. Like and encourage a proof photo, then confirm monthly positivity points update on the points podium.
+9. Like and encourage a proof photo, then confirm monthly positivity points update on the points podium and duplicate likes or encouragements do not add extra points.
 10. Export a backup after bonus changes.
 
 ## Vanessa Helper Test
