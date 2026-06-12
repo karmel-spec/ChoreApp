@@ -62,11 +62,12 @@ At least twice per week:
 
 1. Toggle chores on and off in the master chore list.
 2. Add one new chore with schedule, minutes, difficulty, and approved-for settings.
-3. Confirm non-admin logins cannot edit the master chore list.
-4. Use Shuffle Preview.
-5. Check the 30-day forecast for one younger child and one older child.
-6. Confirm schedule, notice timing, approved-for fit, and difficulty rules look right.
-7. Check 30-Day Fairness and note if one child seems overloaded.
+3. Confirm master chore rows show who added or last changed rotation settings and when.
+4. Confirm non-admin logins cannot edit the master chore list.
+5. Use Shuffle Preview.
+6. Check the 30-day forecast for one younger child and one older child.
+7. Confirm schedule, notice timing, approved-for fit, and difficulty rules look right.
+8. Check 30-Day Fairness and note if one child seems overloaded.
 
 ## Bonus Test
 

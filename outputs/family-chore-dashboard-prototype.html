@@ -1334,6 +1334,14 @@
       opacity: .58;
     }
 
+    .chore-audit {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
     .difficulty {
       display: inline-block;
       min-width: 28px;
@@ -4244,12 +4252,22 @@
       ].join(" · ");
     }
 
+    function choreAuditDetail(chore) {
+      const created = chore.createdAt
+        ? `added by ${chore.createdBy || "admin"} ${shortDateTime(chore.createdAt)}`
+        : "original chore";
+      const updated = chore.updatedAt
+        ? ` · last changed by ${chore.updatedBy || "admin"} ${shortDateTime(chore.updatedAt)}`
+        : "";
+      return `${created}${updated}`;
+    }
+
     function renderChoreTable() {
       const activeCount = choreLibrary.filter(chore => chore.active !== false).length;
       document.getElementById("choreCountLabel").textContent = `${activeCount} on / ${choreLibrary.length} saved`;
       document.getElementById("choreTable").innerHTML = choreLibrary.map((chore, index) => `
         <tr class="${chore.active === false ? "inactive" : ""}">
-          <td>${escapeHtml(chore.name)}</td>
+          <td>${escapeHtml(chore.name)}<span class="chore-audit">${escapeHtml(choreAuditDetail(chore))}</span></td>
           <td>${chore.minutes}</td>
           <td><span class="difficulty">${chore.difficulty}</span></td>
           <td>${escapeHtml(chore.frequency || "Daily")}</td>
@@ -4266,9 +4284,11 @@
           }
           const chore = choreLibrary[Number(button.dataset.choreIndex)];
           chore.active = chore.active === false;
+          chore.updatedBy = currentUser?.name || "Admin";
+          chore.updatedAt = new Date().toISOString();
           shuffleOffset += 5;
           persistBetaData();
-          document.getElementById("adminStatus").textContent = `${chore.name} is now ${chore.active === false ? "out of" : "back in"} the rotation. ${activeCount} chores were active before this change.`;
+          document.getElementById("adminStatus").textContent = `${chore.name} is now ${chore.active === false ? "out of" : "back in"} the rotation. Changed by ${chore.updatedBy}. ${activeCount} chores were active before this change.`;
           render();
         });
       });
@@ -4598,11 +4618,21 @@
         document.getElementById("adminStatus").textContent = `${name} is already in the master chore list. Toggle it on or edit the existing chore before adding a duplicate.`;
         return;
       }
-      choreLibrary.unshift({ name, minutes, difficulty, fit, frequency, notice, active: true, createdAt: new Date().toISOString() });
+      choreLibrary.unshift({
+        name,
+        minutes,
+        difficulty,
+        fit,
+        frequency,
+        notice,
+        active: true,
+        createdAt: new Date().toISOString(),
+        createdBy: currentUser?.name || "Admin"
+      });
       shuffleOffset += 3;
       persistBetaData();
       document.getElementById("adminChoreName").value = "";
-      document.getElementById("adminStatus").textContent = `${name} added as ${frequency.toLowerCase()} and set to ${notice.toLowerCase()}.`;
+      document.getElementById("adminStatus").textContent = `${name} added by ${currentUser?.name || "Admin"} as ${frequency.toLowerCase()} and set to ${notice.toLowerCase()}.`;
       render();
     }
 
