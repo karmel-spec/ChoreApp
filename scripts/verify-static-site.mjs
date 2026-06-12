@@ -452,6 +452,7 @@ const requiredGuideMarkers = [
   "Try opening another child’s direct dashboard link",
   "Use Undo before parent review",
   "returns to incomplete",
+  "backend dashboard, then confirm the home page displays the saved photos without exposing edit controls",
   "photo-first proof marks the chore ready for review",
   "oversized proof photo",
   "Parent Noon Review Test",

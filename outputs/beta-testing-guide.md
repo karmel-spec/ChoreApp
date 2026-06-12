@@ -13,7 +13,7 @@ Use this guide for the first 2-4 weeks of website beta testing before moving tow
    - Review recipient and contact
 4. Try one invalid rule time and one invalid text number, then confirm the app blocks saving until both are valid.
 5. Save Family Rule Settings once and confirm the panel shows who saved the rules and when.
-6. Add or adjust child profile photos as Brigham or Karmel, including confirming the home page photo tools stay locked for non-admin sessions.
+6. Add or adjust family and child profile photos as Brigham or Karmel in the backend dashboard, then confirm the home page displays the saved photos without exposing edit controls.
 7. Try a non-image or oversized photo and confirm the app asks for an image under 2 MB.
 8. If a photo file fails to read, confirm the app shows a clear try-again message instead of hanging.
 9. Export a backup before making major changes.
