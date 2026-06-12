@@ -42,17 +42,18 @@ Each day, Brigham or Karmel should test:
 3. Confirm the Noon Review panel logs Mom Karmel's number, the selected child, who queued it, and the time.
 4. Confirm only today’s noon reminder cues appear in the daily review panel.
 5. Confirm the reminder status changes between upcoming, due now, and Review Text Queued Today, and that a second click does not create a duplicate reminder record.
-6. Physically inspect chores.
-7. Approve completed chores.
-8. Send one chore back for redo during beta to test the loop.
-9. Have the child tap Redo Done and confirm it returns to waiting for inspection.
-10. Finalize the selected child or all children.
-11. Confirm missed rotating chores charge a fine only once for the day.
-12. Try Charge Missed Deadline Fine twice for the same child and confirm the second click is blocked for that day.
-13. Confirm the fine ledger shows the actual missed deadline, including any Brigham-approved extension time.
-14. Confirm fine rows show who charged the fine, when it was charged, and who marked it paid.
-15. Confirm finalized chores lock against late edits.
-16. Mark a fine paid and confirm the open fine total changes.
+6. Sign in as a child and confirm the noon review text cue is parent-locked for Brigham/Karmel only.
+7. Physically inspect chores.
+8. Approve completed chores.
+9. Send one chore back for redo during beta to test the loop.
+10. Have the child tap Redo Done and confirm it returns to waiting for inspection.
+11. Finalize the selected child or all children.
+12. Confirm missed rotating chores charge a fine only once for the day.
+13. Try Charge Missed Deadline Fine twice for the same child and confirm the second click is blocked for that day.
+14. Confirm the fine ledger shows the actual missed deadline, including any Brigham-approved extension time.
+15. Confirm fine rows show who charged the fine, when it was charged, and who marked it paid.
+16. Confirm finalized chores lock against late edits.
+17. Mark a fine paid and confirm the open fine total changes.
 
 ## Extension Test
 

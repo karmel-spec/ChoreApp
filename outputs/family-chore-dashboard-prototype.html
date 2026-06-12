@@ -3993,6 +3993,12 @@
       const button = document.getElementById("sendReviewBtn");
       const notice = document.getElementById("reviewReminderText");
       if (!button || !notice || !child) return;
+      button.disabled = !isAdmin();
+      if (!isAdmin()) {
+        button.textContent = "Parent Review Locked";
+        notice.textContent = `Only Brigham or Karmel can send the ${familySettings.reviewReminderTime} review text to ${familySettings.reviewRecipient} at ${familySettings.reviewContact}.`;
+        return;
+      }
       const queuedReminder = todayReviewReminderFor(child);
       if (queuedReminder) {
         button.textContent = "Review Text Queued Today";
@@ -5351,6 +5357,11 @@
     document.getElementById("addIngredientBtn").addEventListener("click", addIngredientRequest);
 
     document.getElementById("sendReviewBtn").addEventListener("click", () => {
+      if (!isAdmin()) {
+        document.getElementById("reviewStatus").textContent = "Only Brigham or Karmel can send the noon review text cue.";
+        updateReviewCueState();
+        return;
+      }
       const child = children.find(item => item.id === selectedChildId);
       const message = noonReviewMessage(child);
       const smsNumber = reviewContactSmsNumber();
