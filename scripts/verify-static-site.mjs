@@ -230,6 +230,9 @@ const requiredMarkers = [
   "approved-for fit",
   "Family Rule Settings",
   "familySettings",
+  "familySettingsAudit",
+  "Family rules last saved by",
+  "Family rules saved by",
   "Save Family Rules",
   "table-scroll",
   "min-width: 720px",
@@ -274,6 +277,7 @@ for (const marker of requiredMarkers) {
 const requiredGuideMarkers = [
   "Teamwork Chores Beta Testing Guide",
   "Daily Child Test",
+  "Save Family Rule Settings once and confirm the panel shows who saved the rules and when",
   "Try opening another child’s direct dashboard link",
   "Use Undo before parent review",
   "returns to incomplete",

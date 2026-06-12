@@ -1723,6 +1723,7 @@
               </div>
               <button class="primary-btn" type="button" id="saveFamilySettingsBtn">Save Family Rules</button>
               <div class="admin-status" id="familySettingsStatus"></div>
+              <div class="notice-card" id="familySettingsAudit">Family rules have not been changed in this beta browser yet.</div>
             </div>
           </div>
         </section>
@@ -2920,6 +2921,9 @@
       document.getElementById("approvalOption").textContent = `Approved by ${familySettings.extensionApprover}`;
       document.getElementById("extensionRuleText").textContent = `The child sends a text-style petition to ${familySettings.extensionApprover} at ${familySettings.extensionContact}. Only ${extensionApproverShortName()} can approve an extension; if approved, the deadline moves from ${familySettings.defaultDeadline} to the approved time for that child only.`;
       document.getElementById("reviewReminderText").textContent = `At ${familySettings.reviewReminderTime}, send ${familySettings.reviewRecipient} a text reminder at ${familySettings.reviewContact} to physically inspect today’s completed chores before fines are finalized.`;
+      document.getElementById("familySettingsAudit").textContent = familySettings.updatedAt
+        ? `Family rules last saved by ${familySettings.updatedBy || "Admin"} at ${shortDateTime(familySettings.updatedAt)}.`
+        : "Family rules have not been changed in this beta browser yet.";
       document.getElementById("approveBtn").disabled = !isExtensionApprover();
       document.getElementById("extensionStatus").textContent = isExtensionApprover()
         ? `${familySettings.extensionApprover} is signed in and can approve extension petitions.`
@@ -2938,12 +2942,14 @@
         extensionApprover: document.getElementById("extensionApproverInput").value.trim() || "Brigham-dad",
         extensionContact: document.getElementById("extensionContactInput").value.trim() || "801-830-0011",
         reviewRecipient: document.getElementById("reviewRecipientInput").value.trim() || defaultReviewRecipient,
-        reviewContact: document.getElementById("reviewContactInput").value.trim() || defaultReviewContact
+        reviewContact: document.getElementById("reviewContactInput").value.trim() || defaultReviewContact,
+        updatedBy: currentUser?.name || "Admin",
+        updatedAt: new Date().toISOString()
       };
       normalizeFamilyReviewContact();
       persistBetaData();
       render();
-      document.getElementById("familySettingsStatus").textContent = "Family rules saved for this beta browser.";
+      document.getElementById("familySettingsStatus").textContent = `Family rules saved by ${familySettings.updatedBy} for this beta browser.`;
     }
 
     function renderLoginGrid() {
