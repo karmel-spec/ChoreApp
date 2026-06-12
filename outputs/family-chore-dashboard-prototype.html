@@ -2681,6 +2681,39 @@
       }, {});
     }
 
+    const helperTaskColumns = ["daily", "projects", "oneoff"];
+
+    function normalizeHelperTaskRecord(task, index = 0) {
+      const taskData = task && typeof task === "object" ? task : {};
+      const rawTitle = String(taskData.title || (typeof task === "string" ? task : "")).trim().replace(/\s+/g, " ");
+      const rawDetail = String(taskData.detail || "").trim().replace(/\s+/g, " ");
+      return {
+        ...taskData,
+        title: rawTitle || `Imported helper task ${index + 1}`,
+        detail: rawDetail || "No detail added yet."
+      };
+    }
+
+    function normalizeHelperBoardTasks(savedTasks) {
+      return helperTaskColumns.reduce((normalized, columnId) => {
+        const fallbackTasks = Array.isArray(helperBoardTasks[columnId]) ? helperBoardTasks[columnId] : [];
+        const columnTasks = Array.isArray(savedTasks?.[columnId]) ? savedTasks[columnId] : fallbackTasks;
+        normalized[columnId] = columnTasks.map((task, index) => normalizeHelperTaskRecord(task, index));
+        return normalized;
+      }, {});
+    }
+
+    function normalizeIngredientRequest(request, index = 0) {
+      const requestData = request && typeof request === "object" ? request : {};
+      const rawName = String(requestData.name || (typeof request === "string" ? request : "")).trim().replace(/\s+/g, " ");
+      return {
+        ...requestData,
+        name: rawName || `Imported ingredient request ${index + 1}`,
+        requestedBy: String(requestData.requestedBy || "Vanessa").trim() || "Vanessa",
+        requestedAt: requestData.requestedAt || requestData.date || ""
+      };
+    }
+
     function hydrateBetaData() {
       const data = getStoredBetaData();
       if (data.childSettings) {
@@ -2707,8 +2740,8 @@
         choreLibrary.splice(0, choreLibrary.length, ...data.choreLibrary.map(normalizeChoreRecord));
       }
       if (Array.isArray(data.helperPayRecords)) helperPayRecords = data.helperPayRecords;
-      if (data.helperBoardTasks) helperBoardTasks = { ...helperBoardTasks, ...data.helperBoardTasks };
-      if (Array.isArray(data.ingredientRequests)) ingredientRequests = data.ingredientRequests;
+      if (data.helperBoardTasks) helperBoardTasks = normalizeHelperBoardTasks(data.helperBoardTasks);
+      if (Array.isArray(data.ingredientRequests)) ingredientRequests = data.ingredientRequests.map(normalizeIngredientRequest);
       if (data.fineAssessments) fineAssessments = data.fineAssessments;
       if (data.extensionDeadlines) extensionDeadlines = data.extensionDeadlines;
       if (Array.isArray(data.extensionAuditLog)) extensionAuditLog = data.extensionAuditLog;
