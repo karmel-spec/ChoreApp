@@ -3108,6 +3108,7 @@
               proofImage: "",
               proofName: "",
               proofSubmittedAt: "",
+              redoneAt: "",
               undoneAt: new Date().toISOString()
             });
             render();
@@ -3117,6 +3118,7 @@
           updateChoreRecord(child, chore, choreType, {
             completedAt: new Date().toISOString(),
             reviewStatus: "waiting",
+            redoneAt: existingRecord.reviewStatus === "redo" ? new Date().toISOString() : "",
             undoneAt: ""
           });
           showCelebration(child, chore.name);
@@ -3369,6 +3371,7 @@
 
     function choreStatusText(record, fallback) {
       if (record.reviewStatus === "approved") return "Approved";
+      if (record.reviewStatus === "waiting" && record.redoneAt) return "Redo ready for review";
       if (record.reviewStatus === "redo") return "Needs redo";
       if (record.completedAt && record.proofImage) return "Photo ready for review";
       if (record.completedAt) return "Ready for review";
@@ -3390,9 +3393,10 @@
       const statusClass = choreStatusClass(record, warning);
       const proofThumb = record.proofImage ? `<img class="proof-thumb" src="${escapeHtml(record.proofImage)}" alt="${escapeHtml(chore.name)} proof photo">` : "";
       const completionDisabled = finalized;
+      const completeLabel = completed ? "Undo" : record.reviewStatus === "redo" ? "Redo Done" : finalized ? "Locked" : "Complete";
       const statusText = finalized && !completed && record.reviewStatus !== "approved" ? "Review finalized" : choreStatusText(record, fallbackStatus);
       return `
-        <button class="check-btn ${completed ? "completed" : ""}" type="button" data-chore-type="${choreType}" data-chore-name="${encodedName}" ${completionDisabled ? "disabled" : ""}>${completed ? "Undo" : finalized ? "Locked" : "Complete"}</button>
+        <button class="check-btn ${completed ? "completed" : ""}" type="button" data-chore-type="${choreType}" data-chore-name="${encodedName}" ${completionDisabled ? "disabled" : ""}>${completeLabel}</button>
         <button class="proof-btn" type="button" data-proof-key="${proofKey}" data-chore-type="${choreType}" data-chore-name="${encodedName}" ${finalized ? "disabled" : ""}>${record.proofImage ? "Photo saved" : "Photo"}</button>
         <input class="proof-input" type="file" accept="image/*" data-proof-key="${proofKey}" data-chore-type="${choreType}" data-chore-name="${encodedName}">
         ${proofThumb}
@@ -3487,6 +3491,8 @@
           ? "approved after inspection"
           : record.reviewStatus === "redo"
             ? "sent back for redo"
+            : record.redoneAt
+              ? `${record.proofImage ? "photo submitted" : "redo completed"} · waiting for physical inspection`
             : record.completedAt
               ? `${record.proofImage ? "photo submitted" : "checkbox clicked"} · waiting for physical inspection`
               : "not yet marked complete";
@@ -3524,6 +3530,7 @@
           updateChoreRecord(child, chore, choreType, {
             reviewStatus: action === "approve" ? "approved" : "redo",
             completedAt: action === "approve" ? getChoreRecord(child, chore, choreType).completedAt : "",
+            redoneAt: action === "approve" ? getChoreRecord(child, chore, choreType).redoneAt || "" : "",
             reviewedBy: currentUser.name,
             reviewedAt: new Date().toISOString()
           });
