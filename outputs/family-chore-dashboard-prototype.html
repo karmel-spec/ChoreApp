@@ -1764,6 +1764,7 @@
           <div class="side-body">
             <div class="notice-card">Monthly bonus streaks restart on the first of each month. Overall streaks keep growing and can unlock long-term super bonuses.</div>
             <div class="notice-card" id="bonusPeriodNote">Current monthly bonus period loading...</div>
+            <div class="notice-card" id="bonusEligibilityNote">Bonus eligibility loading...</div>
             <div class="helper-grid">
               <div class="helper-metric"><span>MONTH STREAK</span><strong id="monthlyStreakMetric">0</strong></div>
               <div class="helper-metric"><span>OVERALL STREAK</span><strong id="overallStreakMetric">0</strong></div>
@@ -3579,6 +3580,7 @@
       document.getElementById("overallStreakMetric").textContent = `${child.streak} days`;
       document.getElementById("bonusBalanceMetric").textContent = `$${child.accountBalance}`;
       document.getElementById("bonusPeriodNote").textContent = `Current monthly bonus period: ${currentBonusMonthLabel()}. Next monthly bonus reset: ${nextBonusResetLabel()}.`;
+      document.getElementById("bonusEligibilityNote").textContent = nextBonusEligibility(child);
       document.getElementById("bonus5").value = bonusRules.monthly.find(rule => rule.days === 5)?.amount ?? 5;
       document.getElementById("bonus7").value = bonusRules.monthly.find(rule => rule.days === 7)?.amount ?? 10;
       document.getElementById("bonus30").value = bonusRules.monthly.find(rule => rule.days === 30)?.amount ?? 50;
@@ -3650,6 +3652,38 @@
       return [...superEarned, ...monthlyEarned]
         .filter(bonus => !hasBonusAward(child, bonus))
         .sort((a, b) => b.amount - a.amount || b.days - a.days)[0] || null;
+    }
+
+    function nextBonusEligibility(child) {
+      const eligible = getEligibleBonus(child);
+      if (eligible) {
+        const title = eligible.type === "super" ? `${eligible.days}-day super bonus` : `${eligible.days}-day monthly streak`;
+        return `${child.name} is eligible now for the ${title}: $${eligible.amount}.`;
+      }
+      const nextMilestone = [
+        ...bonusRules.monthly.map(rule => ({
+          type: "monthly",
+          days: rule.days,
+          amount: rule.amount,
+          current: child.monthlyStreak,
+          label: `${rule.days}-day monthly streak`
+        })),
+        ...bonusRules.super.map(rule => ({
+          type: "super",
+          days: rule.days,
+          amount: rule.amount,
+          current: child.streak,
+          label: `${rule.days}-day super bonus`
+        }))
+      ]
+        .filter(rule => !hasBonusAward(child, rule))
+        .map(rule => ({ ...rule, remaining: Math.max(0, rule.days - rule.current) }))
+        .sort((a, b) => a.remaining - b.remaining || b.amount - a.amount || a.days - b.days)[0];
+      if (!nextMilestone) {
+        return `${child.name} has received all configured bonus milestones.`;
+      }
+      const dayLabel = nextMilestone.remaining === 1 ? "day" : "days";
+      return `${child.name} needs ${nextMilestone.remaining} more ${dayLabel} for the next bonus: ${nextMilestone.label} ($${nextMilestone.amount}).`;
     }
 
     function awardEligibleBonus() {
