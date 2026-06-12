@@ -2631,6 +2631,29 @@
       };
     }
 
+    const allowedChoreFrequencies = ["Daily", "Monday only", "Weekly", "Monthly", "One-off"];
+    const allowedChoreFits = ["Anyone", "Boys", "Older kids", "Louis and Brielle", "Brielle only", "Boys only", "Vanessa"];
+    const allowedChoreNotices = ["Starts after 24 hours", "Start today", "Start next week"];
+
+    function normalizeChoreRecord(chore, index = 0) {
+      const name = String(chore?.name || "").trim().replace(/\s+/g, " ");
+      const minutes = Math.round(safeStoredNumber(chore?.minutes, 10, 1));
+      const difficulty = Math.round(safeStoredNumber(chore?.difficulty, 3, 1));
+      const frequency = allowedChoreFrequencies.includes(chore?.frequency) ? chore.frequency : "Daily";
+      const fit = allowedChoreFits.includes(chore?.fit) ? chore.fit : "Anyone";
+      const notice = allowedChoreNotices.includes(chore?.notice) ? chore.notice : (chore?.notice ? "Starts after 24 hours" : "");
+      return {
+        ...chore,
+        name: name || `Imported chore ${index + 1}`,
+        minutes: Math.min(180, Math.max(1, minutes)),
+        difficulty: Math.min(10, Math.max(1, difficulty)),
+        fit,
+        frequency,
+        notice,
+        active: chore?.active === false ? false : true
+      };
+    }
+
     function hydrateBetaData() {
       const data = getStoredBetaData();
       if (data.childSettings) {
@@ -2654,7 +2677,7 @@
       if (data.bonusLedger) bonusLedger = data.bonusLedger;
       if (data.bonusRules) bonusRules = normalizeBonusRules(data.bonusRules);
       if (Array.isArray(data.choreLibrary)) {
-        choreLibrary.splice(0, choreLibrary.length, ...data.choreLibrary);
+        choreLibrary.splice(0, choreLibrary.length, ...data.choreLibrary.map(normalizeChoreRecord));
       }
       if (Array.isArray(data.helperPayRecords)) helperPayRecords = data.helperPayRecords;
       if (data.helperBoardTasks) helperBoardTasks = { ...helperBoardTasks, ...data.helperBoardTasks };
