@@ -175,7 +175,26 @@ const requiredMarkers = [
   "podiumLeadNote",
   "Leading by ${leaderGap} days",
   "escapeHtml",
-  "No eligible rotating chores under ${rotatingDailyMinuteCap} minutes",
+  "No eligible rotating chores under ${getDailyMinuteTarget(child)} minutes",
+  "dailyPositiveThought",
+  "Make 10 layered salad jars",
+  "ensureRequiredChoreSeeds",
+  "trainingNotes",
+  "deleteChore",
+  "Backend Admin: Availability Holds",
+  "activeHoldFor",
+  "No rotating chore fines accrue during this hold",
+  "childWorkTargets",
+  "renderFairnessTargets",
+  "Backend Admin: Chore Feedback Approvals",
+  "choreFeedbackQueue",
+  "renderChoreFeedbackApprovals",
+  "Suggest Edit",
+  "Monthly Points Podium",
+  "familyPhotoFeed",
+  "addMonthlyPoints",
+  "renderFamilyPhotoFeed",
+  "Generic room-only photos are not accepted",
   "teamworkChoresChoreState",
   "teamworkChoresBetaData",
   "teamworkChoresAuthProvider",
@@ -315,7 +334,7 @@ const requiredMarkers = [
   "rotatingDailyMinuteCap",
   "chore.minutes <= rotatingDailyMinuteCap",
   "Boys only",
-  "No eligible rotating chores under ${rotatingDailyMinuteCap} minutes",
+  "No eligible rotating chores under ${getDailyMinuteTarget(child)} minutes",
   "choreAuditDetail",
   "createdBy",
   "updatedBy",
@@ -422,11 +441,18 @@ const requiredGuideMarkers = [
   "invalid extension time",
   "changes only when Brigham approves",
   "master chore rows show who added or last changed rotation settings and when",
+  "training notes",
+  "Delete a test chore",
+  "daily work-minute target",
+  "vacation or sick hold",
+  "Chore Feedback Approvals",
+  "family feed/points update",
   "invalid minutes and invalid difficulty",
   "over-30-minute chore and confirm it does not appear",
   "approved-for fit",
   "separate 5-day, 7-day, 30-day, and super-bonus milestones",
   "bonus rows show who awarded the money and when it was awarded",
+  "monthly positivity points update on the points podium",
   "cannot edit fine rates, bonus rates, pay rates, or award/charge money",
   "cannot mark child chores complete or add proof photos",
   "up/down controls to confirm priority order also works on mobile",
@@ -545,6 +571,9 @@ for (const id of requiredAppIds) {
 
 if (!homeHtml.includes('href="/beta-testing-guide.html"')) {
   throw new Error("Home hub is missing beta guide link.");
+}
+if (homeHtml.includes("Design Options")) {
+  throw new Error("Home hub should not show the old Design Options button.");
 }
 
 const requiredHomeMarkers = [

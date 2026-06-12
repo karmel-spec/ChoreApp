@@ -72,15 +72,19 @@ Once during beta:
 At least twice per week:
 
 1. Toggle chores on and off in the master chore list.
-2. Add one new chore with schedule, minutes, difficulty, and approved-for settings.
+2. Add one new chore with schedule, minutes, difficulty, approved-for settings, and training notes.
 3. Try invalid minutes and invalid difficulty, then confirm the app blocks the new chore until both are valid.
-4. Confirm master chore rows show who added or last changed rotation settings and when.
+4. Confirm master chore rows show who added or last changed rotation settings and when, plus any training notes.
 5. Confirm non-admin logins cannot edit the master chore list.
-6. Add or temporarily edit one over-30-minute chore and confirm it does not appear in a child’s rotating assignment.
-7. Use Shuffle Preview.
-8. Check the 30-day forecast for one younger child and one older child.
-9. Confirm schedule, notice timing, approved-for fit, and difficulty rules look right.
-10. Check 30-Day Fairness and note if one child seems overloaded.
+6. Delete a test chore and confirm it leaves future rotation.
+7. Add or temporarily edit one over-30-minute chore and confirm it does not appear in a child’s rotating assignment unless that child’s fairness target allows it.
+8. Use Shuffle Preview.
+9. Check the 30-day forecast for one younger child and one older child.
+10. Confirm schedule, notice timing, approved-for fit, and difficulty rules look right.
+11. Check 30-Day Fairness, adjust one child’s daily work-minute target, and confirm future assignments respond.
+12. Add a vacation or sick hold and confirm the child is muted with no fine accrual during that hold.
+13. Have a child submit actual minutes/difficulty feedback and confirm it appears in Chore Feedback Approvals for parent accept or deny.
+14. Upload a selfie-style proof photo, confirm generic room-only photos are rejected by the beta prompt, and check that the family feed/points update.
 
 ## Bonus Test
 
@@ -94,7 +98,8 @@ Once per week:
 6. Confirm bonus rows show who awarded the money and when it was awarded.
 7. Sign in as a child and Vanessa to confirm they cannot edit fine rates, bonus rates, pay rates, or award/charge money.
 8. Confirm the chore account balance changes only once per awarded milestone.
-9. Export a backup after bonus changes.
+9. Like and encourage a proof photo, then confirm monthly positivity points update on the points podium.
+10. Export a backup after bonus changes.
 
 ## Vanessa Helper Test
 

@@ -1621,7 +1621,7 @@
   <header>
     <div>
       <h1>Teamwork Chores</h1>
-      <p class="intro">A Design 2 prototype with priority routines first, randomized rotating chores second, noon fines, extension petitions, child dashboards, seven-day planning, 30-day forecasts, fairness checks, and an admin-maintained chore library.</p>
+      <p class="intro" id="dailyThought">Teamwork grows when everyone contributes a little care to the home.</p>
     </div>
     <div class="admin-chip" id="currentUserChip">Not signed in</div>
   </header>
@@ -1644,6 +1644,11 @@
           <p class="podium-summary">Best overall lead for lifetime streaks. Tap a winner to open their dashboard.</p>
           <div class="podium" id="streakPodium"></div>
           <div class="podium-lead-note" id="podiumLeadNote">All-time leader loading...</div>
+        </div>
+        <div class="rule-box">
+          <strong>Monthly Points Podium</strong>
+          <p class="podium-summary">Gold, silver, and bronze for positivity points this month.</p>
+          <div class="podium" id="pointsPodium"></div>
         </div>
         <div class="rule-box">
           <strong>Assignment Rule</strong>
@@ -1708,8 +1713,8 @@
       <aside class="side-stack">
         <section class="panel">
           <div class="panel-head">
-            <h3>Family Rule Settings</h3>
-            <span>Admin</span>
+            <h3>Backend Admin: Family Rule Settings</h3>
+            <span>Backend Admin</span>
           </div>
           <div class="side-body">
             <div class="admin-form admin-only" id="familySettingsForm">
@@ -1795,6 +1800,7 @@
             <div class="notice-card" id="reviewSummary">Review summary loading...</div>
             <div class="review-list" id="reviewReminderLog"></div>
             <div class="review-list" id="reviewList"></div>
+            <div class="notice-card">Proof photos should be selfie-style photos with the child visible doing the job. Generic room-only photos are not accepted during beta.</div>
             <button class="primary-btn" type="button" id="sendReviewBtn">Send Noon Review Text</button>
             <div class="form-row">
               <button class="primary-btn" type="button" id="finalizeChildBtn">Finalize Selected Child</button>
@@ -1886,7 +1892,18 @@
 
         <section class="panel">
           <div class="panel-head">
-            <h3>Profile Photo</h3>
+            <h3>Family Photo Feed</h3>
+            <span>Points</span>
+          </div>
+          <div class="side-body">
+            <div class="notice-card">Photos earn 10 positivity points, likes earn 5, and encouraging comments earn 10. Secret service photos for another sibling can be marked for double points in beta review.</div>
+            <div class="feedback-list" id="familyPhotoFeed"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Backend Admin: Profile Photos</h3>
             <span id="profileName">Child</span>
           </div>
           <div class="side-body">
@@ -1906,7 +1923,7 @@
 
         <section class="panel">
           <div class="panel-head">
-            <h3>Master Chore List</h3>
+            <h3>Backend Admin: Master Chore List</h3>
             <span id="choreCountLabel">Editable</span>
           </div>
           <div class="side-body">
@@ -1920,7 +1937,9 @@
                     <th>When</th>
                     <th>Best Fit</th>
                     <th>Notice</th>
+                    <th>Training</th>
                     <th>Rotation</th>
+                    <th>Delete</th>
                   </tr>
                 </thead>
                 <tbody id="choreTable"></tbody>
@@ -1947,20 +1966,22 @@
           </div>
           <div class="side-body">
             <div class="fairness-note" id="fairnessNote">Comparing rotating chore load across the next 30 days.</div>
+            <div class="fairness-note" id="fairnessRetroNote">Past 30 days will compare completed chore records after beta data starts flowing.</div>
             <div class="fairness-list" id="fairnessList"></div>
+            <div class="fairness-list" id="fairnessTargetList"></div>
           </div>
         </section>
 
         <section class="panel">
           <div class="panel-head">
-            <h3>Admin Chore Intake</h3>
+            <h3>Backend Admin: Chore Intake</h3>
             <span>24-hour notice</span>
           </div>
           <div class="side-body">
             <div class="notice-card">New chores can be added as daily, Monday-only, weekly, monthly, or one-off. By default, they enter the random rotation after 24 hours so kids get notice before assignments switch.</div>
             <div class="admin-form admin-only" id="choreAdminForm">
               <label for="adminChoreName">Chore Name</label>
-              <input id="adminChoreName" value="Clean backyard cushions">
+              <input id="adminChoreName" value="Make 10 layered salad jars">
               <div class="form-row three">
                 <div>
                   <label for="adminFrequency">Schedule</label>
@@ -1974,11 +1995,11 @@
                 </div>
                 <div>
                   <label for="adminMinutes">Minutes</label>
-                  <input id="adminMinutes" value="12" inputmode="numeric">
+                  <input id="adminMinutes" value="30" inputmode="numeric">
                 </div>
                 <div>
                   <label for="adminDifficulty">Difficulty</label>
-                  <input id="adminDifficulty" value="4" inputmode="numeric">
+                  <input id="adminDifficulty" value="7" inputmode="numeric">
                 </div>
               </div>
               <div class="form-row">
@@ -2002,9 +2023,64 @@
                   </select>
                 </div>
               </div>
+              <label for="adminTrainingNotes">Training Notes</label>
+              <textarea id="adminTrainingNotes">Make 5 pint jars and 5 quart jars. Keep wet ingredients low, add sturdy vegetables next, greens near the top, seal and label with date.</textarea>
               <button class="primary-btn" type="button" id="addChoreBtn">Add to Rotation</button>
               <div class="admin-status" id="adminStatus"></div>
             </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Backend Admin: Availability Holds</h3>
+            <span>Vacation / Sick</span>
+          </div>
+          <div class="side-body">
+            <div class="notice-card">Mute chores for vacation, sickness, travel, or an unavailable day so fines do not accrue while a child is excused.</div>
+            <div class="admin-form admin-only" id="availabilityAdminForm">
+              <div class="form-row three">
+                <div>
+                  <label for="holdChild">Child</label>
+                  <select id="holdChild">
+                    <option value="thayne">Thayne</option>
+                    <option value="brig">Brig Jr.</option>
+                    <option value="josh">Josh</option>
+                    <option value="jojo">JoJo</option>
+                    <option value="louis">Louis</option>
+                    <option value="brielle">Brielle</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="holdDays">Days</label>
+                  <input id="holdDays" value="1" inputmode="numeric">
+                </div>
+                <div>
+                  <label for="holdReason">Reason</label>
+                  <select id="holdReason">
+                    <option>Sick day</option>
+                    <option>Vacation</option>
+                    <option>Travel</option>
+                    <option>Busy season</option>
+                  </select>
+                </div>
+              </div>
+              <button class="primary-btn" type="button" id="saveHoldBtn">Mute Chores</button>
+              <div class="admin-status" id="holdStatus"></div>
+            </div>
+            <div class="review-list" id="availabilityLedger"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Backend Admin: Chore Feedback Approvals</h3>
+            <span>Minutes / Difficulty</span>
+          </div>
+          <div class="side-body">
+            <div class="notice-card">When a child reports actual minutes or difficulty that differs from the chore setup, the suggestion waits here for Brigham or Karmel to accept or deny.</div>
+            <div class="review-list" id="choreFeedbackApprovals"></div>
+            <div class="admin-status" id="feedbackApprovalStatus"></div>
           </div>
         </section>
 
@@ -2310,6 +2386,10 @@
       { name: "Refill napkins and paper towels", minutes: 5, difficulty: 2, fit: "Anyone", frequency: "Weekly", active: true },
       { name: "Clean microwave", minutes: 10, difficulty: 4, fit: "Anyone", frequency: "Weekly", active: true },
       { name: "Wipe appliance fronts", minutes: 12, difficulty: 4, fit: "Anyone", frequency: "Weekly", active: true },
+      { name: "Make 10 layered salad jars", minutes: 30, difficulty: 7, fit: "Older kids", frequency: "Weekly", active: true, trainingNotes: "Make 5 pint jars and 5 quart jars. Keep wet ingredients low, add sturdy vegetables next, greens near the top, seal and label with date." },
+      { name: "Prep breakfast burritos", minutes: 25, difficulty: 6, fit: "Older kids", frequency: "Weekly", active: true, trainingNotes: "Cook filling safely, cool before wrapping, label the freezer bag with date and count." },
+      { name: "Wash and chop snack vegetables", minutes: 18, difficulty: 4, fit: "Anyone", frequency: "Weekly", active: true, trainingNotes: "Wash produce first, use a clean board, dry containers, and put cut vegetables at eye level in the fridge." },
+      { name: "Pack lunch snack bins", minutes: 15, difficulty: 3, fit: "Anyone", frequency: "Weekly", active: true, trainingNotes: "Portion snacks evenly, check expiration dates, and leave the pantry shelf tidy." },
       { name: "Organize game shelf", minutes: 15, difficulty: 4, fit: "Anyone", frequency: "Monthly", active: true },
       { name: "Organize craft supplies", minutes: 18, difficulty: 5, fit: "Older kids", frequency: "Monthly", active: true },
       { name: "Clean car interior trash", minutes: 12, difficulty: 4, fit: "Anyone", frequency: "Weekly", active: true },
@@ -2438,6 +2518,18 @@
     let extensionDeadlines = {};
     let extensionAuditLog = [];
     let reviewReminderLog = [];
+    let choreFeedbackQueue = [];
+    let childAvailabilityHolds = [];
+    let familyPhotoFeed = [];
+    let monthlyPoints = {};
+    let childWorkTargets = {
+      thayne: 40,
+      brig: 40,
+      josh: 35,
+      jojo: 35,
+      louis: 30,
+      brielle: 20
+    };
     let familySettings = {
       defaultDeadline: "12:00 PM",
       reviewReminderTime: "12:00 PM",
@@ -2541,6 +2633,11 @@
         extensionDeadlines,
         extensionAuditLog,
         reviewReminderLog,
+        choreFeedbackQueue,
+        childAvailabilityHolds,
+        familyPhotoFeed,
+        monthlyPoints,
+        childWorkTargets,
         familySettings,
         betaFeedback
       }));
@@ -2677,6 +2774,12 @@
     const allowedChoreFrequencies = ["Daily", "Monday only", "Weekly", "Monthly", "One-off"];
     const allowedChoreFits = ["Anyone", "Boys", "Older kids", "Louis and Brielle", "Brielle only", "Boys only", "Vanessa"];
     const allowedChoreNotices = ["Starts after 24 hours", "Start today", "Start next week"];
+    const requiredChoreSeeds = [
+      { name: "Make 10 layered salad jars", minutes: 30, difficulty: 7, fit: "Older kids", frequency: "Weekly", active: true, trainingNotes: "Make 5 pint jars and 5 quart jars. Keep wet ingredients low, add sturdy vegetables next, greens near the top, seal and label with date." },
+      { name: "Prep breakfast burritos", minutes: 25, difficulty: 6, fit: "Older kids", frequency: "Weekly", active: true, trainingNotes: "Cook filling safely, cool before wrapping, label the freezer bag with date and count." },
+      { name: "Wash and chop snack vegetables", minutes: 18, difficulty: 4, fit: "Anyone", frequency: "Weekly", active: true, trainingNotes: "Wash produce first, use a clean board, dry containers, and put cut vegetables at eye level in the fridge." },
+      { name: "Pack lunch snack bins", minutes: 15, difficulty: 3, fit: "Anyone", frequency: "Weekly", active: true, trainingNotes: "Portion snacks evenly, check expiration dates, and leave the pantry shelf tidy." }
+    ];
 
     function normalizeChoreRecord(chore, index = 0) {
       const name = String(chore?.name || "").trim().replace(/\s+/g, " ");
@@ -2693,8 +2796,69 @@
         fit,
         frequency,
         notice,
+        trainingNotes: String(chore?.trainingNotes || "").trim(),
         active: chore?.active === false ? false : true
       };
+    }
+
+    function ensureRequiredChoreSeeds() {
+      requiredChoreSeeds.forEach(seed => {
+        const exists = choreLibrary.some(chore => chore.name.trim().toLowerCase() === seed.name.toLowerCase());
+        if (!exists) {
+          choreLibrary.push({
+            ...seed,
+            createdBy: "System seed",
+            createdAt: new Date().toISOString()
+          });
+        }
+      });
+    }
+
+    function normalizeChoreFeedbackRecord(record, index = 0) {
+      const recordData = record && typeof record === "object" ? record : {};
+      const childId = normalizeChildId(recordData.childId, selectedChildId);
+      const child = children.find(item => item.id === childId) || children[0];
+      return {
+        ...recordData,
+        id: recordData.id || `imported-chore-feedback-${index + 1}`,
+        childId,
+        childName: String(recordData.childName || child.name).trim() || child.name,
+        choreName: String(recordData.choreName || `Imported chore feedback ${index + 1}`).trim(),
+        choreType: ["priority", "rotating"].includes(recordData.choreType) ? recordData.choreType : "rotating",
+        assignedMinutes: safeStoredNumber(recordData.assignedMinutes, 0),
+        assignedDifficulty: safeStoredNumber(recordData.assignedDifficulty, 0),
+        actualMinutes: Math.round(safeStoredNumber(recordData.actualMinutes, 1, 1)),
+        actualDifficulty: Math.min(10, Math.round(safeStoredNumber(recordData.actualDifficulty, 1, 1))),
+        note: String(recordData.note || "").trim(),
+        status: ["pending", "accepted", "denied"].includes(recordData.status) ? recordData.status : "pending",
+        submittedAt: normalizeTimestamp(recordData.submittedAt),
+        reviewedBy: String(recordData.reviewedBy || "").trim(),
+        reviewedAt: normalizeOptionalTimestamp(recordData.reviewedAt)
+      };
+    }
+
+    function normalizeAvailabilityHold(record, index = 0) {
+      const recordData = record && typeof record === "object" ? record : {};
+      const childId = normalizeChildId(recordData.childId, selectedChildId);
+      const startDate = normalizeDateKey(recordData.startDate || recordData.date || localDateKey());
+      const days = Math.min(60, Math.round(safeStoredNumber(recordData.days, 1, 1)));
+      return {
+        ...recordData,
+        id: recordData.id || `imported-hold-${index + 1}`,
+        childId,
+        startDate,
+        days,
+        reason: String(recordData.reason || "Unavailable").trim() || "Unavailable",
+        createdBy: String(recordData.createdBy || "Admin").trim() || "Admin",
+        createdAt: normalizeTimestamp(recordData.createdAt)
+      };
+    }
+
+    function normalizeChildWorkTargets(targets) {
+      return validChildIds.reduce((normalized, childId) => {
+        normalized[childId] = Math.min(60, Math.round(safeStoredNumber(targets?.[childId], childWorkTargets[childId] || rotatingDailyMinuteCap, 5)));
+        return normalized;
+      }, {});
     }
 
     function normalizedLedgerAmount(value) {
@@ -2899,6 +3063,7 @@
       if (Array.isArray(data.choreLibrary)) {
         choreLibrary.splice(0, choreLibrary.length, ...data.choreLibrary.map(normalizeChoreRecord));
       }
+      ensureRequiredChoreSeeds();
       if (Array.isArray(data.helperPayRecords)) helperPayRecords = data.helperPayRecords.map(normalizeHelperPayRecord).slice(0, 80);
       if (data.helperBoardTasks) helperBoardTasks = normalizeHelperBoardTasks(data.helperBoardTasks);
       if (Array.isArray(data.ingredientRequests)) ingredientRequests = data.ingredientRequests.map(normalizeIngredientRequest);
@@ -2908,6 +3073,11 @@
       if (data.extensionDeadlines) extensionDeadlines = normalizeExtensionDeadlines(data.extensionDeadlines);
       if (Array.isArray(data.extensionAuditLog)) extensionAuditLog = data.extensionAuditLog.map(normalizeExtensionAuditRecord).slice(0, 80);
       if (Array.isArray(data.reviewReminderLog)) reviewReminderLog = data.reviewReminderLog.map(normalizeReviewReminderRecord).slice(0, 60);
+      if (Array.isArray(data.choreFeedbackQueue)) choreFeedbackQueue = data.choreFeedbackQueue.map(normalizeChoreFeedbackRecord).slice(0, 120);
+      if (Array.isArray(data.childAvailabilityHolds)) childAvailabilityHolds = data.childAvailabilityHolds.map(normalizeAvailabilityHold).slice(0, 120);
+      if (Array.isArray(data.familyPhotoFeed)) familyPhotoFeed = data.familyPhotoFeed.slice(0, 80);
+      if (data.monthlyPoints) monthlyPoints = data.monthlyPoints;
+      if (data.childWorkTargets) childWorkTargets = normalizeChildWorkTargets(data.childWorkTargets);
       if (Array.isArray(data.betaFeedback)) betaFeedback = data.betaFeedback.map(normalizeFeedbackRecord).slice(0, 120);
       if (Number.isFinite(Number(data.helperWeeklyHours))) helperWeeklyHours = Math.max(0, Number(data.helperWeeklyHours));
       if (Number.isFinite(Number(data.helperRate))) helperRate = Math.max(0, Number(data.helperRate));
@@ -3240,6 +3410,49 @@
 
     function extensionDeadlineKey(child, offset = 0) {
       return `${localDateKey(offset)}|${child.id}`;
+    }
+
+    const dailyThoughts = [
+      "Teamwork means nobody carries the whole house alone.",
+      "A clean space is a quiet gift to everyone who lives here.",
+      "Leadership starts with seeing what needs doing and doing it well.",
+      "Contribution is love made visible.",
+      "Small steady effort turns into real trust.",
+      "Kindness includes leaving a room better than you found it.",
+      "Hard work feels lighter when the whole team helps.",
+      "Discipline today becomes freedom tomorrow.",
+      "Every completed job says: I care about this family."
+    ];
+
+    function dailyPositiveThought() {
+      const index = Math.abs(seededIndex(new Date().getFullYear() + new Date().getMonth() + new Date().getDate(), dailyThoughts.length));
+      return dailyThoughts[index] || dailyThoughts[0];
+    }
+
+    function getDailyMinuteTarget(child) {
+      return childWorkTargets[child.id] || rotatingDailyMinuteCap;
+    }
+
+    function holdEndDate(hold) {
+      const end = new Date(`${hold.startDate}T00:00:00`);
+      end.setDate(end.getDate() + Number(hold.days || 1) - 1);
+      return end;
+    }
+
+    function activeHoldFor(child, offset = 0) {
+      const date = dateForOffset(offset);
+      return childAvailabilityHolds.find(hold => {
+        if (hold.childId !== child.id) return false;
+        const start = new Date(`${hold.startDate}T00:00:00`);
+        const end = holdEndDate(hold);
+        return date >= start && date <= end;
+      });
+    }
+
+    function holdLabel(hold) {
+      if (!hold) return "";
+      const end = holdEndDate(hold).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      return `${hold.reason} through ${end}`;
     }
 
     function approvedDeadlineFor(child, offset = 0) {
@@ -3673,6 +3886,10 @@
             document.getElementById("reviewStatus").textContent = `${child.name}'s review is already finalized for today.`;
             return;
           }
+          if (!window.confirm("Proof photos must be selfie-style photos with the child visible doing the job. Generic room-only photos are not accepted. Continue?")) {
+            document.getElementById("reviewStatus").textContent = "Photo proof cancelled. Please submit a selfie-style job photo with the child visible.";
+            return;
+          }
           const input = document.querySelector(`.proof-input[data-proof-key="${button.dataset.proofKey}"]`);
           if (input) input.click();
         });
@@ -3711,6 +3928,8 @@
               proofName: file.name,
               proofSubmittedAt: new Date().toISOString()
             });
+            addFamilyPhotoPost(child, chore, event.target.result);
+            persistBetaData();
             render();
             document.getElementById("reviewStatus").textContent = `${child.name}'s photo proof for ${chore.name} was saved and marked ready for ${familySettings.reviewRecipient}'s physical inspection.`;
           };
@@ -3721,9 +3940,48 @@
           reader.readAsDataURL(file);
         });
       });
+
+      document.querySelectorAll("[data-feedback-task]").forEach(button => {
+        button.addEventListener("click", () => {
+          if (!canManageChildTasks(child)) {
+            document.getElementById("reviewStatus").textContent = "Only that child or Brigham/Karmel can suggest chore timing or difficulty edits.";
+            return;
+          }
+          const choreName = decodeURIComponent(button.dataset.choreName);
+          const choreType = button.dataset.choreType;
+          const chore = findTodayChore(child, choreName, choreType);
+          if (!chore) return;
+          const feedbackKey = button.dataset.feedbackTask;
+          const actualMinutes = parseWholeNumberValue(document.querySelector(`[data-feedback-minutes="${feedbackKey}"]`)?.value, 1, 180);
+          const actualDifficulty = parseWholeNumberValue(document.querySelector(`[data-feedback-difficulty="${feedbackKey}"]`)?.value, 1, 10);
+          if (actualMinutes === null && actualDifficulty === null) {
+            document.getElementById("reviewStatus").textContent = "Add actual minutes or actual difficulty before suggesting a chore edit.";
+            return;
+          }
+          choreFeedbackQueue.unshift({
+            id: `chore-feedback-${Date.now()}`,
+            childId: child.id,
+            childName: child.name,
+            choreName: chore.name,
+            choreType,
+            assignedMinutes: chore.minutes,
+            assignedDifficulty: chore.difficulty,
+            actualMinutes: actualMinutes || chore.minutes,
+            actualDifficulty: actualDifficulty || chore.difficulty,
+            status: "pending",
+            submittedAt: new Date().toISOString()
+          });
+          choreFeedbackQueue = choreFeedbackQueue.slice(0, 120);
+          persistBetaData();
+          renderChoreFeedbackApprovals();
+          document.getElementById("reviewStatus").textContent = `${child.name}'s timing/difficulty feedback for ${chore.name} was sent to the admin approval list.`;
+        });
+      });
     }
 
     function getRotatingChores(child, dayOffset) {
+      if (activeHoldFor(child, dayOffset)) return [];
+      const dailyTarget = getDailyMinuteTarget(child);
       const eligible = choreLibrary
         .filter(chore => chore.active !== false)
         .filter(chore => noticeAllowsChore(chore, dayOffset))
@@ -3749,7 +4007,7 @@
       const selected = [];
       let total = 0;
       eligible.forEach(chore => {
-        if (total < 22 && total + chore.minutes <= rotatingDailyMinuteCap) {
+        if (total < Math.max(5, dailyTarget - 8) && total + chore.minutes <= dailyTarget) {
           selected.push(chore);
           total += chore.minutes;
         }
@@ -3918,6 +4176,81 @@
       });
     }
 
+    function addMonthlyPoints(childId, amount) {
+      const period = currentBonusPeriod();
+      monthlyPoints[period] = monthlyPoints[period] || {};
+      monthlyPoints[period][childId] = Number((Number(monthlyPoints[period][childId] || 0) + amount).toFixed(2));
+    }
+
+    function currentPointsFor(child) {
+      return Number(monthlyPoints[currentBonusPeriod()]?.[child.id] || 0);
+    }
+
+    function renderPointsPodium() {
+      const winners = [...children].sort((a, b) => currentPointsFor(b) - currentPointsFor(a)).slice(0, 3);
+      document.getElementById("pointsPodium").innerHTML = winners.map((child, index) => `
+        <button class="podium-place ${index === 0 ? "first" : index === 1 ? "second" : "third"}" type="button" data-child="${child.id}" aria-label="${escapeHtml(child.name)} has ${currentPointsFor(child)} monthly positivity points">
+          <span class="podium-rank">${index + 1}</span>
+          ${renderChildPhoto(child, "podium-photo")}
+          <strong class="podium-name">${escapeHtml(child.name)}</strong>
+          <span class="podium-streak">${currentPointsFor(child)} pts</span>
+        </button>
+      `).join("");
+    }
+
+    function addFamilyPhotoPost(child, chore, image) {
+      addMonthlyPoints(child.id, 10);
+      familyPhotoFeed.unshift({
+        id: `photo-post-${Date.now()}`,
+        childId: child.id,
+        childName: child.name,
+        choreName: chore.name,
+        image,
+        likes: [],
+        comments: [],
+        createdAt: new Date().toISOString()
+      });
+      familyPhotoFeed = familyPhotoFeed.slice(0, 80);
+    }
+
+    function renderFamilyPhotoFeed() {
+      document.getElementById("familyPhotoFeed").innerHTML = familyPhotoFeed.length ? familyPhotoFeed.slice(0, 10).map(post => `
+        <div class="feedback-item">
+          <div>
+            <strong>${escapeHtml(post.childName)} shared ${escapeHtml(post.choreName)}</strong>
+            <span>${escapeHtml(shortDateTime(post.createdAt))} · ${post.likes.length} likes · ${post.comments.length} comments</span>
+            ${post.image ? `<img class="proof-thumb" src="${escapeHtml(post.image)}" alt="${escapeHtml(post.childName)} chore proof">` : ""}
+          </div>
+          <div class="review-actions">
+            <button class="ghost-btn" type="button" data-like-post="${post.id}">Like +5</button>
+            <button class="ghost-btn" type="button" data-comment-post="${post.id}">Encourage +10</button>
+          </div>
+        </div>
+      `).join("") : `<div class="notice-card">No proof photos in the family feed yet.</div>`;
+      document.querySelectorAll("[data-like-post]").forEach(button => {
+        button.addEventListener("click", () => {
+          const post = familyPhotoFeed.find(item => item.id === button.dataset.likePost);
+          if (!post) return;
+          post.likes.push(currentUser?.name || "Family");
+          addMonthlyPoints(post.childId, 5);
+          persistBetaData();
+          renderFamilyPhotoFeed();
+          renderPointsPodium();
+        });
+      });
+      document.querySelectorAll("[data-comment-post]").forEach(button => {
+        button.addEventListener("click", () => {
+          const post = familyPhotoFeed.find(item => item.id === button.dataset.commentPost);
+          if (!post) return;
+          post.comments.push({ by: currentUser?.name || "Family", text: "Great work!", at: new Date().toISOString() });
+          addMonthlyPoints(post.childId, 10);
+          persistBetaData();
+          renderFamilyPhotoFeed();
+          renderPointsPodium();
+        });
+      });
+    }
+
     function findTodayChore(child, choreName, choreType) {
       const routines = getRoutines(child);
       const rotating = getRotatingChores(child, 0);
@@ -3958,6 +4291,9 @@
         <button class="check-btn ${completed ? "completed" : ""}" type="button" data-chore-type="${choreType}" data-chore-name="${encodedName}" ${completionDisabled ? "disabled" : ""}>${completeLabel}</button>
         <button class="proof-btn" type="button" data-proof-key="${proofKey}" data-chore-type="${choreType}" data-chore-name="${encodedName}" ${finalized || !canManage ? "disabled" : ""}>${record.proofImage ? "Photo saved" : "Photo"}</button>
         <input class="proof-input" type="file" accept="image/*" data-proof-key="${proofKey}" data-chore-type="${choreType}" data-chore-name="${encodedName}">
+        <input class="actual-minutes-input" aria-label="Actual minutes for ${escapeHtml(chore.name)}" inputmode="numeric" placeholder="${chore.minutes}m" data-feedback-minutes="${proofKey}" ${!canManage ? "disabled" : ""}>
+        <input class="actual-difficulty-input" aria-label="Actual difficulty for ${escapeHtml(chore.name)}" inputmode="numeric" placeholder="D${chore.difficulty}" data-feedback-difficulty="${proofKey}" ${!canManage ? "disabled" : ""}>
+        <button class="ghost-btn" type="button" data-feedback-task="${proofKey}" data-chore-type="${choreType}" data-chore-name="${encodedName}" ${!canManage ? "disabled" : ""}>Suggest Edit</button>
         ${proofThumb}
         <span class="status ${statusClass}">${escapeHtml(statusText)}</span>
       `;
@@ -4032,13 +4368,15 @@
       const rotatingMinutes = rotating.reduce((sum, chore) => sum + chore.minutes, 0);
       const routineMinutes = routines.reduce((sum, chore) => sum + chore.minutes, 0);
       const todayDeadline = approvedDeadlineFor(child);
+      const activeHold = activeHoldFor(child);
 
+      document.getElementById("dailyThought").textContent = dailyPositiveThought();
       document.getElementById("dashboardPhoto").outerHTML = renderChildPhoto(child, "profile-photo");
       document.querySelector(".profile-photo").id = "dashboardPhoto";
       document.getElementById("childHeading").textContent = `${child.name}'s Dashboard`;
-      document.getElementById("childSubhead").textContent = child.id === "louis"
-        ? "Louis has 10 minutes of priority chores, then 26 minutes of rotating chores."
-        : `${child.name} has ${routineMinutes} minutes of priority chores, then ${rotatingMinutes} minutes of rotating chores.`;
+      document.getElementById("childSubhead").textContent = activeHold
+        ? `${child.name} is excused today: ${holdLabel(activeHold)}. No rotating fines accrue while muted.`
+        : dailyPositiveThought();
       document.getElementById("deadlineTime").textContent = todayDeadline;
       document.getElementById("rotatingNote").textContent = `Has until ${todayDeadline}`;
       updateExtensionPetitionState(child);
@@ -4069,7 +4407,9 @@
       `;
       }).join("");
 
-      document.getElementById("rotatingTasks").innerHTML = rotating.length ? rotating.map((chore, index) => {
+      document.getElementById("rotatingTasks").innerHTML = activeHold
+        ? `<div class="notice-card warn">${escapeHtml(child.name)} has chores muted for ${escapeHtml(holdLabel(activeHold))}. No rotating chore fines accrue during this hold.</div>`
+        : rotating.length ? rotating.map((chore, index) => {
         const record = getChoreRecord(child, chore, "rotating");
         const warning = index === 0 && child.openFines;
         return `
@@ -4078,14 +4418,14 @@
           ${renderChildPhoto(child, "task-person")}
           <div>
             <strong>${escapeHtml(chore.name)}</strong>
-            <span>Difficulty ${chore.difficulty}/10. Estimated ${chore.minutes} minutes. Has until ${escapeHtml(todayDeadline)}. If incomplete by the deadline without ${escapeHtml(extensionApproverShortName())}’s extension, charge $${child.fineRate}.</span>
+            <span>Difficulty ${chore.difficulty}/10. Estimated ${chore.minutes} minutes. Has until ${escapeHtml(todayDeadline)}. If incomplete by the deadline without ${escapeHtml(extensionApproverShortName())}’s extension, charge $${child.fineRate}.${chore.trainingNotes ? ` Training: ${escapeHtml(chore.trainingNotes)}` : ""}</span>
           </div>
           <div class="task-actions">
             ${renderTaskActions(child, chore, "rotating", warning ? `$${child.fineRate} risk` : "Due", warning)}
           </div>
         </div>
       `;
-      }).join("") : `<div class="notice-card warn">No eligible rotating chores under ${rotatingDailyMinuteCap} minutes are active for ${escapeHtml(child.name)}. Turn on chores in the master list, lower an estimated time, or adjust difficulty approvals.</div>`;
+      }).join("") : `<div class="notice-card warn">No eligible rotating chores under ${getDailyMinuteTarget(child)} minutes are active for ${escapeHtml(child.name)}. Turn on chores in the master list, lower an estimated time, or adjust difficulty approvals.</div>`;
 
       renderReviewList(child, routines, rotating);
       attachCompletionHandlers(child);
@@ -4093,6 +4433,7 @@
 
     function renderReviewList(child, routines, rotating) {
       const finalized = isChildReviewFinalized(child);
+      const reviewLocked = finalized || !isAdmin();
       const reviewItems = [
         ...routines.map(chore => ({ ...chore, reviewType: "priority", typeLabel: "Priority" })),
         ...rotating.map(chore => ({ ...chore, reviewType: "rotating", typeLabel: "Rotating" }))
@@ -4127,8 +4468,8 @@
           </div>
           <div class="review-actions">
             ${proofThumb}
-            <button class="ghost-btn" type="button" data-review-action="redo" data-review-type="${chore.reviewType}" data-review-name="${encodedName}" ${finalized ? "disabled" : ""}>Redo</button>
-            <button class="primary-btn" type="button" data-review-action="approve" data-review-type="${chore.reviewType}" data-review-name="${encodedName}" ${record.completedAt && !finalized ? "" : "disabled"}>Approve</button>
+            <button class="ghost-btn" type="button" data-review-action="redo" data-review-type="${chore.reviewType}" data-review-name="${encodedName}" ${reviewLocked ? "disabled" : ""}>Redo</button>
+            <button class="primary-btn" type="button" data-review-action="approve" data-review-type="${chore.reviewType}" data-review-name="${encodedName}" ${record.completedAt && !reviewLocked ? "" : "disabled"}>Approve</button>
             <span class="status ${choreStatusClass(record, false)}">${escapeHtml(finalized && record.reviewStatus !== "approved" ? "Finalized" : choreStatusText(record, "Inspect"))}</span>
           </div>
         </div>
@@ -4232,6 +4573,7 @@
           <span class="fairness-stat">D${item.difficultyPoints} · max ${item.hardest}</span>
         </div>
       `).join("");
+      renderFairnessTargets();
     }
 
     function renderLedger(child) {
@@ -4246,7 +4588,7 @@
           </div>
           <div class="review-actions">
             <div class="${item.paid ? "paid" : "unpaid"}">${item.paid ? "Paid" : "Unpaid"}</div>
-            ${item.paid ? "" : `<button class="ghost-btn" type="button" data-pay-fine-index="${index}">Mark Paid</button>`}
+            ${item.paid ? "" : `<button class="ghost-btn" type="button" data-pay-fine-index="${index}" ${isAdmin() ? "" : "disabled"}>Mark Paid</button>`}
           </div>
         </div>
       `).join("") : `<div class="notice-card">No fine records for ${escapeHtml(child.name)} yet.</div>`;
@@ -4268,7 +4610,12 @@
     }
 
     function parseWholeNumberInput(inputId, min, max) {
-      const rawValue = document.getElementById(inputId).value.trim();
+      return parseWholeNumberValue(document.getElementById(inputId).value, min, max);
+    }
+
+    function parseWholeNumberValue(rawValue, min, max) {
+      rawValue = String(rawValue || "").trim();
+      if (!rawValue) return null;
       if (!/^\d+$/.test(rawValue)) return null;
       const value = Number(rawValue);
       if (value < min || value > max) return null;
@@ -4572,6 +4919,7 @@
     }
 
     function getMissedRotatingChores(child) {
+      if (activeHoldFor(child)) return [];
       return getRotatingChores(child, 0).filter(chore => {
         const record = getChoreRecord(child, chore, "rotating");
         return record.reviewStatus !== "approved";
@@ -4626,6 +4974,33 @@
           missed: fineAssessments[key].missed || [],
           streakCredited: Boolean(fineAssessments[key].streakCredited),
           message: `${child.name} was already finalized today.`
+        };
+      }
+
+      const hold = activeHoldFor(child);
+      if (hold) {
+        fineAssessments[key] = {
+          childId: child.id,
+          date: localDateKey(),
+          deadline: approvedDeadlineFor(child),
+          missed: [],
+          charged: 0,
+          streakCredited: false,
+          excused: true,
+          holdReason: hold.reason,
+          finalizedBy: currentUser?.name || "Admin",
+          finalizedAt: new Date().toISOString()
+        };
+        persistBetaData();
+        return {
+          child,
+          skipped: false,
+          charged: 0,
+          missed: [],
+          missedDetail: "",
+          deadline: approvedDeadlineFor(child),
+          streakCredited: false,
+          message: `${child.name} is excused for ${holdLabel(hold)}. No fines charged.`
         };
       }
 
@@ -4813,7 +5188,9 @@
           <td>${escapeHtml(chore.frequency || "Daily")}</td>
           <td>${escapeHtml(chore.fit)}</td>
           <td>${escapeHtml(noticeLabel(chore))}</td>
+          <td>${escapeHtml(chore.trainingNotes || "No notes yet")}</td>
           <td><button class="toggle-btn ${chore.active === false ? "off" : ""}" type="button" data-chore-index="${index}" ${isAdmin() ? "" : "disabled"}>${chore.active === false ? "Off" : "On"}</button></td>
+          <td><button class="ghost-btn" type="button" data-delete-chore-index="${index}" ${isAdmin() ? "" : "disabled"}>Delete</button></td>
         </tr>
       `).join("");
       document.querySelectorAll("[data-chore-index]").forEach(button => {
@@ -4832,6 +5209,135 @@
           render();
         });
       });
+      document.querySelectorAll("[data-delete-chore-index]").forEach(button => {
+        button.addEventListener("click", () => deleteChore(Number(button.dataset.deleteChoreIndex)));
+      });
+    }
+
+    function deleteChore(index) {
+      if (!isAdmin()) {
+        document.getElementById("adminStatus").textContent = "Only Brigham or Karmel can delete chores from the master rotation.";
+        return;
+      }
+      const chore = choreLibrary[index];
+      if (!chore) return;
+      if (!window.confirm(`Delete ${chore.name} from the master chore list? This removes it from future rotations.`)) {
+        document.getElementById("adminStatus").textContent = "Delete cancelled.";
+        return;
+      }
+      choreLibrary.splice(index, 1);
+      shuffleOffset += 9;
+      persistBetaData();
+      render();
+      document.getElementById("adminStatus").textContent = `${chore.name} was deleted from the master chore list by ${currentUser?.name || "Admin"}.`;
+    }
+
+    function renderAvailabilityLedger() {
+      const recent = childAvailabilityHolds.slice(0, 8);
+      document.getElementById("availabilityLedger").innerHTML = recent.length ? recent.map(hold => {
+        const child = children.find(item => item.id === hold.childId) || children[0];
+        return `
+          <div class="review-row">
+            <div>
+              <strong>${escapeHtml(child.name)} muted</strong>
+              <span>${escapeHtml(holdLabel(hold))} · ${hold.days} day${hold.days === 1 ? "" : "s"} · saved by ${escapeHtml(hold.createdBy || "Admin")}</span>
+            </div>
+            <span class="status done">No fines</span>
+          </div>
+        `;
+      }).join("") : `<div class="notice-card">No vacation, sick, or unavailable holds have been added yet.</div>`;
+    }
+
+    function saveAvailabilityHold() {
+      if (!isAdmin()) {
+        document.getElementById("holdStatus").textContent = "Only Brigham or Karmel can mute chores for vacation, sickness, or travel.";
+        return;
+      }
+      const childId = document.getElementById("holdChild").value;
+      const days = parseWholeNumberInput("holdDays", 1, 60);
+      if (days === null) {
+        document.getElementById("holdStatus").textContent = "Use a number of days from 1 to 60.";
+        return;
+      }
+      childAvailabilityHolds.unshift({
+        id: `hold-${Date.now()}`,
+        childId,
+        startDate: localDateKey(),
+        days,
+        reason: document.getElementById("holdReason").value,
+        createdBy: currentUser?.name || "Admin",
+        createdAt: new Date().toISOString()
+      });
+      childAvailabilityHolds = childAvailabilityHolds.slice(0, 120);
+      persistBetaData();
+      render();
+      const child = children.find(item => item.id === childId);
+      document.getElementById("holdStatus").textContent = `${child?.name || "Child"} chores muted for ${days} day${days === 1 ? "" : "s"}.`;
+    }
+
+    function renderFairnessTargets() {
+      document.getElementById("fairnessTargetList").innerHTML = children.map(child => `
+        <div class="fairness-row">
+          <strong>${escapeHtml(child.name)}</strong>
+          <span class="fairness-stat">target ${getDailyMinuteTarget(child)} min/day</span>
+          <input aria-label="${escapeHtml(child.name)} daily target minutes" data-work-target="${child.id}" value="${getDailyMinuteTarget(child)}" inputmode="numeric" ${isAdmin() ? "" : "disabled"}>
+          <button class="ghost-btn" type="button" data-save-work-target="${child.id}" ${isAdmin() ? "" : "disabled"}>Save</button>
+        </div>
+      `).join("");
+      document.querySelectorAll("[data-save-work-target]").forEach(button => {
+        button.addEventListener("click", () => {
+          if (!isAdmin()) return;
+          const childId = button.dataset.saveWorkTarget;
+          const value = parseWholeNumberValue(document.querySelector(`[data-work-target="${childId}"]`)?.value, 5, 60);
+          if (value === null) return;
+          childWorkTargets[childId] = value;
+          persistBetaData();
+          render();
+        });
+      });
+    }
+
+    function renderChoreFeedbackApprovals() {
+      const pending = choreFeedbackQueue.filter(item => item.status === "pending").slice(0, 12);
+      document.getElementById("choreFeedbackApprovals").innerHTML = pending.length ? pending.map(item => `
+        <div class="review-row">
+          <div>
+            <strong>${escapeHtml(item.childName)} suggests ${escapeHtml(item.choreName)}</strong>
+            <span>Assigned ${item.assignedMinutes} min / D${item.assignedDifficulty}. Actual ${item.actualMinutes} min / D${item.actualDifficulty}. ${escapeHtml(shortDateTime(item.submittedAt))}</span>
+          </div>
+          <div class="review-actions">
+            <button class="ghost-btn" type="button" data-chore-feedback-action="deny" data-chore-feedback-id="${item.id}" ${isAdmin() ? "" : "disabled"}>Deny</button>
+            <button class="primary-btn" type="button" data-chore-feedback-action="accept" data-chore-feedback-id="${item.id}" ${isAdmin() ? "" : "disabled"}>Accept</button>
+          </div>
+        </div>
+      `).join("") : `<div class="notice-card">No pending chore timing or difficulty suggestions.</div>`;
+      document.querySelectorAll("[data-chore-feedback-id]").forEach(button => {
+        button.addEventListener("click", () => reviewChoreFeedback(button.dataset.choreFeedbackId, button.dataset.choreFeedbackAction));
+      });
+    }
+
+    function reviewChoreFeedback(feedbackId, action) {
+      if (!isAdmin()) {
+        document.getElementById("feedbackApprovalStatus").textContent = "Only Brigham or Karmel can accept or deny chore edit suggestions.";
+        return;
+      }
+      const item = choreFeedbackQueue.find(entry => entry.id === feedbackId);
+      if (!item || item.status !== "pending") return;
+      item.status = action === "accept" ? "accepted" : "denied";
+      item.reviewedBy = currentUser?.name || "Admin";
+      item.reviewedAt = new Date().toISOString();
+      if (action === "accept") {
+        const chore = choreLibrary.find(entry => entry.name === item.choreName);
+        if (chore) {
+          chore.minutes = item.actualMinutes;
+          chore.difficulty = item.actualDifficulty;
+          chore.updatedBy = item.reviewedBy;
+          chore.updatedAt = item.reviewedAt;
+        }
+      }
+      persistBetaData();
+      render();
+      document.getElementById("feedbackApprovalStatus").textContent = `${item.choreName} feedback ${item.status} by ${item.reviewedBy}.`;
     }
 
     function renderFeedbackLog() {
@@ -5211,6 +5717,7 @@
       const difficulty = parseWholeNumberInput("adminDifficulty", 1, 10);
       const fit = document.getElementById("adminFit").value;
       const notice = document.getElementById("adminNotice").value;
+      const trainingNotes = document.getElementById("adminTrainingNotes").value.trim();
       if (!name) {
         document.getElementById("adminStatus").textContent = "Add a chore name first.";
         return;
@@ -5235,6 +5742,7 @@
         fit,
         frequency,
         notice,
+        trainingNotes,
         active: true,
         createdAt: new Date().toISOString(),
         createdBy: currentUser?.name || "Admin"
@@ -5242,6 +5750,7 @@
       shuffleOffset += 3;
       persistBetaData();
       document.getElementById("adminChoreName").value = "";
+      document.getElementById("adminTrainingNotes").value = "";
       document.getElementById("adminStatus").textContent = `${name} added by ${currentUser?.name || "Admin"} as ${frequency.toLowerCase()} and set to ${notice.toLowerCase()}.`;
       render();
     }
@@ -5259,6 +5768,7 @@
       renderFamilySettings();
       renderFamilyList();
       renderStreakPodium();
+      renderPointsPodium();
       renderDaily(child);
       renderWeekly(child);
       renderForecast(child);
@@ -5275,6 +5785,9 @@
       renderHelperBoard();
       renderIngredients();
       renderFeedbackLog();
+      renderAvailabilityLedger();
+      renderChoreFeedbackApprovals();
+      renderFamilyPhotoFeed();
       renderView();
     }
 
@@ -5347,6 +5860,7 @@
     });
 
     document.getElementById("addChoreBtn").addEventListener("click", addAdminChore);
+    document.getElementById("saveHoldBtn").addEventListener("click", saveAvailabilityHold);
 
     document.getElementById("addFeedbackBtn").addEventListener("click", addFeedback);
 
