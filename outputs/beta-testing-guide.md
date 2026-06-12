@@ -41,17 +41,18 @@ Each day, Brigham or Karmel should test:
 2. On a phone, confirm the cue opens a text draft to Mom Karmel at 801-427-9293.
 3. Confirm the Noon Review panel logs Mom Karmel's number, the selected child, who queued it, and the time.
 4. Confirm only today’s noon reminder cues appear in the daily review panel.
-5. Physically inspect chores.
-6. Approve completed chores.
-7. Send one chore back for redo during beta to test the loop.
-8. Have the child tap Redo Done and confirm it returns to waiting for inspection.
-9. Finalize the selected child or all children.
-10. Confirm missed rotating chores charge a fine only once for the day.
-11. Try Charge Missed Deadline Fine twice for the same child and confirm the second click is blocked for that day.
-12. Confirm the fine ledger shows the actual missed deadline, including any Brigham-approved extension time.
-13. Confirm fine rows show who charged the fine, when it was charged, and who marked it paid.
-14. Confirm finalized chores lock against late edits.
-15. Mark a fine paid and confirm the open fine total changes.
+5. Confirm the reminder status changes between upcoming, due now, and Review Text Queued Today, and that a second click does not create a duplicate reminder record.
+6. Physically inspect chores.
+7. Approve completed chores.
+8. Send one chore back for redo during beta to test the loop.
+9. Have the child tap Redo Done and confirm it returns to waiting for inspection.
+10. Finalize the selected child or all children.
+11. Confirm missed rotating chores charge a fine only once for the day.
+12. Try Charge Missed Deadline Fine twice for the same child and confirm the second click is blocked for that day.
+13. Confirm the fine ledger shows the actual missed deadline, including any Brigham-approved extension time.
+14. Confirm fine rows show who charged the fine, when it was charged, and who marked it paid.
+15. Confirm finalized chores lock against late edits.
+16. Mark a fine paid and confirm the open fine total changes.
 
 ## Extension Test
 
