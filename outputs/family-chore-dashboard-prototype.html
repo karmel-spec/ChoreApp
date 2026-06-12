@@ -1272,6 +1272,28 @@
       font-weight: 900;
     }
 
+    .credit-pill {
+      color: #08705a;
+      background: #dff5ef;
+      border: 1px solid #b7e8db;
+      border-radius: 6px;
+      padding: 5px 7px;
+      font-size: 11px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .debit-pill {
+      color: #b43b33;
+      background: #ffecea;
+      border: 1px solid #ffd0cc;
+      border-radius: 6px;
+      padding: 5px 7px;
+      font-size: 11px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
     .chore-table {
       width: 100%;
       min-width: 720px;
@@ -1797,6 +1819,22 @@
             </div>
             <div class="notice-card" id="bonusLedgerSummary">Bonus totals loading...</div>
             <div class="ledger" id="bonusLedger"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Chore Account Activity</h3>
+            <span id="accountActivityName">Child</span>
+          </div>
+          <div class="side-body">
+            <div class="helper-grid">
+              <div class="helper-metric"><span>BONUS BALANCE</span><strong id="accountBonusMetric">$0</strong></div>
+              <div class="helper-metric"><span>OPEN FINES</span><strong id="accountFineMetric">$0</strong></div>
+              <div class="helper-metric"><span>NET AFTER FINES</span><strong id="accountNetMetric">$0</strong></div>
+            </div>
+            <div class="notice-card" id="accountActivitySummary">Account activity loading...</div>
+            <div class="ledger" id="accountActivityLedger"></div>
           </div>
         </section>
 
@@ -3561,6 +3599,46 @@
       return Number(String(value).replace(/[^0-9.]/g, "")) || 0;
     }
 
+    function renderAccountActivity(child) {
+      const fineRows = (ledger[child.id] || []).map((item, index) => ({
+        kind: "debit",
+        order: index,
+        title: item.paid ? `Paid fine: ${item.title}` : `Open fine: ${item.title}`,
+        detail: `${item.date}${item.deadline ? ` · deadline ${item.deadline}` : ""}${item.paid ? " · marked paid" : " · still owed"}`,
+        amount: moneyAmount(item.amount),
+        label: item.paid ? "Paid fine" : "Fine due"
+      }));
+      const bonusRows = (bonusLedger[child.id] || []).map((item, index) => ({
+        kind: "credit",
+        order: index,
+        title: item.title,
+        detail: `${item.date}${item.period ? ` · ${item.period}` : ""}${item.paid ? " · credited" : " · pending"}`,
+        amount: moneyAmount(item.amount),
+        label: item.paid ? "Credit" : "Pending"
+      }));
+      const activityRows = [...fineRows, ...bonusRows].sort((a, b) => a.order - b.order).slice(0, 8);
+      const creditedBonuses = bonusRows
+        .filter(item => item.label === "Credit")
+        .reduce((sum, item) => sum + item.amount, 0);
+      const openFineTotal = Number(child.openFines || 0);
+      const paidFineTotal = Number(child.paidFines || 0);
+      const netAfterFines = Number((Number(child.accountBalance || 0) - openFineTotal).toFixed(2));
+      document.getElementById("accountActivityName").textContent = child.name;
+      document.getElementById("accountBonusMetric").textContent = `$${child.accountBalance}`;
+      document.getElementById("accountFineMetric").textContent = `$${openFineTotal}`;
+      document.getElementById("accountNetMetric").textContent = `$${netAfterFines}`;
+      document.getElementById("accountActivitySummary").textContent = `${child.name} has $${creditedBonuses} in credited bonuses, $${openFineTotal} in open fines, and $${paidFineTotal} in paid fine history. Net chore account after open fines: $${netAfterFines}.`;
+      document.getElementById("accountActivityLedger").innerHTML = activityRows.length ? activityRows.map(item => `
+        <div class="ledger-row">
+          <div>
+            <strong>${escapeHtml(item.title)}</strong>
+            <span>${escapeHtml(item.detail)}</span>
+          </div>
+          <div class="${item.kind === "credit" ? "credit-pill" : "debit-pill"}">${item.kind === "credit" ? "+" : "-"}$${item.amount} · ${escapeHtml(item.label)}</div>
+        </div>
+      `).join("") : `<div class="notice-card">No account activity for ${escapeHtml(child.name)} yet. Bonuses and fines will appear here together once beta testing starts.</div>`;
+    }
+
     function ensureCurrentMonthlyStreakPeriod(child) {
       const period = currentBonusPeriod();
       if (!child.monthlyStreakPeriod) {
@@ -4270,6 +4348,7 @@
       renderFairnessSummary();
       renderLedger(child);
       renderBonusPanel(child);
+      renderAccountActivity(child);
       renderProfilePanel(child);
       renderBetaDataSummary();
       renderChoreTable();
