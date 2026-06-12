@@ -2929,6 +2929,29 @@
       return text.startsWith("data:image/") && text.length <= 3000000 ? text : "";
     }
 
+    function normalizeStoredPhoto(value) {
+      const text = String(value || "").trim();
+      if (text.startsWith("data:image/") && text.length <= 3000000) return text;
+      if (/^https:\/\/[^\s"<>]+$/i.test(text)) return text;
+      return "";
+    }
+
+    function normalizeChildPhotos(photos) {
+      return validChildIds.reduce((normalized, childId) => {
+        const photo = normalizeStoredPhoto(photos?.[childId]);
+        if (photo) normalized[childId] = photo;
+        return normalized;
+      }, {});
+    }
+
+    function normalizeGmailLinks(links) {
+      return accounts.reduce((normalized, account) => {
+        const email = String(links?.[account.id] || "").trim().toLowerCase();
+        if (/^[^\s@]+@gmail\.com$/.test(email)) normalized[account.id] = email;
+        return normalized;
+      }, {});
+    }
+
     function normalizeChoreStateRecord(key, record) {
       const [date, childId, choreType, ...choreNameParts] = String(key).split("|");
       const cleanDate = normalizeDateKey(date, "");
@@ -3041,15 +3064,16 @@
 
     function applyImportedBackup(backup) {
       const validBackup = validateBetaBackup(backup);
+      const cleanFamilyPhoto = normalizeStoredPhoto(validBackup.familyPhoto);
       localStorage.setItem(betaDataStoreKey, JSON.stringify(validBackup.betaData || {}));
       localStorage.setItem(choreStateStoreKey, JSON.stringify(normalizeChoreState(validBackup.choreState || {})));
-      localStorage.setItem(photoStoreKey, JSON.stringify(validBackup.childPhotos || {}));
-      if (validBackup.familyPhoto) {
-        localStorage.setItem(familyPhotoStoreKey, validBackup.familyPhoto);
+      localStorage.setItem(photoStoreKey, JSON.stringify(normalizeChildPhotos(validBackup.childPhotos || {})));
+      if (cleanFamilyPhoto) {
+        localStorage.setItem(familyPhotoStoreKey, cleanFamilyPhoto);
       } else {
         localStorage.removeItem(familyPhotoStoreKey);
       }
-      localStorage.setItem(gmailStoreKey, JSON.stringify(validBackup.gmailLinks || {}));
+      localStorage.setItem(gmailStoreKey, JSON.stringify(normalizeGmailLinks(validBackup.gmailLinks || {})));
       saveBetaDataMeta({ lastImportAt: new Date().toISOString(), importedFrom: validBackup.exportedAt || "" });
       hydrateBetaData();
       hydrateStoredChildPhotos();
