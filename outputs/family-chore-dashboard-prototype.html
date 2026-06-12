@@ -2801,6 +2801,30 @@
       };
     }
 
+    const feedbackCategories = ["Bug", "Chore timing", "Fairness", "Fine or bonus", "Wording", "Feature idea"];
+    const feedbackSeverities = ["Watch", "Important", "Blocking"];
+    const feedbackPeople = ["Whole family", "Thayne", "Brig Jr.", "Josh", "JoJo", "Louis", "Brielle", "Vanessa"];
+
+    function normalizeFeedbackRecord(record, index = 0) {
+      const recordData = record && typeof record === "object" ? record : {};
+      const category = feedbackCategories.includes(recordData.category) ? recordData.category : "Bug";
+      const severity = feedbackSeverities.includes(recordData.severity) ? recordData.severity : "Watch";
+      const person = feedbackPeople.includes(recordData.person) ? recordData.person : "Whole family";
+      const text = String(recordData.text || (typeof record === "string" ? record : "")).trim().replace(/\s+/g, " ");
+      return {
+        ...recordData,
+        id: recordData.id || `imported-feedback-${index + 1}`,
+        category,
+        severity,
+        person,
+        text: text || `Imported feedback note ${index + 1}`,
+        date: String(recordData.date || new Date().toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })).trim(),
+        resolved: Boolean(recordData.resolved),
+        resolvedBy: recordData.resolved ? String(recordData.resolvedBy || "Admin").trim() || "Admin" : "",
+        resolvedAt: recordData.resolved ? String(recordData.resolvedAt || recordData.date || "").trim() : ""
+      };
+    }
+
     function hydrateBetaData() {
       const data = getStoredBetaData();
       if (data.childSettings) {
@@ -2835,7 +2859,7 @@
       if (data.extensionDeadlines) extensionDeadlines = normalizeExtensionDeadlines(data.extensionDeadlines);
       if (Array.isArray(data.extensionAuditLog)) extensionAuditLog = data.extensionAuditLog.map(normalizeExtensionAuditRecord).slice(0, 80);
       if (Array.isArray(data.reviewReminderLog)) reviewReminderLog = data.reviewReminderLog.map(normalizeReviewReminderRecord).slice(0, 60);
-      if (Array.isArray(data.betaFeedback)) betaFeedback = data.betaFeedback;
+      if (Array.isArray(data.betaFeedback)) betaFeedback = data.betaFeedback.map(normalizeFeedbackRecord).slice(0, 120);
       if (Number.isFinite(Number(data.helperWeeklyHours))) helperWeeklyHours = Number(data.helperWeeklyHours);
       if (Number.isFinite(Number(data.helperRate))) helperRate = Number(data.helperRate);
       if (Number.isFinite(Number(data.shuffleOffset))) shuffleOffset = Number(data.shuffleOffset);
