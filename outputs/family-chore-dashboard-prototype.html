@@ -3230,6 +3230,9 @@
         `${Object.keys(betaData.extensionDeadlines || {}).length} active extensions`,
         `${(betaData.extensionAuditLog || []).length} extension audit events`,
         `${(betaData.reviewReminderLog || []).length} review reminders`,
+        `${(betaData.childAvailabilityHolds || []).length} availability holds`,
+        `${(betaData.choreFeedbackQueue || []).length} chore feedback suggestions`,
+        `${(betaData.familyPhotoFeed || []).length} family feed posts`,
         `${(betaData.helperPayRecords || []).length} helper pay weeks`,
         `${(betaData.ingredientRequests || []).length} ingredient requests`,
         `${backup?.familyPhoto ? 1 : 0} family photo`,
@@ -4511,14 +4514,15 @@
       const grid = document.getElementById("weekGrid");
       grid.innerHTML = Array.from({ length: 7 }).map((_, day) => {
         const routines = getRoutines(child).slice(0, 2);
+        const hold = activeHoldFor(child, day);
         const rotating = getRotatingChores(child, day);
         const minutes = rotating.reduce((sum, chore) => sum + chore.minutes, 0);
         return `
           <div class="day-card ${day === 0 ? "today" : ""}">
             <h4>${formatDate(day)}</h4>
-            <p>${minutes} rotating min, due ${escapeHtml(day === 0 ? approvedDeadlineFor(child, day) : familySettings.defaultDeadline)}</p>
+            <p>${hold ? `Muted: ${escapeHtml(hold.reason)}` : `${minutes} rotating min, due ${escapeHtml(day === 0 ? approvedDeadlineFor(child, day) : familySettings.defaultDeadline)}`}</p>
             ${routines.map(chore => `<span class="mini-task streak">${escapeHtml(chore.name)}</span>`).join("")}
-            ${rotating.length ? rotating.map(chore => `<span class="mini-task">${escapeHtml(chore.name)} · ${chore.minutes}m · D${chore.difficulty}</span>`).join("") : `<span class="mini-task">No eligible rotating chores active</span>`}
+            ${hold ? `<span class="mini-task">Chores muted. No fines accrue.</span>` : rotating.length ? rotating.map(chore => `<span class="mini-task">${escapeHtml(chore.name)} · ${chore.minutes}m · D${chore.difficulty}</span>`).join("") : `<span class="mini-task">No eligible rotating chores active</span>`}
           </div>
         `;
       }).join("");
@@ -4527,9 +4531,10 @@
     function renderForecast(child) {
       document.getElementById("forecastName").textContent = child.name;
       document.getElementById("forecastList").innerHTML = Array.from({ length: 30 }).map((_, day) => {
+        const hold = activeHoldFor(child, day);
         const rotating = getRotatingChores(child, day);
         const minutes = rotating.reduce((sum, chore) => sum + chore.minutes, 0);
-        const chores = rotating.length ? rotating.map(chore => `${escapeHtml(chore.name)} (${chore.minutes}m, D${chore.difficulty})`).join("; ") : "No eligible rotating chores active";
+        const chores = hold ? `Muted for ${escapeHtml(hold.reason)}. No fines accrue.` : rotating.length ? rotating.map(chore => `${escapeHtml(chore.name)} (${chore.minutes}m, D${chore.difficulty})`).join("; ") : "No eligible rotating chores active";
         return `
           <div class="forecast-row">
             <div class="forecast-date">${formatDate(day)}</div>
@@ -5000,6 +5005,7 @@
           missedDetail: "",
           deadline: approvedDeadlineFor(child),
           streakCredited: false,
+          excused: true,
           message: `${child.name} is excused for ${holdLabel(hold)}. No fines charged.`
         };
       }
@@ -5061,11 +5067,12 @@
       const chargedChildren = results.filter(result => result.charged > 0).map(result => `${result.child.name} $${result.charged}`);
       const chargedDetails = results.filter(result => result.charged > 0).map(result => `${result.child.name}: ${result.missedDetail}`);
       const streakChildren = results.filter(result => result.streakCredited && !result.skipped).map(result => result.child.name);
+      const excusedChildren = results.filter(result => result.excused).map(result => result.child.name);
       const skippedCount = results.filter(result => result.skipped).length;
       render();
       document.getElementById("reviewStatus").textContent = chargedChildren.length
-        ? `Noon review finalized. Charged ${chargedChildren.join(", ")}. Total $${chargedTotal}. Reasons: ${chargedDetails.join(" | ")}. ${streakChildren.length ? `Streaks credited: ${streakChildren.join(", ")}.` : ""} ${skippedCount ? `${skippedCount} already finalized.` : ""}`
-        : `Noon review finalized. No new fines charged. ${streakChildren.length ? `Streaks credited: ${streakChildren.join(", ")}.` : ""} ${skippedCount ? `${skippedCount} already finalized.` : ""}`;
+        ? `Noon review finalized. Charged ${chargedChildren.join(", ")}. Total $${chargedTotal}. Reasons: ${chargedDetails.join(" | ")}. ${excusedChildren.length ? `Excused: ${excusedChildren.join(", ")}.` : ""} ${streakChildren.length ? `Streaks credited: ${streakChildren.join(", ")}.` : ""} ${skippedCount ? `${skippedCount} already finalized.` : ""}`
+        : `Noon review finalized. No new fines charged. ${excusedChildren.length ? `Excused: ${excusedChildren.join(", ")}.` : ""} ${streakChildren.length ? `Streaks credited: ${streakChildren.join(", ")}.` : ""} ${skippedCount ? `${skippedCount} already finalized.` : ""}`;
     }
 
     function markFinePaid(child, fineIndex) {
@@ -5155,6 +5162,9 @@
         `${Object.keys(betaData.extensionDeadlines || extensionDeadlines).length} active extensions`,
         `${(betaData.extensionAuditLog || extensionAuditLog).length} extension audit events`,
         `${(betaData.reviewReminderLog || reviewReminderLog).length} review reminder cues`,
+        `${(betaData.childAvailabilityHolds || childAvailabilityHolds).length} availability holds`,
+        `${(betaData.choreFeedbackQueue || choreFeedbackQueue).length} chore feedback suggestions`,
+        `${(betaData.familyPhotoFeed || familyPhotoFeed).length} family feed posts`,
         `${(betaData.helperPayRecords || helperPayRecords).length} helper pay weeks`,
         `${(betaData.ingredientRequests || ingredientRequests).length} ingredient requests`,
         `${(betaData.betaFeedback || betaFeedback).length} feedback notes`,

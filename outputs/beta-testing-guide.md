@@ -82,7 +82,7 @@ At least twice per week:
 9. Check the 30-day forecast for one younger child and one older child.
 10. Confirm schedule, notice timing, approved-for fit, and difficulty rules look right.
 11. Check 30-Day Fairness, adjust one child’s daily work-minute target, and confirm future assignments respond.
-12. Add a vacation or sick hold and confirm the child is muted with no fine accrual during that hold.
+12. Add a vacation or sick hold and confirm the child is muted in daily, 7-day, and 30-day forecast views with no fine accrual during that hold.
 13. Have a child submit actual minutes/difficulty feedback and confirm it appears in Chore Feedback Approvals for parent accept or deny.
 14. Upload a selfie-style proof photo, confirm generic room-only photos are rejected by the beta prompt, and check that the family feed/points update.
 
@@ -129,9 +129,9 @@ Once per week:
 5. If a backup file cannot be read, confirm the app shows a clear try-again message.
 6. Import the backup in another browser or device.
 7. Confirm the import warning appears before replacing local beta data.
-8. Confirm chores, chore minutes/difficulty, chore checkbox, proof photo, redo, and approval statuses, family photo, child photo, and Gmail link restore values, helper task priority lists and ingredient request names, helper pay records, helper weekly hours, rate, shifts, and paid audit details, child account totals, bonus rules, family rule times, approver, and text contacts, fine and bonus ledger amounts/dates, finalized review records, extension deadlines, extension audit logs, review reminder logs, feedback notes and resolved status, fines, bonuses, and settings restore.
+8. Confirm chores, chore minutes/difficulty, chore checkbox, proof photo, redo, and approval statuses, family photo, child photo, and Gmail link restore values, helper task priority lists and ingredient request names, helper pay records, helper weekly hours, rate, shifts, and paid audit details, child account totals, bonus rules, family rule times, approver, and text contacts, availability holds, chore feedback suggestions, family feed posts, fine and bonus ledger amounts/dates, finalized review records, extension deadlines, extension audit logs, review reminder logs, feedback notes and resolved status, fines, bonuses, and settings restore.
 9. Reset test data only after exporting a backup, and confirm the family photo, child photos, and Gmail links are cleared with the rest of the local beta data.
-10. Check the local beta data summary counts for chore records, finalized reviews, extensions, extension audit events, review reminder cues, helper pay weeks, ingredient requests, family photo, child photos, Gmail links, and last export/import/reset timestamps.
+10. Check the local beta data summary counts for chore records, finalized reviews, extensions, extension audit events, review reminder cues, availability holds, chore feedback suggestions, family feed posts, helper pay weeks, ingredient requests, family photo, child photos, Gmail links, and last export/import/reset timestamps.
 11. After a new GitHub/Netlify publish, reload the installed web app and confirm the latest dashboard changes appear while offline fallback still opens when the network is unavailable.
 
 ## Known Prototype Limits
