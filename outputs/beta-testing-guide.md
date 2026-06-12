@@ -14,7 +14,8 @@ Use this guide for the first 2-4 weeks of website beta testing before moving tow
 4. Try one invalid rule time and one invalid text number, then confirm the app blocks saving until both are valid.
 5. Save Family Rule Settings once and confirm the panel shows who saved the rules and when.
 6. Add or adjust child profile photos as Brigham or Karmel, including confirming the home page photo tools stay locked for non-admin sessions.
-7. Export a backup before making major changes.
+7. Try a non-image or oversized photo and confirm the app asks for an image under 2 MB.
+8. Export a backup before making major changes.
 
 ## Daily Child Test
 
@@ -27,8 +28,9 @@ Each child should test:
 5. Use Undo before parent review and confirm the chore returns to incomplete.
 6. Complete rotating chores.
 7. Add at least one photo proof during the week and confirm photo-first proof marks the chore ready for review.
-8. Check the 7-day view and notice whether future assignments look understandable.
-9. Watch for celebration messages and whether they feel age-appropriate.
+8. Try a non-image or oversized proof photo and confirm the app blocks it before saving.
+9. Check the 7-day view and notice whether future assignments look understandable.
+10. Watch for celebration messages and whether they feel age-appropriate.
 
 ## Parent Noon Review Test
 

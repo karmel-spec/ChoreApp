@@ -176,6 +176,9 @@ const requiredMarkers = [
   "fineAuditDetail",
   "parseCurrencyInput",
   "parseWholeNumberInput",
+  "imageFileError",
+  "Use an image under 2 MB so beta backups stay reliable",
+  "Choose an image file",
   "Use valid bonus amounts like 5, 10.50, or 100",
   "Use a valid fine amount like 2, 5, or 7.50",
   "Use a valid hourly rate like 17 or 17.50",
@@ -306,6 +309,7 @@ const requiredGuideMarkers = [
   "Use Undo before parent review",
   "returns to incomplete",
   "photo-first proof marks the chore ready for review",
+  "oversized proof photo",
   "Parent Noon Review Test",
   "opens a text draft to Mom Karmel at 801-427-9293",
   "logs Mom Karmel's number",
@@ -449,7 +453,9 @@ const requiredHomeMarkers = [
   "isHomePhotoAdmin",
   "Photo tools are locked until Brigham or Karmel signs in",
   "Only Brigham or Karmel can edit family photos",
-  "Only Brigham or Karmel can edit child photos"
+  "Only Brigham or Karmel can edit child photos",
+  "imageFileError",
+  "Use an image under 2 MB so beta backups stay reliable"
 ];
 
 for (const marker of requiredHomeMarkers) {

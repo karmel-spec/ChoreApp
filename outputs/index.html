@@ -627,6 +627,13 @@
       renderStoredPhotos();
     }
 
+    function imageFileError(file) {
+      const maxBytes = 2 * 1024 * 1024;
+      if (!file.type.startsWith("image/")) return "Choose an image file.";
+      if (file.size > maxBytes) return "Use an image under 2 MB so beta backups stay reliable.";
+      return "";
+    }
+
     function renderStoredPhotos() {
       const familyPhoto = localStorage.getItem(familyPhotoKey);
       if (familyPhoto) {
@@ -650,6 +657,12 @@
       const file = document.getElementById("familyPhotoFile").files[0];
       const url = document.getElementById("familyPhotoUrl").value.trim();
       if (file) {
+        const fileError = imageFileError(file);
+        if (fileError) {
+          document.getElementById("homePhotoStatus").textContent = fileError;
+          document.getElementById("familyPhotoFile").value = "";
+          return;
+        }
         const reader = new FileReader();
         reader.onload = event => {
           localStorage.setItem(familyPhotoKey, event.target.result);
@@ -678,6 +691,12 @@
       const file = document.getElementById("homeChildPhotoFile").files[0];
       const url = document.getElementById("homeChildPhotoUrl").value.trim();
       if (file) {
+        const fileError = imageFileError(file);
+        if (fileError) {
+          document.getElementById("homePhotoStatus").textContent = fileError;
+          document.getElementById("homeChildPhotoFile").value = "";
+          return;
+        }
         const reader = new FileReader();
         reader.onload = event => {
           setChildPhoto(childId, event.target.result);

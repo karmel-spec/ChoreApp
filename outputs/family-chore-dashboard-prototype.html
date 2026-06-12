@@ -3333,6 +3333,12 @@
           }
           const file = input.files[0];
           if (!file) return;
+          const fileError = imageFileError(file);
+          if (fileError) {
+            document.getElementById("reviewStatus").textContent = fileError;
+            input.value = "";
+            return;
+          }
           const choreName = decodeURIComponent(input.dataset.choreName);
           const choreType = input.dataset.choreType;
           const chore = findTodayChore(child, choreName, choreType);
@@ -3875,6 +3881,13 @@
       return value;
     }
 
+    function imageFileError(file) {
+      const maxBytes = 2 * 1024 * 1024;
+      if (!file.type.startsWith("image/")) return "Choose an image file.";
+      if (file.size > maxBytes) return "Use an image under 2 MB so beta backups stay reliable.";
+      return "";
+    }
+
     function fineAuditDate(value) {
       return value ? shortDateTime(value) : "Not recorded";
     }
@@ -4313,6 +4326,12 @@
       const file = document.getElementById("profilePhotoFile").files[0];
       const url = document.getElementById("profileImageUrl").value.trim();
       if (file) {
+        const fileError = imageFileError(file);
+        if (fileError) {
+          document.getElementById("profileStatus").textContent = fileError;
+          document.getElementById("profilePhotoFile").value = "";
+          return;
+        }
         const reader = new FileReader();
         reader.onload = event => {
           child.profileImage = event.target.result;
