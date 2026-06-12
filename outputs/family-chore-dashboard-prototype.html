@@ -3618,7 +3618,7 @@
         <div class="ledger-row">
           <div>
             <strong>${escapeHtml(item.title)}</strong>
-            <span>${escapeHtml(item.date)}${item.deadline ? ` · deadline ${escapeHtml(item.deadline)}` : ""} · ${escapeHtml(item.amount)}</span>
+            <span>${escapeHtml(fineAuditDetail(item))} · ${escapeHtml(item.amount)}</span>
           </div>
           <div class="review-actions">
             <div class="${item.paid ? "paid" : "unpaid"}">${item.paid ? "Paid" : "Unpaid"}</div>
@@ -3636,12 +3636,25 @@
       return Number(String(value).replace(/[^0-9.]/g, "")) || 0;
     }
 
+    function fineAuditDate(value) {
+      return value ? shortDateTime(value) : "Not recorded";
+    }
+
+    function fineAuditDetail(item) {
+      const chargedBy = item.chargedBy ? `charged by ${item.chargedBy}` : "charged by not recorded";
+      const chargedAt = item.chargedAt ? `at ${fineAuditDate(item.chargedAt)}` : "";
+      const payment = item.paid
+        ? ` · paid by ${item.paidBy || "admin"} at ${fineAuditDate(item.paidAt)}`
+        : " · still owed";
+      return `${item.date}${item.deadline ? ` · deadline ${item.deadline}` : ""} · ${chargedBy}${chargedAt ? ` ${chargedAt}` : ""}${payment}`;
+    }
+
     function renderAccountActivity(child) {
       const fineRows = (ledger[child.id] || []).map((item, index) => ({
         kind: "debit",
         order: index,
         title: item.paid ? `Paid fine: ${item.title}` : `Open fine: ${item.title}`,
-        detail: `${item.date}${item.deadline ? ` · deadline ${item.deadline}` : ""}${item.paid ? " · marked paid" : " · still owed"}`,
+        detail: fineAuditDetail(item),
         amount: moneyAmount(item.amount),
         label: item.paid ? "Paid fine" : "Fine due"
       }));
@@ -3867,6 +3880,8 @@
         date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" }),
         deadline,
         amount: `$${amount}`,
+        chargedBy: currentUser?.name || "Admin",
+        chargedAt: new Date().toISOString(),
         paid: false
       });
       persistBetaData();
@@ -4010,6 +4025,8 @@
       const item = ledger[child.id][fineIndex];
       if (!item || item.paid) return;
       item.paid = true;
+      item.paidBy = currentUser?.name || "Admin";
+      item.paidAt = new Date().toISOString();
       const amount = moneyAmount(item.amount);
       child.openFines = Math.max(0, Number((child.openFines - amount).toFixed(2)));
       child.paidFines = Number((child.paidFines + amount).toFixed(2));
