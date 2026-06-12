@@ -1671,11 +1671,11 @@
               <div class="form-row">
                 <div>
                   <label for="reviewRecipientInput">Review Recipient</label>
-                  <input id="reviewRecipientInput" value="Mom">
+                  <input id="reviewRecipientInput" value="Karmel">
                 </div>
                 <div>
                   <label for="reviewContactInput">Review Contact</label>
-                  <input id="reviewContactInput" value="Mom text">
+                  <input id="reviewContactInput" value="801-427-9293">
                 </div>
               </div>
               <button class="primary-btn" type="button" id="saveFamilySettingsBtn">Save Family Rules</button>
@@ -1939,6 +1939,7 @@
                   <input id="betaDataFile" type="file" accept="application/json,.json">
                 </div>
               </div>
+              <div class="notice-card" id="backupFileSummary">No backup file selected.</div>
               <div class="admin-status" id="betaDataStatus"></div>
               <div class="notice-card" id="betaDataSummary">Local beta data summary loading...</div>
             </div>
@@ -2288,6 +2289,8 @@
     const choreStateStoreKey = "teamworkChoresChoreState";
     const betaDataStoreKey = "teamworkChoresBetaData";
     const betaDataMetaStoreKey = "teamworkChoresBetaDataMeta";
+    const defaultReviewRecipient = "Karmel";
+    const defaultReviewContact = "801-427-9293";
     const accounts = [
       { id: "karmel", name: "Karmel", initials: "K", role: "admin", label: "Mom admin", gmail: "" },
       { id: "brigham", name: "Brigham", initials: "BR", role: "admin", label: "Dad admin", gmail: "" },
@@ -2350,8 +2353,8 @@
       reviewReminderTime: "12:00 PM",
       extensionApprover: "Brigham-dad",
       extensionContact: "801-830-0011",
-      reviewRecipient: "Mom",
-      reviewContact: "Mom text"
+      reviewRecipient: defaultReviewRecipient,
+      reviewContact: defaultReviewContact
     };
     let betaFeedback = [];
     let celebrationTimer = null;
@@ -2450,6 +2453,15 @@
       }));
     }
 
+    function normalizeFamilyReviewContact() {
+      if (!familySettings.reviewRecipient || familySettings.reviewRecipient === "Mom") {
+        familySettings.reviewRecipient = defaultReviewRecipient;
+      }
+      if (!familySettings.reviewContact || familySettings.reviewContact === "Mom text") {
+        familySettings.reviewContact = defaultReviewContact;
+      }
+    }
+
     function hydrateBetaData() {
       const data = getStoredBetaData();
       if (data.childSettings) {
@@ -2481,6 +2493,7 @@
       if (data.fineAssessments) fineAssessments = data.fineAssessments;
       if (data.extensionDeadlines) extensionDeadlines = data.extensionDeadlines;
       if (data.familySettings) familySettings = { ...familySettings, ...data.familySettings };
+      normalizeFamilyReviewContact();
       if (Array.isArray(data.betaFeedback)) betaFeedback = data.betaFeedback;
       if (Number.isFinite(Number(data.helperWeeklyHours))) helperWeeklyHours = Number(data.helperWeeklyHours);
       if (Number.isFinite(Number(data.helperRate))) helperRate = Number(data.helperRate);
@@ -2567,19 +2580,40 @@
       document.getElementById("betaDataStatus").textContent = "Backup exported. Keep it private because it can include family photos and chore history.";
     }
 
-    function applyImportedBackup(backup) {
+    function validateBetaBackup(backup) {
       if (!backup || backup.app !== "Teamwork Chores" || !backup.betaData) {
         throw new Error("That file is not a Teamwork Chores beta backup.");
       }
-      localStorage.setItem(betaDataStoreKey, JSON.stringify(backup.betaData || {}));
-      localStorage.setItem(choreStateStoreKey, JSON.stringify(backup.choreState || {}));
-      localStorage.setItem(photoStoreKey, JSON.stringify(backup.childPhotos || {}));
-      localStorage.setItem(gmailStoreKey, JSON.stringify(backup.gmailLinks || {}));
-      saveBetaDataMeta({ lastImportAt: new Date().toISOString(), importedFrom: backup.exportedAt || "" });
+      if (backup.version !== 1) {
+        throw new Error("That backup version is not supported by this beta app.");
+      }
+      const requiredSections = ["betaData", "choreState", "childPhotos", "gmailLinks"];
+      requiredSections.forEach(section => {
+        if (backup[section] === null || Array.isArray(backup[section]) || typeof backup[section] !== "object") {
+          throw new Error(`Backup section ${section} is missing or invalid.`);
+        }
+      });
+      return backup;
+    }
+
+    function applyImportedBackup(backup) {
+      const validBackup = validateBetaBackup(backup);
+      localStorage.setItem(betaDataStoreKey, JSON.stringify(validBackup.betaData || {}));
+      localStorage.setItem(choreStateStoreKey, JSON.stringify(validBackup.choreState || {}));
+      localStorage.setItem(photoStoreKey, JSON.stringify(validBackup.childPhotos || {}));
+      localStorage.setItem(gmailStoreKey, JSON.stringify(validBackup.gmailLinks || {}));
+      saveBetaDataMeta({ lastImportAt: new Date().toISOString(), importedFrom: validBackup.exportedAt || "" });
       hydrateBetaData();
       hydrateStoredChildPhotos();
       renderLoginGrid();
       render();
+    }
+
+    function updateBackupFileSummary() {
+      const file = document.getElementById("betaDataFile").files[0];
+      document.getElementById("backupFileSummary").textContent = file
+        ? `Selected backup: ${file.name} (${Math.max(1, Math.round(file.size / 1024))} KB). Import will replace beta data saved in this browser.`
+        : "No backup file selected.";
     }
 
     function importBetaData() {
@@ -2589,6 +2623,7 @@
       }
       const file = document.getElementById("betaDataFile").files[0];
       if (!file) {
+        updateBackupFileSummary();
         document.getElementById("betaDataStatus").textContent = "Choose a Teamwork Chores backup JSON file first.";
         return;
       }
@@ -2603,6 +2638,7 @@
           document.getElementById("betaDataStatus").textContent = "Backup imported. The dashboard has been refreshed with the saved beta data.";
         } catch (error) {
           document.getElementById("betaDataStatus").textContent = error.message;
+          updateBackupFileSummary();
         }
       };
       reader.readAsText(file);
@@ -2623,6 +2659,8 @@
       localStorage.removeItem(gmailStoreKey);
       localStorage.removeItem(sessionStoreKey);
       localStorage.removeItem("teamworkChoresAuthProvider");
+      document.getElementById("betaDataFile").value = "";
+      updateBackupFileSummary();
       saveBetaDataMeta({ lastResetAt: new Date().toISOString() });
       window.location.reload();
     }
@@ -2719,9 +2757,10 @@
         reviewReminderTime: document.getElementById("reviewReminderTimeInput").value.trim() || "12:00 PM",
         extensionApprover: document.getElementById("extensionApproverInput").value.trim() || "Brigham-dad",
         extensionContact: document.getElementById("extensionContactInput").value.trim() || "801-830-0011",
-        reviewRecipient: document.getElementById("reviewRecipientInput").value.trim() || "Mom",
-        reviewContact: document.getElementById("reviewContactInput").value.trim() || "Mom text"
+        reviewRecipient: document.getElementById("reviewRecipientInput").value.trim() || defaultReviewRecipient,
+        reviewContact: document.getElementById("reviewContactInput").value.trim() || defaultReviewContact
       };
+      normalizeFamilyReviewContact();
       persistBetaData();
       render();
       document.getElementById("familySettingsStatus").textContent = "Family rules saved for this beta browser.";
@@ -4214,6 +4253,8 @@
     document.getElementById("exportBetaDataBtn").addEventListener("click", exportBetaData);
 
     document.getElementById("importBetaDataBtn").addEventListener("click", importBetaData);
+
+    document.getElementById("betaDataFile").addEventListener("change", updateBackupFileSummary);
 
     document.getElementById("resetBetaDataBtn").addEventListener("click", resetBetaData);
 
