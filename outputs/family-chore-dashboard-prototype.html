@@ -2604,6 +2604,33 @@
       return Math.max(min, number);
     }
 
+    function normalizeBonusRules(rules) {
+      const defaultRules = {
+        monthly: [
+          { days: 5, amount: 5 },
+          { days: 7, amount: 10 },
+          { days: 30, amount: 50 }
+        ],
+        super: [
+          { days: 100, amount: 100 }
+        ]
+      };
+      const normalizeRuleList = (list, fallbackList) => {
+        if (!Array.isArray(list)) return fallbackList;
+        const normalized = list
+          .map((rule, index) => ({
+            days: safeStoredNumber(rule?.days, fallbackList[index]?.days || 1, 1),
+            amount: safeStoredNumber(rule?.amount, fallbackList[index]?.amount || 0)
+          }))
+          .filter(rule => rule.days > 0);
+        return normalized.length ? normalized : fallbackList;
+      };
+      return {
+        monthly: normalizeRuleList(rules?.monthly, defaultRules.monthly),
+        super: normalizeRuleList(rules?.super, defaultRules.super)
+      };
+    }
+
     function hydrateBetaData() {
       const data = getStoredBetaData();
       if (data.childSettings) {
@@ -2625,7 +2652,7 @@
       }
       if (data.ledger) ledger = data.ledger;
       if (data.bonusLedger) bonusLedger = data.bonusLedger;
-      if (data.bonusRules) bonusRules = data.bonusRules;
+      if (data.bonusRules) bonusRules = normalizeBonusRules(data.bonusRules);
       if (Array.isArray(data.choreLibrary)) {
         choreLibrary.splice(0, choreLibrary.length, ...data.choreLibrary);
       }
