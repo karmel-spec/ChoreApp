@@ -2324,6 +2324,7 @@
     const validChildIds = ["thayne", "brig", "josh", "jojo", "louis", "brielle"];
     const requestedChildId = new URLSearchParams(window.location.search).get("child");
     const photoStoreKey = "choreAppChildPhotos";
+    const familyPhotoStoreKey = "choreAppFamilyPhoto";
     const sessionStoreKey = "teamworkChoresSession";
     const gmailStoreKey = "teamworkChoresGmailLinks";
     const choreStateStoreKey = "teamworkChoresChoreState";
@@ -2609,6 +2610,10 @@
       });
     }
 
+    function getStoredFamilyPhoto() {
+      return localStorage.getItem(familyPhotoStoreKey) || "";
+    }
+
     function createBetaBackup() {
       persistBetaData();
       return {
@@ -2617,6 +2622,7 @@
         exportedAt: new Date().toISOString(),
         betaData: getStoredBetaData(),
         choreState: getStoredChoreState(),
+        familyPhoto: getStoredFamilyPhoto(),
         childPhotos: getStoredChildPhotos(),
         gmailLinks: getStoredGmailLinks()
       };
@@ -2653,6 +2659,9 @@
           throw new Error(`Backup section ${section} is missing or invalid.`);
         }
       });
+      if (backup.familyPhoto !== undefined && typeof backup.familyPhoto !== "string") {
+        throw new Error("Backup family photo is invalid.");
+      }
       return backup;
     }
 
@@ -2661,6 +2670,11 @@
       localStorage.setItem(betaDataStoreKey, JSON.stringify(validBackup.betaData || {}));
       localStorage.setItem(choreStateStoreKey, JSON.stringify(validBackup.choreState || {}));
       localStorage.setItem(photoStoreKey, JSON.stringify(validBackup.childPhotos || {}));
+      if (validBackup.familyPhoto) {
+        localStorage.setItem(familyPhotoStoreKey, validBackup.familyPhoto);
+      } else {
+        localStorage.removeItem(familyPhotoStoreKey);
+      }
       localStorage.setItem(gmailStoreKey, JSON.stringify(validBackup.gmailLinks || {}));
       saveBetaDataMeta({ lastImportAt: new Date().toISOString(), importedFrom: validBackup.exportedAt || "" });
       hydrateBetaData();
@@ -2716,6 +2730,7 @@
       localStorage.removeItem(betaDataStoreKey);
       localStorage.removeItem(choreStateStoreKey);
       localStorage.removeItem(photoStoreKey);
+      localStorage.removeItem(familyPhotoStoreKey);
       localStorage.removeItem(gmailStoreKey);
       localStorage.removeItem(sessionStoreKey);
       localStorage.removeItem("teamworkChoresAuthProvider");
@@ -4028,6 +4043,7 @@
       const choreState = getStoredChoreState();
       const photos = getStoredChildPhotos();
       const gmailLinks = getStoredGmailLinks();
+      const familyPhotoCount = getStoredFamilyPhoto() ? 1 : 0;
       const meta = getBetaDataMeta();
       const activeChores = Array.isArray(betaData.choreLibrary)
         ? betaData.choreLibrary.filter(chore => chore.active !== false).length
@@ -4040,6 +4056,7 @@
         `${(betaData.helperPayRecords || helperPayRecords).length} helper pay weeks`,
         `${(betaData.ingredientRequests || ingredientRequests).length} ingredient requests`,
         `${(betaData.betaFeedback || betaFeedback).length} feedback notes`,
+        `${familyPhotoCount} family photo`,
         `${Object.keys(photos).length} child photos`,
         `${Object.keys(gmailLinks).length} Gmail links`,
         `last export: ${shortDateTime(meta.lastExportAt)}`,
