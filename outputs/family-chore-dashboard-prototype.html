@@ -2126,6 +2126,7 @@
               </div>
               <div class="notice-card" id="backupFileSummary">No backup file selected.</div>
               <div class="admin-status" id="betaDataStatus"></div>
+              <div class="notice-card" id="appBuildSummary">Current app build loading...</div>
               <div class="notice-card" id="betaDataSummary">Local beta data summary loading...</div>
             </div>
           </div>
@@ -2479,6 +2480,8 @@
     const choreStateStoreKey = "teamworkChoresChoreState";
     const betaDataStoreKey = "teamworkChoresBetaData";
     const betaDataMetaStoreKey = "teamworkChoresBetaDataMeta";
+    const appBuildLabel = "Beta build 2026-06-12";
+    const appBackupVersion = 1;
     const defaultReviewRecipient = "Mom Karmel";
     const defaultReviewContact = "801-427-9293";
     const rotatingDailyMinuteCap = 30;
@@ -3323,7 +3326,8 @@
       persistBetaData();
       return {
         app: "Teamwork Chores",
-        version: 1,
+        version: appBackupVersion,
+        build: appBuildLabel,
         exportedAt: new Date().toISOString(),
         exportedBy: currentUser?.name || "Admin",
         betaData: getStoredBetaData(),
@@ -3382,7 +3386,7 @@
       if (!backup || backup.app !== "Teamwork Chores" || !backup.betaData) {
         throw new Error("That file is not a Teamwork Chores beta backup.");
       }
-      if (backup.version !== 1) {
+      if (backup.version !== appBackupVersion) {
         throw new Error("That backup version is not supported by this beta app.");
       }
       const requiredSections = ["betaData", "choreState", "childPhotos", "gmailLinks"];
@@ -3427,7 +3431,7 @@
       reader.onload = event => {
         try {
           const backup = validateBetaBackup(JSON.parse(event.target.result));
-          document.getElementById("backupFileSummary").textContent = `Selected backup: ${file.name} (${Math.max(1, Math.round(file.size / 1024))} KB). Exported ${shortDateTime(backup.exportedAt)} by ${backup.exportedBy || "not recorded"}. ${backupSummary(backup)}. Import will replace beta data saved in this browser.`;
+          document.getElementById("backupFileSummary").textContent = `Selected backup: ${file.name} (${Math.max(1, Math.round(file.size / 1024))} KB). Exported ${shortDateTime(backup.exportedAt)} by ${backup.exportedBy || "not recorded"} from ${backup.build || "unknown build"}. ${backupSummary(backup)}. Import will replace beta data saved in this browser.`;
         } catch (error) {
           document.getElementById("backupFileSummary").textContent = `Selected backup: ${file.name}. ${error.message}`;
         }
@@ -5458,6 +5462,7 @@
       const activeChores = Array.isArray(betaData.choreLibrary)
         ? betaData.choreLibrary.filter(chore => chore.active !== false).length
         : choreLibrary.filter(chore => chore.active !== false).length;
+      document.getElementById("appBuildSummary").textContent = `${appBuildLabel}. Use this label after each GitHub/Netlify publish to confirm the installed web app refreshed.`;
       document.getElementById("betaDataSummary").textContent = [
         `${Object.keys(choreState).length} chore records`,
         `${activeChores} active chores`,

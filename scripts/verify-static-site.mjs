@@ -60,7 +60,7 @@ const netlifyConfig = await readFile("netlify.toml", "utf8");
 const deployWorkflow = await readFile(".github/workflows/deploy-netlify.yml", "utf8");
 const manifest = JSON.parse(await readFile("outputs/manifest.webmanifest", "utf8"));
 const serviceWorker = await readFile("outputs/service-worker.js", "utf8");
-const expectedCacheName = "teamwork-chores-beta-2026-06-11";
+const expectedCacheName = "teamwork-chores-beta-2026-06-12";
 
 assertUniqueIds(appHtml, "outputs/family-chore-dashboard-prototype.html");
 assertUniqueIds(homeHtml, "outputs/index.html");
@@ -234,6 +234,11 @@ const requiredMarkers = [
   "already has a manual missed-deadline fine",
   "deadline ${item.deadline}",
   "Beta Data Tools",
+  "appBuildLabel",
+  "Beta build 2026-06-12",
+  "appBuildSummary",
+  "build: appBuildLabel",
+  "Use this label after each GitHub/Netlify publish",
   "Local beta data summary loading",
   "renderBetaDataSummary",
   "finalized reviews",
@@ -510,6 +515,7 @@ const requiredGuideMarkers = [
   "Confirm a new week starts a new pay record",
   "mark one purchased as Brigham or Karmel",
   "local beta data summary",
+  "app build label",
   "finalized reviews, extensions, extension audit events, review reminder cues, availability holds, chore feedback suggestions, family feed posts, helper pay weeks, ingredient requests",
   "After a new GitHub/Netlify publish",
   "Beta Feedback Log",

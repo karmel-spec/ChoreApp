@@ -1,4 +1,4 @@
-const CACHE_NAME = "teamwork-chores-beta-2026-06-11";
+const CACHE_NAME = "teamwork-chores-beta-2026-06-12";
 
 const APP_SHELL = [
   "/",

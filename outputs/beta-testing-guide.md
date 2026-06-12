@@ -133,8 +133,8 @@ Once per week:
 7. Confirm the import warning appears before replacing local beta data.
 8. Confirm chores, chore minutes/difficulty, chore checkbox, proof photo, redo, and approval statuses, family photo, child photo, and Gmail link restore values, helper task priority lists and ingredient request names, helper pay records, helper weekly hours, rate, shifts, and paid audit details, child account totals, bonus rules, family rule times, approver, and text contacts, availability holds, chore feedback suggestions, family feed posts, fine and bonus ledger amounts/dates, finalized review records, extension deadlines, extension audit logs, review reminder logs, feedback notes and resolved status, fines, bonuses, and settings restore.
 9. Reset test data only after exporting a backup, and confirm the family photo, child photos, and Gmail links are cleared with the rest of the local beta data.
-10. Check the local beta data summary counts for chore records, finalized reviews, extensions, extension audit events, review reminder cues, availability holds, chore feedback suggestions, family feed posts, helper pay weeks, ingredient requests, family photo, child photos, Gmail links, and last export/import/reset timestamps.
-11. After a new GitHub/Netlify publish, reload the installed web app and confirm the latest dashboard changes appear while offline fallback still opens when the network is unavailable.
+10. Check the local beta data summary counts and app build label for chore records, finalized reviews, extensions, extension audit events, review reminder cues, availability holds, chore feedback suggestions, family feed posts, helper pay weeks, ingredient requests, family photo, child photos, Gmail links, and last export/import/reset timestamps.
+11. After a new GitHub/Netlify publish, reload the installed web app and confirm the latest dashboard changes and app build label appear while offline fallback still opens when the network is unavailable.
 
 ## Known Prototype Limits
 
