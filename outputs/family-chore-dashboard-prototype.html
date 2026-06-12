@@ -2654,6 +2654,33 @@
       };
     }
 
+    function normalizedLedgerAmount(value) {
+      const amount = moneyAmount(value);
+      return `$${Number(amount.toFixed(2)).toString()}`;
+    }
+
+    function normalizeLedgerRecord(record, index = 0, kind = "fine") {
+      const recordData = record && typeof record === "object" ? record : {};
+      const rawTitle = String(recordData.title || (typeof record === "string" ? record : "")).trim().replace(/\s+/g, " ");
+      const rawDate = String(recordData.date || "").trim().replace(/\s+/g, " ");
+      const defaultTitle = kind === "bonus" ? `Imported bonus ${index + 1}` : `Imported fine ${index + 1}`;
+      return {
+        ...recordData,
+        title: rawTitle || defaultTitle,
+        date: rawDate || "Date not recorded",
+        amount: normalizedLedgerAmount(recordData.amount),
+        paid: Boolean(recordData.paid)
+      };
+    }
+
+    function normalizeChildLedgerSet(recordsByChild, kind = "fine") {
+      return validChildIds.reduce((normalized, childId) => {
+        const childRecords = Array.isArray(recordsByChild?.[childId]) ? recordsByChild[childId] : [];
+        normalized[childId] = childRecords.map((record, index) => normalizeLedgerRecord(record, index, kind));
+        return normalized;
+      }, {});
+    }
+
     function hydrateBetaData() {
       const data = getStoredBetaData();
       if (data.childSettings) {
@@ -2673,8 +2700,8 @@
           }
         });
       }
-      if (data.ledger) ledger = data.ledger;
-      if (data.bonusLedger) bonusLedger = data.bonusLedger;
+      if (data.ledger) ledger = normalizeChildLedgerSet(data.ledger, "fine");
+      if (data.bonusLedger) bonusLedger = normalizeChildLedgerSet(data.bonusLedger, "bonus");
       if (data.bonusRules) bonusRules = normalizeBonusRules(data.bonusRules);
       if (Array.isArray(data.choreLibrary)) {
         choreLibrary.splice(0, choreLibrary.length, ...data.choreLibrary.map(normalizeChoreRecord));
