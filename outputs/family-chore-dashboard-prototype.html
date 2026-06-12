@@ -3052,6 +3052,7 @@
           });
           showCelebration(child, chore.name);
           render();
+          document.getElementById("reviewStatus").textContent = `${child.name}'s ${chore.name} is marked ready for ${familySettings.reviewRecipient}'s physical inspection.`;
         });
       });
 
@@ -3089,6 +3090,7 @@
               proofSubmittedAt: new Date().toISOString()
             });
             render();
+            document.getElementById("reviewStatus").textContent = `${child.name}'s photo proof for ${chore.name} was saved and marked ready for ${familySettings.reviewRecipient}'s physical inspection.`;
           };
           reader.readAsDataURL(file);
         });
@@ -3299,7 +3301,7 @@
     function choreStatusText(record, fallback) {
       if (record.reviewStatus === "approved") return "Approved";
       if (record.reviewStatus === "redo") return "Needs redo";
-      if (record.completedAt && record.proofImage) return "Photo ready";
+      if (record.completedAt && record.proofImage) return "Photo ready for review";
       if (record.completedAt) return "Ready for review";
       return fallback;
     }
