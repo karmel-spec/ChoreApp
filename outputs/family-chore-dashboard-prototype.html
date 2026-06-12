@@ -3089,6 +3089,7 @@
           deadline: normalizeClockTime(assessment.deadline) || familySettings.defaultDeadline,
           missed: Array.isArray(assessment.missed) ? assessment.missed.map(item => String(item || "").trim()).filter(Boolean) : [],
           charged: safeStoredNumber(assessment.charged, 0),
+          existingDeadlineFine: Boolean(assessment.existingDeadlineFine),
           streakCredited: Boolean(assessment.streakCredited),
           finalizedBy: String(assessment.finalizedBy || "Admin").trim() || "Admin",
           finalizedAt: normalizeTimestamp(assessment.finalizedAt)
@@ -5195,10 +5196,7 @@
       const child = children.find(item => item.id === selectedChildId);
       const deadline = approvedDeadlineFor(child);
       const title = `Missed ${deadline} deadline`;
-      const todayKey = localDateKey();
-      const alreadyCharged = (ledger[child.id] || []).some(item => (
-        item.title === title && item.deadline === deadline && (item.dateKey === todayKey || (!item.dateKey && item.date === new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })))
-      ));
+      const alreadyCharged = hasSameDayDeadlineFine(child, deadline, title);
       if (alreadyCharged) {
         document.getElementById("fineRateStatus").textContent = `${child.name} already has a manual missed-deadline fine for ${deadline} today.`;
         return;
@@ -5206,6 +5204,17 @@
       addFineToLedger(child, title, child.fineRate, deadline);
       render();
       document.getElementById("fineRateStatus").textContent = `${child.name} was charged $${child.fineRate} for a missed ${deadline} deadline.`;
+    }
+
+    function hasSameDayDeadlineFine(child, deadline, title = "") {
+      const todayKey = localDateKey();
+      const todayLabel = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      return (ledger[child.id] || []).some(item => {
+        const sameDay = item.dateKey === todayKey || (!item.dateKey && item.date === todayLabel);
+        const sameDeadline = item.deadline === deadline;
+        const sameTitle = title ? item.title === title : String(item.title || "").includes(deadline);
+        return sameDay && sameDeadline && sameTitle;
+      });
     }
 
     function addFineToLedger(child, title, amount, deadline = approvedDeadlineFor(child)) {
@@ -5321,7 +5330,8 @@
       const missed = getMissedRotatingChores(child);
       const missedDetail = missedReviewDetail(child);
       const deadline = approvedDeadlineFor(child);
-      const amount = missed.length ? child.fineRate : 0;
+      const existingDeadlineFine = missed.length ? hasSameDayDeadlineFine(child, deadline) : false;
+      const amount = missed.length && !existingDeadlineFine ? child.fineRate : 0;
       const streakCredited = creditDailyStreakIfEarned(child);
       fineAssessments[key] = {
         childId: child.id,
@@ -5329,6 +5339,7 @@
         deadline,
         missed: missed.map(chore => chore.name),
         charged: amount,
+        existingDeadlineFine,
         streakCredited,
         finalizedBy: currentUser?.name || "Admin",
         finalizedAt: new Date().toISOString()
@@ -5345,9 +5356,12 @@
         missed: missed.map(chore => chore.name),
         missedDetail,
         deadline,
+        existingDeadlineFine,
         streakCredited,
         message: amount > 0
           ? `${child.name}: charged $${amount} after the ${deadline} deadline.`
+          : existingDeadlineFine
+            ? `${child.name}: review finalized with missed chores, but no duplicate fine was added because a ${deadline} deadline fine already exists.`
           : `${child.name}: all rotating chores cleared.${streakCredited ? " Streak credited." : ""}`
       };
     }
