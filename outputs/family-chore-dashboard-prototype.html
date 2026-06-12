@@ -2480,6 +2480,7 @@
     const choreStateStoreKey = "teamworkChoresChoreState";
     const betaDataStoreKey = "teamworkChoresBetaData";
     const betaDataMetaStoreKey = "teamworkChoresBetaDataMeta";
+    const betaDataPendingStatusKey = "teamworkChoresPendingBetaStatus";
     const appBuildLabel = "Beta build 2026-06-12";
     const appBackupVersion = 1;
     const defaultReviewRecipient = "Mom Karmel";
@@ -3414,10 +3415,8 @@
       }
       localStorage.setItem(gmailStoreKey, JSON.stringify(normalizeGmailLinks(validBackup.gmailLinks || {})));
       saveBetaDataMeta({ lastImportAt: new Date().toISOString(), importedFrom: validBackup.exportedAt || "" });
-      hydrateBetaData();
-      hydrateStoredChildPhotos();
-      renderLoginGrid();
-      render();
+      sessionStorage.setItem(betaDataPendingStatusKey, `Backup imported from ${validBackup.build || "unknown build"}. The dashboard reloaded so imported beta data is clean.`);
+      window.location.reload();
     }
 
     function updateBackupFileSummary() {
@@ -3461,7 +3460,6 @@
       reader.onload = event => {
         try {
           applyImportedBackup(JSON.parse(event.target.result));
-          document.getElementById("betaDataStatus").textContent = "Backup imported. The dashboard has been refreshed with the saved beta data.";
         } catch (error) {
           document.getElementById("betaDataStatus").textContent = error.message;
           updateBackupFileSummary();
@@ -5487,6 +5485,13 @@
       ].join(" · ");
     }
 
+    function restorePendingBetaStatus() {
+      const pendingStatus = sessionStorage.getItem(betaDataPendingStatusKey);
+      if (!pendingStatus) return;
+      sessionStorage.removeItem(betaDataPendingStatusKey);
+      document.getElementById("betaDataStatus").textContent = pendingStatus;
+    }
+
     function choreAuditDetail(chore) {
       const created = chore.createdAt
         ? `added by ${chore.createdBy || "admin"} ${shortDateTime(chore.createdAt)}`
@@ -6242,6 +6247,7 @@
     renderLoginGrid();
     restoreLogin();
     render();
+    restorePendingBetaStatus();
     setInterval(updateReviewCueState, 30000);
   </script>
 </body>

@@ -129,7 +129,7 @@ Once per week:
 3. Save the file privately.
 4. Select the backup file and confirm the preview shows exported date, exported by, and key counts before importing.
 5. If a backup file cannot be read, confirm the app shows a clear try-again message.
-6. Import the backup in another browser or device.
+6. Import the backup in another browser or device and confirm the dashboard reloads with a clean imported-data success message.
 7. Confirm the import warning appears before replacing local beta data.
 8. Confirm chores, chore minutes/difficulty, chore checkbox, proof photo, redo, and approval statuses, family photo, child photo, and Gmail link restore values, helper task priority lists and ingredient request names, helper pay records, helper weekly hours, rate, shifts, and paid audit details, child account totals, bonus rules, family rule times, approver, and text contacts, availability holds, chore feedback suggestions, family feed posts, fine and bonus ledger amounts/dates, finalized review records, extension deadlines, extension audit logs, review reminder logs, feedback notes and resolved status, fines, bonuses, and settings restore.
 9. Reset test data only after exporting a backup, and confirm the family photo, child photos, and Gmail links are cleared with the rest of the local beta data.
