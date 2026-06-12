@@ -636,20 +636,23 @@ if (homeHtml.includes("Design Options")) {
 
 const requiredHomeMarkers = [
   "homePhotoAdminStatus",
-  "teamworkChoresSession",
-  "isHomePhotoAdmin",
-  "Photo tools are locked until Brigham or Karmel signs in",
-  "Only Brigham or Karmel can edit family photos",
-  "Only Brigham or Karmel can edit child photos",
-  "imageFileError",
-  "Use an image under 2 MB so beta backups stay reliable",
-  "The browser could not read that family photo",
-  "The browser could not read that child photo"
+  "Photo Admin",
+  "Open Backend Dashboard",
+  "Brigham or Karmel can edit them in the backend dashboard",
+  "renderStoredPhotos",
+  "choreAppFamilyPhoto",
+  "choreAppChildPhotos"
 ];
 
 for (const marker of requiredHomeMarkers) {
   if (!homeHtml.includes(marker)) {
     throw new Error(`Missing expected home hub marker: ${marker}`);
+  }
+}
+
+for (const removedHomeMarker of ["saveFamilyPhotoBtn", "saveChildPhotoBtn", "familyPhotoFile", "homeChildPhotoFile", "familyPhotoUrl", "homeChildPhotoUrl"]) {
+  if (homeHtml.includes(removedHomeMarker)) {
+    throw new Error(`Home hub should not expose photo editing control: ${removedHomeMarker}`);
   }
 }
 

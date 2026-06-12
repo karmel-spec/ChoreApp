@@ -482,39 +482,10 @@
             </a>
           </div>
         </section>
-        <section class="photo-tools" aria-label="Edit family and child photos">
-          <h2>Edit Photos</h2>
-          <div class="photo-status" id="homePhotoAdminStatus">Photo tools are available after Brigham or Karmel signs in on the chore dashboard.</div>
-          <div>
-            <label for="familyPhotoUrl">Family Photo URL</label>
-            <input id="familyPhotoUrl" placeholder="Paste a family photo URL">
-          </div>
-          <div class="photo-tool-row">
-            <input id="familyPhotoFile" type="file" accept="image/*" aria-label="Choose family photo file">
-            <button type="button" id="saveFamilyPhotoBtn">Save Family Photo</button>
-          </div>
-          <div class="photo-tool-row">
-            <div>
-              <label for="homeChildSelect">Child Photo</label>
-              <select id="homeChildSelect">
-                <option value="thayne">Thayne</option>
-                <option value="brig">Brig Jr.</option>
-                <option value="josh">Josh</option>
-                <option value="jojo">JoJo</option>
-                <option value="louis">Louis</option>
-                <option value="brielle">Brielle</option>
-              </select>
-            </div>
-            <div>
-              <label for="homeChildPhotoUrl">Child Photo URL</label>
-              <input id="homeChildPhotoUrl" placeholder="Paste a child photo URL">
-            </div>
-          </div>
-          <div class="photo-tool-row">
-            <input id="homeChildPhotoFile" type="file" accept="image/*" aria-label="Choose child photo file">
-            <button type="button" id="saveChildPhotoBtn">Save Child Photo</button>
-          </div>
-          <div class="photo-status" id="homePhotoStatus"></div>
+        <section class="photo-tools" aria-label="Photo admin shortcut">
+          <h2>Photo Admin</h2>
+          <div class="photo-status" id="homePhotoAdminStatus">Family and child photos are displayed here. Brigham or Karmel can edit them in the backend dashboard.</div>
+          <a class="primary" href="/family-chore-dashboard-prototype.html">Open Backend Dashboard</a>
         </section>
       </div>
 
@@ -594,22 +565,6 @@
     let thoughtIndex = 0;
     const photoStoreKey = "choreAppChildPhotos";
     const familyPhotoKey = "choreAppFamilyPhoto";
-    const sessionStoreKey = "teamworkChoresSession";
-    const adminAccountIds = ["brigham", "karmel"];
-
-    function isHomePhotoAdmin() {
-      return adminAccountIds.includes(localStorage.getItem(sessionStoreKey));
-    }
-
-    function renderHomePhotoLocks() {
-      const locked = !isHomePhotoAdmin();
-      document.querySelectorAll(".photo-tools input, .photo-tools select, .photo-tools button").forEach(control => {
-        control.disabled = locked;
-      });
-      document.getElementById("homePhotoAdminStatus").textContent = locked
-        ? "Photo tools are locked until Brigham or Karmel signs in on the chore dashboard."
-        : "Photo tools unlocked for Brigham/Karmel admin session.";
-    }
 
     function getChildPhotos() {
       try {
@@ -619,25 +574,10 @@
       }
     }
 
-    function setChildPhoto(childId, value) {
-      const photos = getChildPhotos();
-      photos[childId] = value;
-      localStorage.setItem(photoStoreKey, JSON.stringify(photos));
-      renderStoredPhotos();
-    }
-
-    function imageFileError(file) {
-      const maxBytes = 2 * 1024 * 1024;
-      if (!file.type.startsWith("image/")) return "Choose an image file.";
-      if (file.size > maxBytes) return "Use an image under 2 MB so beta backups stay reliable.";
-      return "";
-    }
-
     function renderStoredPhotos() {
       const familyPhoto = localStorage.getItem(familyPhotoKey);
       if (familyPhoto) {
         document.documentElement.style.setProperty("--family-photo", `url("${familyPhoto}")`);
-        document.getElementById("familyPhotoUrl").value = familyPhoto.startsWith("data:") ? "" : familyPhoto;
       }
       const photos = getChildPhotos();
       document.querySelectorAll("[data-child-photo]").forEach(photo => {
@@ -645,79 +585,6 @@
         const storedPhoto = photos[childId];
         photo.innerHTML = storedPhoto ? `<img src="${storedPhoto}" alt="${childId} profile photo">` : photo.dataset.initials;
       });
-    }
-
-    function saveFamilyPhoto() {
-      if (!isHomePhotoAdmin()) {
-        renderHomePhotoLocks();
-        document.getElementById("homePhotoStatus").textContent = "Only Brigham or Karmel can edit family photos.";
-        return;
-      }
-      const file = document.getElementById("familyPhotoFile").files[0];
-      const url = document.getElementById("familyPhotoUrl").value.trim();
-      if (file) {
-        const fileError = imageFileError(file);
-        if (fileError) {
-          document.getElementById("homePhotoStatus").textContent = fileError;
-          document.getElementById("familyPhotoFile").value = "";
-          return;
-        }
-        const reader = new FileReader();
-        reader.onload = event => {
-          localStorage.setItem(familyPhotoKey, event.target.result);
-          renderStoredPhotos();
-          document.getElementById("homePhotoStatus").textContent = "Family photo saved from this device.";
-        };
-        reader.onerror = () => {
-          document.getElementById("homePhotoStatus").textContent = "The browser could not read that family photo. Try a smaller image or choose a different file.";
-          document.getElementById("familyPhotoFile").value = "";
-        };
-        reader.readAsDataURL(file);
-        return;
-      }
-      if (url) {
-        localStorage.setItem(familyPhotoKey, url);
-        renderStoredPhotos();
-        document.getElementById("homePhotoStatus").textContent = "Family photo URL saved.";
-        return;
-      }
-      document.getElementById("homePhotoStatus").textContent = "Choose a file or paste a photo URL.";
-    }
-
-    function saveHomeChildPhoto() {
-      if (!isHomePhotoAdmin()) {
-        renderHomePhotoLocks();
-        document.getElementById("homePhotoStatus").textContent = "Only Brigham or Karmel can edit child photos.";
-        return;
-      }
-      const childId = document.getElementById("homeChildSelect").value;
-      const file = document.getElementById("homeChildPhotoFile").files[0];
-      const url = document.getElementById("homeChildPhotoUrl").value.trim();
-      if (file) {
-        const fileError = imageFileError(file);
-        if (fileError) {
-          document.getElementById("homePhotoStatus").textContent = fileError;
-          document.getElementById("homeChildPhotoFile").value = "";
-          return;
-        }
-        const reader = new FileReader();
-        reader.onload = event => {
-          setChildPhoto(childId, event.target.result);
-          document.getElementById("homePhotoStatus").textContent = "Child photo saved from this device.";
-        };
-        reader.onerror = () => {
-          document.getElementById("homePhotoStatus").textContent = "The browser could not read that child photo. Try a smaller image or choose a different file.";
-          document.getElementById("homeChildPhotoFile").value = "";
-        };
-        reader.readAsDataURL(file);
-        return;
-      }
-      if (url) {
-        setChildPhoto(childId, url);
-        document.getElementById("homePhotoStatus").textContent = "Child photo URL saved.";
-        return;
-      }
-      document.getElementById("homePhotoStatus").textContent = "Choose a file or paste a child photo URL.";
     }
 
     function renderThought() {
@@ -747,9 +614,6 @@
     renderThought();
     renderFeed();
     renderStoredPhotos();
-    renderHomePhotoLocks();
-    document.getElementById("saveFamilyPhotoBtn").addEventListener("click", saveFamilyPhoto);
-    document.getElementById("saveChildPhotoBtn").addEventListener("click", saveHomeChildPhoto);
     setInterval(renderThought, 5200);
   </script>
 </body>
