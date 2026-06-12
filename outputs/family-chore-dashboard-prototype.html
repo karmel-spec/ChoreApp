@@ -5708,10 +5708,30 @@
               <strong>${escapeHtml(child.name)} muted</strong>
               <span>${escapeHtml(holdLabel(hold))} · ${hold.days} day${hold.days === 1 ? "" : "s"} · saved by ${escapeHtml(hold.createdBy || "Admin")}</span>
             </div>
-            <span class="status done">No fines</span>
+            <div class="review-actions">
+              <span class="status done">No fines</span>
+              <button class="ghost-btn" type="button" data-remove-hold-id="${escapeHtml(hold.id)}" ${isAdmin() ? "" : "disabled"}>Remove Hold</button>
+            </div>
           </div>
         `;
       }).join("") : `<div class="notice-card">No vacation, sick, or unavailable holds have been added yet.</div>`;
+      document.querySelectorAll("[data-remove-hold-id]").forEach(button => {
+        button.addEventListener("click", () => removeAvailabilityHold(button.dataset.removeHoldId));
+      });
+    }
+
+    function removeAvailabilityHold(holdId) {
+      if (!isAdmin()) {
+        document.getElementById("holdStatus").textContent = "Only Brigham or Karmel can remove availability holds.";
+        return;
+      }
+      const hold = childAvailabilityHolds.find(item => item.id === holdId);
+      if (!hold) return;
+      const child = children.find(item => item.id === hold.childId) || children[0];
+      childAvailabilityHolds = childAvailabilityHolds.filter(item => item.id !== holdId);
+      persistBetaData();
+      render();
+      document.getElementById("holdStatus").textContent = `${child.name}'s ${hold.reason || "availability"} hold was removed by ${currentUser?.name || "Admin"}. Future chores and fines are active again unless another hold applies.`;
     }
 
     function saveAvailabilityHold() {
