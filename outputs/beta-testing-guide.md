@@ -32,14 +32,15 @@ Each child should test:
 Each day, Brigham or Karmel should test:
 
 1. Send the noon review text cue.
-2. Physically inspect chores.
-3. Approve completed chores.
-4. Send one chore back for redo during beta to test the loop.
-5. Finalize the selected child or all children.
-6. Confirm missed rotating chores charge a fine only once for the day.
-7. Confirm the fine ledger shows the actual missed deadline, including any Brigham-approved extension time.
-8. Confirm finalized chores lock against late edits.
-9. Mark a fine paid and confirm the open fine total changes.
+2. On a phone, confirm the cue opens a text draft to Karmel at 801-427-9293.
+3. Physically inspect chores.
+4. Approve completed chores.
+5. Send one chore back for redo during beta to test the loop.
+6. Finalize the selected child or all children.
+7. Confirm missed rotating chores charge a fine only once for the day.
+8. Confirm the fine ledger shows the actual missed deadline, including any Brigham-approved extension time.
+9. Confirm finalized chores lock against late edits.
+10. Mark a fine paid and confirm the open fine total changes.
 
 ## Extension Test
 

@@ -2462,6 +2462,15 @@
       }
     }
 
+    function reviewContactSmsNumber() {
+      const digits = String(familySettings.reviewContact || "").replace(/\D/g, "");
+      return digits.length === 10 ? digits : "";
+    }
+
+    function noonReviewMessage(child) {
+      return `${familySettings.reviewReminderTime} reminder: please physically inspect ${child.name}'s chores before fines are finalized.`;
+    }
+
     function hydrateBetaData() {
       const data = getStoredBetaData();
       if (data.childSettings) {
@@ -4276,7 +4285,12 @@
 
     document.getElementById("sendReviewBtn").addEventListener("click", () => {
       const child = children.find(item => item.id === selectedChildId);
-      document.getElementById("reviewStatus").textContent = `${familySettings.reviewReminderTime} review text queued for ${familySettings.reviewRecipient} at ${familySettings.reviewContact}: inspect ${child.name}'s chores before fines are finalized.`;
+      const message = noonReviewMessage(child);
+      const smsNumber = reviewContactSmsNumber();
+      document.getElementById("reviewStatus").textContent = `${familySettings.reviewReminderTime} review text ready for ${familySettings.reviewRecipient} at ${familySettings.reviewContact}: ${message}`;
+      if (smsNumber) {
+        window.location.href = `sms:${smsNumber}?&body=${encodeURIComponent(message)}`;
+      }
     });
 
     document.getElementById("finalizeChildBtn").addEventListener("click", finalizeSelectedChildReview);
