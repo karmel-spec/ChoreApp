@@ -13,7 +13,7 @@ create type notification_kind as enum ('noon_review', 'extension', 'redo', 'teen
 
 create table families (
   id uuid primary key default gen_random_uuid(),
-  name text not null default 'Teamwork Chores',
+  name text not null default 'Teamwork Chores' unique,
   hero_photo_path text,
   created_at timestamptz not null default now()
 );

@@ -148,7 +148,11 @@ Once per week:
 
 ## Backend Setup Track
 
-Use `docs/backend-setup.md` and `supabase/schema.sql` when moving from browser beta storage to the real backend. The repository now includes Netlify Function scaffolding for Google session verification, authenticated child contact settings, Supabase Storage photo upload/record updates, extension request and approval texts, scheduled noon review texts, and Twilio SMS sends, but those functions require real Supabase and Twilio environment variables before they can be used on the hosted site.
+Use `docs/backend-setup.md`, `supabase/schema.sql`, and `supabase/seed-teamwork-chores.sql` when moving from browser beta storage to the real backend. The seed creates the Teamwork Chores family, Karmel and Brigham admin profiles, Vanessa, the children, notification preference rows, the private `family-photos` bucket, and starter chores.
+
+Before testing real Google login, update the seed Gmail values for each invited family member, run the seed after the schema, then sign in once with each Gmail. The `link-google-member` function verifies the Supabase Google session token and links that Gmail to the matching family member record so Karmel and Brigham can unlock the backend admin dashboard through Google login.
+
+The repository now includes Netlify Function scaffolding for Google session verification, authenticated child contact settings, Supabase Storage photo upload/record updates, extension request and approval texts, scheduled noon review texts, and Twilio SMS sends, but those functions require real Supabase and Twilio environment variables before they can be used on the hosted site.
 
 ## What To Track
 

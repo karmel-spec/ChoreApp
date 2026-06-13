@@ -33,16 +33,19 @@ Never expose `SUPABASE_SERVICE_ROLE_KEY` or Twilio secrets in browser JavaScript
 
 1. Create a Supabase project.
 2. Run `supabase/schema.sql` in the Supabase SQL editor.
-3. Create a private Supabase Storage bucket named `family-photos`.
-4. Enable Google provider in Supabase Auth.
-5. Add the Google OAuth redirect URL for the Netlify domain.
-6. Add the environment variables in Netlify.
-7. Deploy the Netlify Functions in `netlify/functions`.
-8. Wire the static dashboard to call the functions for auth, profile save, photo upload, and SMS.
+3. Update Gmail placeholders in `supabase/seed-teamwork-chores.sql`, then run it in the Supabase SQL editor.
+4. Confirm the private Supabase Storage bucket named `family-photos` exists.
+5. Enable Google provider in Supabase Auth.
+6. Add the Google OAuth redirect URL for the Netlify domain.
+7. Add the environment variables in Netlify.
+8. Deploy the Netlify Functions in `netlify/functions`.
+9. Sign in once with each Gmail so `link-google-member` can connect Supabase Auth users to family member rows.
+10. Use Production Backend Readiness in the app until `backend-health` reports `readyForWorkflowBeta: true`.
 
 ## Netlify Function Contracts
 
 - `backend-health`: checks production readiness for environment variables, Supabase tables, expected family member mapping, Google auth links, Supabase Storage, notification logging, and Twilio configuration.
+- `link-google-member`: verifies the signed-in Google email and links the Supabase Auth user to the matching `family_members.gmail` record.
 - `runtime-config`: returns public Supabase and Google client configuration for the browser.
 - `auth-google`: verifies a Supabase Auth bearer token and returns the linked family member.
 - `member-contact`: lets admins update any child phone/text opt-in and lets children update only their own setting.
@@ -64,6 +67,21 @@ The browser prototype currently hides admin controls in the UI. Production must 
 - All money-changing actions must be audited.
 
 The `supabase/schema.sql` file includes initial row-level security policies for those boundaries.
+
+## Family Seed Data
+
+`supabase/seed-teamwork-chores.sql` creates:
+
+- One Teamwork Chores family row
+- Brigham and Karmel admin profiles
+- Vanessa helper profile
+- Thayne, Brig Jr., Josh, JoJo, Louis, and Brielle child profiles
+- Default work-minute targets, fine rates, difficulty approvals, and zero account balances
+- Notification preference rows for every family member
+- The private `family-photos` storage bucket and authenticated storage policies
+- Starter chore library rows, including cooking/food prep chores and inactive harder one-off chores
+
+Before production, replace every `null` Gmail in the seed with that person’s real Gmail. The first Google sign-in for each invited Gmail will call `link-google-member` and store the Supabase `auth_user_id` on the matching family member.
 
 ## SMS / Push Notifications
 

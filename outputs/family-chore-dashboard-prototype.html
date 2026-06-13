@@ -3745,6 +3745,11 @@
 
     async function verifyProductionSession() {
       if (!productionBackend.session?.access_token) return null;
+      await fetchJson("/.netlify/functions/link-google-member", {
+        method: "POST",
+        headers: { authorization: `Bearer ${productionBackend.session.access_token}` },
+        body: JSON.stringify({})
+      });
       const payload = await fetchJson("/.netlify/functions/auth-google", {
         headers: { authorization: `Bearer ${productionBackend.session.access_token}` }
       });

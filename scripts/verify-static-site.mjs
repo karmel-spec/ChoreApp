@@ -42,6 +42,7 @@ const requiredFiles = [
   "netlify/functions/backend-health.js",
   "netlify/functions/extension-decision.js",
   "netlify/functions/extension-request.js",
+  "netlify/functions/link-google-member.js",
   "netlify/functions/member-contact.js",
   "netlify/functions/photo-record.js",
   "netlify/functions/photo-upload-url.js",
@@ -58,7 +59,8 @@ const requiredFiles = [
   "outputs/service-worker.js",
   "outputs/offline.html",
   "outputs/icons/teamwork-chores-icon.svg",
-  "supabase/schema.sql"
+  "supabase/schema.sql",
+  "supabase/seed-teamwork-chores.sql"
 ];
 
 for (const file of requiredFiles) {
@@ -76,11 +78,13 @@ const packageJson = JSON.parse(await readFile("package.json", "utf8"));
 const envExample = await readFile(".env.example", "utf8");
 const backendSetup = await readFile("docs/backend-setup.md", "utf8");
 const supabaseSchema = await readFile("supabase/schema.sql", "utf8");
+const supabaseSeed = await readFile("supabase/seed-teamwork-chores.sql", "utf8");
 const supabaseHelperFunction = await readFile("netlify/functions/_supabase.js", "utf8");
 const authFunction = await readFile("netlify/functions/auth-google.js", "utf8");
 const backendHealthFunction = await readFile("netlify/functions/backend-health.js", "utf8");
 const extensionDecisionFunction = await readFile("netlify/functions/extension-decision.js", "utf8");
 const extensionRequestFunction = await readFile("netlify/functions/extension-request.js", "utf8");
+const linkGoogleFunction = await readFile("netlify/functions/link-google-member.js", "utf8");
 const memberContactFunction = await readFile("netlify/functions/member-contact.js", "utf8");
 const photoRecordFunction = await readFile("netlify/functions/photo-record.js", "utf8");
 const photoFunction = await readFile("netlify/functions/photo-upload-url.js", "utf8");
@@ -355,6 +359,7 @@ const requiredMarkers = [
   "loadProductionBackend",
   "backendModeStatus",
   "signInWithOAuth",
+  "link-google-member",
   "auth-google",
   "uploadToSignedUrl",
   "saveProductionProfilePhoto",
@@ -641,6 +646,10 @@ const requiredGuideMarkers = [
   "Known Prototype Limits",
   "Ready For Production When",
   "Backend Setup Track",
+  "supabase/seed-teamwork-chores.sql",
+  "Karmel and Brigham admin profiles",
+  "link-google-member",
+  "links that Gmail to the matching family member record",
   "child cell phone field, toggle text reminder permission"
 ];
 
@@ -866,6 +875,9 @@ const requiredBackendMarkers = [
   "Twilio",
   "Netlify Function Contracts",
   "backend-health",
+  "link-google-member",
+  "Family Seed Data",
+  "seed-teamwork-chores.sql",
   "readyForWorkflowBeta",
   "scheduled-noon-review",
   "Server-Side Permissions",
@@ -880,6 +892,7 @@ for (const marker of requiredBackendMarkers) {
 
 const requiredSchemaMarkers = [
   "create table family_members",
+  "name text not null default 'Teamwork Chores' unique",
   "cell_phone text",
   "text_reminders_enabled boolean",
   "create table chores",
@@ -899,8 +912,33 @@ for (const marker of requiredSchemaMarkers) {
   }
 }
 
+const requiredSeedMarkers = [
+  "karmel.larson@gmail.com",
+  "profile_key",
+  "notification_preferences",
+  "family-photos",
+  "Make 10 layered salad jars",
+  "account_balance",
+  "daily_work_target_minutes",
+  "on conflict (name) do nothing",
+  "on conflict (family_id, profile_key)",
+  "on conflict (family_id, lower(name))"
+];
+
+for (const marker of requiredSeedMarkers) {
+  if (!supabaseSeed.includes(marker)) {
+    throw new Error(`Supabase seed is missing: ${marker}`);
+  }
+}
+
 if (!authFunction.includes("memberFromAuthHeader") || !authFunction.includes("Google session is not linked")) {
   throw new Error("Google auth function is missing member verification behavior.");
+}
+
+for (const marker of ["auth_user_id", ".ilike(\"gmail\", email)", "is not invited to Teamwork Chores yet", "already linked to a different Google account"]) {
+  if (!linkGoogleFunction.includes(marker)) {
+    throw new Error(`Google member link function is missing: ${marker}`);
+  }
 }
 
 for (const marker of ["expectedMembers", "family-photos", "notification_log", "readyForWorkflowBeta", "TWILIO_MESSAGING_SERVICE_SID", "authLinked", "gmailLinked"]) {
