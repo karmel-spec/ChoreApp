@@ -3432,6 +3432,35 @@
       return localStorage.getItem(familyPhotoStoreKey) || "";
     }
 
+    function hydrateProductionFamilySnapshot(payload) {
+      if (payload.family?.heroPhotoUrl) {
+        localStorage.setItem(familyPhotoStoreKey, payload.family.heroPhotoUrl);
+      } else if (payload.family && !payload.family.heroPhotoPath) {
+        localStorage.removeItem(familyPhotoStoreKey);
+      }
+      (payload.members || []).forEach(member => {
+        const child = children.find(item => item.id === member.profileKey);
+        if (!child) return;
+        child.cellPhone = formatPhoneNumber(member.cellPhone) || "";
+        child.textReminders = Boolean(member.textRemindersEnabled);
+        child.maxDifficulty = Math.min(10, Math.max(1, Math.round(safeStoredNumber(member.maxDifficulty, child.maxDifficulty, 1))));
+        child.targetHard = Boolean(member.targetHard);
+        if (Number.isFinite(Number(member.dailyWorkTargetMinutes))) {
+          childWorkTargets[child.id] = Math.min(60, Math.max(5, Math.round(Number(member.dailyWorkTargetMinutes))));
+        }
+        if (Number.isFinite(Number(member.fineRate))) {
+          child.fineRate = Number(Number(member.fineRate).toFixed(2));
+        }
+        if (member.profilePhotoUrl) {
+          child.profileImage = member.profilePhotoUrl;
+          saveStoredChildPhoto(child.id, member.profilePhotoUrl);
+        } else if (!member.profilePhotoPath) {
+          child.profileImage = "";
+          saveStoredChildPhoto(child.id, "");
+        }
+      });
+    }
+
     function normalizeProofImage(value) {
       const text = String(value || "");
       return text.startsWith("data:image/") && text.length <= 3000000 ? text : "";
@@ -3957,6 +3986,14 @@
       });
     }
 
+    async function loadProductionFamilySnapshot() {
+      await loadProductionBackend();
+      if (!productionBackend.ready || !productionBackend.session?.access_token) return null;
+      return fetchJson("/.netlify/functions/family-snapshot", {
+        headers: productionAuthHeader()
+      });
+    }
+
     async function saveProductionChoreRecord(action, child, chore, choreType, extra = {}) {
       await loadProductionBackend();
       if (!productionBackend.ready) return null;
@@ -4037,11 +4074,15 @@
 
     async function hydrateProductionBackendData() {
       if (!productionBackend.ready || !productionBackend.session?.access_token) return;
-      const [settingsResult, choreResult, ledgerResult] = await Promise.allSettled([
+      const [snapshotResult, settingsResult, choreResult, ledgerResult] = await Promise.allSettled([
+        loadProductionFamilySnapshot(),
         loadProductionFamilySettings(),
         loadProductionChoreLibrary(),
         loadProductionMoneyLedger()
       ]);
+      if (snapshotResult.status === "fulfilled" && Array.isArray(snapshotResult.value?.members)) {
+        hydrateProductionFamilySnapshot(snapshotResult.value);
+      }
       if (settingsResult.status === "fulfilled" && settingsResult.value?.settings) {
         familySettings = normalizeFamilySettingsRecord(settingsResult.value.settings);
         normalizeFamilyReviewContact();

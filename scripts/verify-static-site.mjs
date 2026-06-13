@@ -44,6 +44,7 @@ const requiredFiles = [
   "netlify/functions/chore-library.js",
   "netlify/functions/extension-decision.js",
   "netlify/functions/extension-request.js",
+  "netlify/functions/family-snapshot.js",
   "netlify/functions/family-settings.js",
   "netlify/functions/link-google-member.js",
   "netlify/functions/member-contact.js",
@@ -94,6 +95,7 @@ const choreRecordFunction = await readFile("netlify/functions/chore-record.js", 
 const choreLibraryFunction = await readFile("netlify/functions/chore-library.js", "utf8");
 const extensionDecisionFunction = await readFile("netlify/functions/extension-decision.js", "utf8");
 const extensionRequestFunction = await readFile("netlify/functions/extension-request.js", "utf8");
+const familySnapshotFunction = await readFile("netlify/functions/family-snapshot.js", "utf8");
 const familySettingsFunction = await readFile("netlify/functions/family-settings.js", "utf8");
 const linkGoogleFunction = await readFile("netlify/functions/link-google-member.js", "utf8");
 const memberContactFunction = await readFile("netlify/functions/member-contact.js", "utf8");
@@ -385,6 +387,8 @@ const requiredMarkers = [
   "Cloud chore review failed",
   "saveProductionFamilySettings",
   "loadProductionFamilySettings",
+  "loadProductionFamilySnapshot",
+  "hydrateProductionFamilySnapshot",
   "saveProductionChoreLibrary",
   "loadProductionChoreLibrary",
   "hydrateProductionBackendData",
@@ -944,6 +948,7 @@ const requiredBackendMarkers = [
   "Twilio",
   "Netlify Function Contracts",
   "backend-health",
+  "family-snapshot",
   "chore-record",
   "chore-library",
   "family-settings",
@@ -955,6 +960,7 @@ const requiredBackendMarkers = [
   "money-ledger",
   "CONFIRM MONEY",
   "read child ledger/account history",
+  "signed family/profile photo URLs",
   "production chore-completion gate",
   "family_settings",
   "parent admin controls",
@@ -1027,6 +1033,20 @@ for (const marker of requiredSeedMarkers) {
 
 if (!authFunction.includes("memberFromAuthHeader") || !authFunction.includes("Google session is not linked")) {
   throw new Error("Google auth function is missing member verification behavior.");
+}
+
+for (const marker of [
+  "createSignedUrl",
+  "hero_photo_path",
+  "profile_photo_path",
+  "text_reminders_enabled",
+  "daily_work_target_minutes",
+  "fine_rate",
+  "family-photos"
+]) {
+  if (!familySnapshotFunction.includes(marker)) {
+    throw new Error(`Family snapshot function is missing: ${marker}`);
+  }
 }
 
 for (const marker of [
