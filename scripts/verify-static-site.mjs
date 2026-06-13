@@ -356,7 +356,12 @@ const requiredMarkers = [
   "auth-google",
   "uploadToSignedUrl",
   "saveProductionProfilePhoto",
+  "saveProductionFamilyHeroPhoto",
+  "Backend Admin: Family Hero Photo",
+  "saveFamilyHeroPhoto",
+  "clearFamilyHeroPhoto",
   "Only ${child.name} or Brigham/Karmel can edit this profile photo",
+  "Family hero photo was uploaded to cloud storage and saved for local home preview",
   "Use valid bonus amounts like 5, 10.50, or 100",
   "Use a valid fine amount like 2, 5, or 7.50",
   "Use a valid hourly rate like 17 or 17.50",
@@ -403,6 +408,10 @@ const requiredMarkers = [
   "restorePendingBetaStatus",
   "The dashboard reloaded so imported beta data is clean",
   "Local beta data reset complete",
+  "Fresh Start Accounts",
+  "freshStartChildAccounts",
+  "Fresh start applied today",
+  "lastAccountFreshStartAt",
   "familyPhotoStoreKey",
   "getStoredFamilyPhoto",
   "familyPhoto: getStoredFamilyPhoto()",
@@ -511,6 +520,23 @@ for (const marker of requiredMarkers) {
 
 if (appHtml.includes('placeholder="D${chore.difficulty}"')) {
   throw new Error("Priority chore difficulty placeholders must use choreDifficulty() so Dundefined cannot render.");
+}
+
+const childSeedBlock = appHtml.match(/const children = \[([\s\S]*?)\n    \];/)?.[1] || "";
+for (const nonZeroSeed of [
+  /streak:\s*(?!0\b)\d+/,
+  /monthlyStreak:\s*(?!0\b)\d+/,
+  /openFines:\s*(?!0\b)\d+/,
+  /paidFines:\s*(?!0\b)\d+/,
+  /accountBalance:\s*(?!0\b)\d+/
+]) {
+  if (nonZeroSeed.test(childSeedBlock)) {
+    throw new Error("Child account defaults must start fresh with zero balances, fines, streaks, and points.");
+  }
+}
+
+if (!appHtml.includes("thayne: []") || !appHtml.includes("brielle: []")) {
+  throw new Error("Fine and bonus ledgers must start empty for a fresh family launch.");
 }
 
 const requiredGuideMarkers = [
@@ -681,6 +707,11 @@ const requiredAppIds = [
   "accountNetMetric",
   "accountActivitySummary",
   "accountActivityLedger",
+  "familyHeroAdminForm",
+  "familyHeroImageUrl",
+  "familyHeroPhotoFile",
+  "saveFamilyHeroPhotoBtn",
+  "clearFamilyHeroPhotoBtn",
   "profileAdminForm",
   "choreAdminForm",
   "choreTable",
@@ -692,6 +723,7 @@ const requiredAppIds = [
   "exportBetaDataBtn",
   "importBetaDataBtn",
   "resetBetaDataBtn",
+  "freshStartAccountsBtn",
   "feedbackForm",
   "feedbackCategory",
   "feedbackSeverity",

@@ -1987,6 +1987,26 @@
 
         <section class="panel">
           <div class="panel-head">
+            <h3>Backend Admin: Family Hero Photo</h3>
+            <span>Home</span>
+          </div>
+          <div class="side-body">
+            <div class="notice-card">Brigham or Karmel can update the family photo shown on the home screen. In production mode, local image files are uploaded to Supabase Storage and recorded as the current family hero photo.</div>
+            <div class="admin-form admin-only" id="familyHeroAdminForm">
+              <label for="familyHeroImageUrl">Image URL</label>
+              <input id="familyHeroImageUrl" placeholder="https://example.com/family-photo.jpg">
+              <div class="form-row">
+                <input id="familyHeroPhotoFile" type="file" accept="image/*">
+                <button class="primary-btn" type="button" id="saveFamilyHeroPhotoBtn">Save Family Photo</button>
+              </div>
+              <button class="ghost-btn" type="button" id="clearFamilyHeroPhotoBtn">Use Default Family Photo</button>
+              <div class="admin-status" id="familyHeroPhotoStatus"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
             <h3>Backend Admin: Profile Photos</h3>
             <span id="profileName">Child</span>
           </div>
@@ -2183,6 +2203,7 @@
               <div class="backup-actions">
                 <button class="primary-btn" type="button" id="exportBetaDataBtn">Export Backup</button>
                 <button class="ghost-btn" type="button" id="importBetaDataBtn">Import Backup</button>
+                <button class="ghost-btn" type="button" id="freshStartAccountsBtn">Fresh Start Accounts</button>
                 <button class="ghost-btn" type="button" id="resetBetaDataBtn">Reset Test Data</button>
                 <div class="backup-file">
                   <label for="betaDataFile">Backup File</label>
@@ -2406,12 +2427,12 @@
     }
 
     const children = [
-      { id: "thayne", name: "Thayne", age: 20, initials: "TH", maxDifficulty: 10, targetHard: true, streak: 111, monthlyStreak: 11, openFines: 0, paidFines: 15, fineRate: 5, accountBalance: 45, profileImage: "", cellPhone: "", textReminders: false },
-      { id: "brig", name: "Brig Jr.", age: 18, initials: "BJ", maxDifficulty: 10, targetHard: true, streak: 38, monthlyStreak: 8, openFines: 5, paidFines: 10, fineRate: 5, accountBalance: 20, profileImage: "", cellPhone: "", textReminders: false },
-      { id: "josh", name: "Josh", age: 16, initials: "J", maxDifficulty: 10, targetHard: true, streak: 64, monthlyStreak: 14, openFines: 0, paidFines: 5, fineRate: 5, accountBalance: 35, profileImage: "", cellPhone: "", textReminders: false },
-      { id: "jojo", name: "JoJo", age: 15, initials: "JJ", maxDifficulty: 10, targetHard: true, streak: 5, monthlyStreak: 5, openFines: 10, paidFines: 0, fineRate: 5, accountBalance: 0, profileImage: "", cellPhone: "", textReminders: false },
-      { id: "louis", name: "Louis", age: 12, initials: "L", maxDifficulty: 6, targetHard: false, streak: 6, monthlyStreak: 6, openFines: 0, paidFines: 5, fineRate: 3, accountBalance: 5, profileImage: "", cellPhone: "", textReminders: false },
-      { id: "brielle", name: "Brielle", age: 8, initials: "B", maxDifficulty: 4, targetHard: false, streak: 9, monthlyStreak: 9, openFines: 0, paidFines: 0, fineRate: 2, accountBalance: 10, profileImage: "", cellPhone: "", textReminders: false }
+      { id: "thayne", name: "Thayne", age: 20, initials: "TH", maxDifficulty: 10, targetHard: true, streak: 0, monthlyStreak: 0, openFines: 0, paidFines: 0, fineRate: 5, accountBalance: 0, profileImage: "", cellPhone: "", textReminders: false },
+      { id: "brig", name: "Brig Jr.", age: 18, initials: "BJ", maxDifficulty: 10, targetHard: true, streak: 0, monthlyStreak: 0, openFines: 0, paidFines: 0, fineRate: 5, accountBalance: 0, profileImage: "", cellPhone: "", textReminders: false },
+      { id: "josh", name: "Josh", age: 16, initials: "J", maxDifficulty: 10, targetHard: true, streak: 0, monthlyStreak: 0, openFines: 0, paidFines: 0, fineRate: 5, accountBalance: 0, profileImage: "", cellPhone: "", textReminders: false },
+      { id: "jojo", name: "JoJo", age: 15, initials: "JJ", maxDifficulty: 10, targetHard: true, streak: 0, monthlyStreak: 0, openFines: 0, paidFines: 0, fineRate: 5, accountBalance: 0, profileImage: "", cellPhone: "", textReminders: false },
+      { id: "louis", name: "Louis", age: 12, initials: "L", maxDifficulty: 6, targetHard: false, streak: 0, monthlyStreak: 0, openFines: 0, paidFines: 0, fineRate: 3, accountBalance: 0, profileImage: "", cellPhone: "", textReminders: false },
+      { id: "brielle", name: "Brielle", age: 8, initials: "B", maxDifficulty: 4, targetHard: false, streak: 0, monthlyStreak: 0, openFines: 0, paidFines: 0, fineRate: 2, accountBalance: 0, profileImage: "", cellPhone: "", textReminders: false }
     ];
 
     const routineChores = [
@@ -2492,48 +2513,21 @@
     ];
 
     let ledger = {
-      thayne: [
-        { title: "No open fines", date: "All paid", amount: "$0", paid: true }
-      ],
-      brig: [
-        { title: "Trash missed", date: "Jun 8", amount: "$5", paid: false },
-        { title: "Bathroom paid", date: "Jun 2", amount: "$5", paid: true }
-      ],
-      josh: [
-        { title: "Dog cleanup paid", date: "Jun 1", amount: "$5", paid: true }
-      ],
-      jojo: [
-        { title: "Dishes missed", date: "Jun 7", amount: "$5", paid: false },
-        { title: "Room reset missed", date: "Jun 5", amount: "$5", paid: false }
-      ],
-      louis: [
-        { title: "Hair routine paid", date: "Jun 3", amount: "$5", paid: true }
-      ],
-      brielle: [
-        { title: "No open fines", date: "All paid", amount: "$0", paid: true }
-      ]
+      thayne: [],
+      brig: [],
+      josh: [],
+      jojo: [],
+      louis: [],
+      brielle: []
     };
 
     let bonusLedger = {
-      thayne: [
-        { title: "100-day super bonus", date: "Jun 10", amount: "$100", paid: true },
-        { title: "7-day monthly streak", date: "Jun 7", amount: "$10", paid: true }
-      ],
-      brig: [
-        { title: "7-day monthly streak", date: "Jun 7", amount: "$10", paid: true }
-      ],
-      josh: [
-        { title: "7-day monthly streak", date: "Jun 7", amount: "$10", paid: true }
-      ],
-      jojo: [
-        { title: "5-day monthly streak", date: "Jun 5", amount: "$5", paid: false }
-      ],
-      louis: [
-        { title: "5-day monthly streak", date: "Jun 5", amount: "$5", paid: true }
-      ],
-      brielle: [
-        { title: "7-day monthly streak", date: "Jun 7", amount: "$10", paid: true }
-      ]
+      thayne: [],
+      brig: [],
+      josh: [],
+      jojo: [],
+      louis: [],
+      brielle: []
     };
 
     const validChildIds = ["thayne", "brig", "josh", "jojo", "louis", "brielle"];
@@ -3596,6 +3590,56 @@
       window.location.reload();
     }
 
+    function emptyChildLedgerSet() {
+      return Object.fromEntries(validChildIds.map(childId => [childId, []]));
+    }
+
+    function freshStartChildAccounts({ confirmReset = true, reload = false } = {}) {
+      if (!isAdmin()) {
+        document.getElementById("betaDataStatus").textContent = "Only Brigham or Karmel can reset child account balances.";
+        return;
+      }
+      if (confirmReset && !window.confirm("Reset child account balances, fines, streaks, monthly points, ledgers, review records, and chore checkboxes to zero? Photos, Gmail links, chores, family settings, and helper setup will stay saved.")) {
+        document.getElementById("betaDataStatus").textContent = "Fresh start cancelled.";
+        return;
+      }
+      children.forEach(child => {
+        child.openFines = 0;
+        child.paidFines = 0;
+        child.accountBalance = 0;
+        child.streak = 0;
+        child.monthlyStreak = 0;
+        child.monthlyStreakPeriod = currentBonusPeriod();
+      });
+      ledger = emptyChildLedgerSet();
+      bonusLedger = emptyChildLedgerSet();
+      fineAssessments = {};
+      extensionDeadlines = {};
+      extensionAuditLog = [];
+      reviewReminderLog = [];
+      choreFeedbackQueue = [];
+      familyPhotoFeed = [];
+      monthlyPoints = {};
+      localStorage.removeItem(choreStateStoreKey);
+      saveBetaDataMeta({ lastAccountFreshStartAt: new Date().toISOString() });
+      persistBetaData();
+      sessionStorage.setItem(betaDataPendingStatusKey, "Fresh start applied today: child account balances, fines, streaks, points, ledgers, review records, and chore checkboxes reset to zero.");
+      if (reload) {
+        window.location.reload();
+        return;
+      }
+      render();
+      restorePendingBetaStatus();
+    }
+
+    function applyFreshStartFromUrl() {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get("freshStart") !== "accounts") return;
+      url.searchParams.delete("freshStart");
+      window.history.replaceState({}, "", url);
+      freshStartChildAccounts({ confirmReset: false });
+    }
+
     function getAccountById(accountId) {
       return accounts.find(account => account.id === accountId);
     }
@@ -3743,6 +3787,31 @@
           profileKey: child.id,
           storagePath: upload.storagePath,
           caption: `${child.name} profile photo`
+        })
+      });
+      return upload.storagePath;
+    }
+
+    async function saveProductionFamilyHeroPhoto(file) {
+      await loadProductionBackend();
+      if (!productionBackend.ready || !productionBackend.session?.access_token || !productionBackend.client || !file) return null;
+      const extension = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const upload = await fetchJson("/.netlify/functions/photo-upload-url", {
+        method: "POST",
+        headers: productionAuthHeader(),
+        body: JSON.stringify({ kind: "family_hero", extension })
+      });
+      const { error } = await productionBackend.client.storage
+        .from("family-photos")
+        .uploadToSignedUrl(upload.storagePath, upload.token, file);
+      if (error) throw new Error(error.message);
+      await fetchJson("/.netlify/functions/photo-record", {
+        method: "POST",
+        headers: productionAuthHeader(),
+        body: JSON.stringify({
+          kind: "family_hero",
+          storagePath: upload.storagePath,
+          caption: "Teamwork Chores family hero photo"
         })
       });
       return upload.storagePath;
@@ -5322,6 +5391,14 @@
       document.getElementById("profileStatus").textContent = child.profileImage ? `${child.name}'s profile photo is set.` : `${child.name} is using initials until ${child.name} or an admin adds a photo.`;
     }
 
+    function renderFamilyHeroPanel() {
+      const familyPhoto = getStoredFamilyPhoto();
+      document.getElementById("familyHeroImageUrl").value = familyPhoto && !familyPhoto.startsWith("data:") ? familyPhoto : "";
+      document.getElementById("familyHeroPhotoStatus").textContent = familyPhoto
+        ? "The home screen family photo is set."
+        : "The home screen is using the default family photo.";
+    }
+
     function saveBonusRules() {
       if (!isAdmin()) {
         document.getElementById("bonusStatus").textContent = "Only Brigham or Karmel can edit bonus rates.";
@@ -5797,6 +5874,64 @@
         return;
       }
       document.getElementById("profileStatus").textContent = "Paste an image URL or choose a local image file.";
+    }
+
+    async function saveFamilyHeroPhoto() {
+      if (!isAdmin()) {
+        document.getElementById("familyHeroPhotoStatus").textContent = "Only Brigham or Karmel can edit the family hero photo.";
+        return;
+      }
+      const file = document.getElementById("familyHeroPhotoFile").files[0];
+      const url = document.getElementById("familyHeroImageUrl").value.trim();
+      if (file) {
+        const fileError = imageFileError(file);
+        if (fileError) {
+          document.getElementById("familyHeroPhotoStatus").textContent = fileError;
+          document.getElementById("familyHeroPhotoFile").value = "";
+          return;
+        }
+        let backendPhotoSaved = false;
+        try {
+          const storagePath = await saveProductionFamilyHeroPhoto(file);
+          backendPhotoSaved = Boolean(storagePath);
+        } catch (error) {
+          document.getElementById("familyHeroPhotoStatus").textContent = `Cloud family photo upload failed: ${error.message}`;
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = event => {
+          localStorage.setItem(familyPhotoStoreKey, event.target.result);
+          document.getElementById("familyHeroPhotoFile").value = "";
+          render();
+          document.getElementById("familyHeroPhotoStatus").textContent = backendPhotoSaved
+            ? "Family hero photo was uploaded to cloud storage and saved for local home preview."
+            : "Family hero photo was updated from a local file for this beta browser.";
+        };
+        reader.onerror = () => {
+          document.getElementById("familyHeroPhotoStatus").textContent = "The browser could not read that family photo. Try a smaller image or choose a different file.";
+          document.getElementById("familyHeroPhotoFile").value = "";
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
+      if (url) {
+        localStorage.setItem(familyPhotoStoreKey, url);
+        render();
+        document.getElementById("familyHeroPhotoStatus").textContent = "Family hero photo URL was saved for this beta browser.";
+        return;
+      }
+      document.getElementById("familyHeroPhotoStatus").textContent = "Paste an image URL or choose a local family image file.";
+    }
+
+    function clearFamilyHeroPhoto() {
+      if (!isAdmin()) {
+        document.getElementById("familyHeroPhotoStatus").textContent = "Only Brigham or Karmel can edit the family hero photo.";
+        return;
+      }
+      localStorage.removeItem(familyPhotoStoreKey);
+      document.getElementById("familyHeroPhotoFile").value = "";
+      render();
+      document.getElementById("familyHeroPhotoStatus").textContent = "The home screen is back to the default family photo.";
     }
 
     function clearProfileImage() {
@@ -6557,6 +6692,7 @@
       renderBonusPanel(child);
       renderAccountActivity(child);
       renderChildContactSettings(child);
+      renderFamilyHeroPanel();
       renderProfilePanel(child);
       renderBetaDataSummary();
       renderChoreTable();
@@ -6655,6 +6791,8 @@
 
     document.getElementById("resetBetaDataBtn").addEventListener("click", resetBetaData);
 
+    document.getElementById("freshStartAccountsBtn").addEventListener("click", () => freshStartChildAccounts());
+
     document.getElementById("saveChildContactBtn").addEventListener("click", saveChildContactSettings);
 
     document.getElementById("saveFineRateBtn").addEventListener("click", saveFineRate);
@@ -6666,6 +6804,10 @@
     document.getElementById("awardBonusBtn").addEventListener("click", awardEligibleBonus);
 
     document.getElementById("awardPointsBonusBtn").addEventListener("click", awardMonthlyPointsBonuses);
+
+    document.getElementById("saveFamilyHeroPhotoBtn").addEventListener("click", saveFamilyHeroPhoto);
+
+    document.getElementById("clearFamilyHeroPhotoBtn").addEventListener("click", clearFamilyHeroPhoto);
 
     document.getElementById("saveProfileImageBtn").addEventListener("click", saveProfileImage);
 
@@ -6706,6 +6848,7 @@
     renderLoginGrid();
     restoreLogin();
     render();
+    applyFreshStartFromUrl();
     loadProductionBackend().catch(error => {
       backendStatusMessage(`Browser beta mode is active because the production backend did not initialize: ${error.message}`);
     });
