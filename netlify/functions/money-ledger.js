@@ -198,11 +198,62 @@ async function markFinePaid({ supabase, actor, body }) {
   return json(200, { ledgerEntry: updated });
 }
 
-exports.handler = async (event) => {
-  if (event.httpMethod !== "POST") return json(405, { error: "Method not allowed" });
+function publicLedgerEntry(entry) {
+  return {
+    id: entry.id,
+    childId: entry.child_id,
+    kind: entry.kind,
+    title: entry.title,
+    amount: Number(entry.amount || 0),
+    serviceDate: entry.service_date,
+    period: entry.period,
+    paid: Boolean(entry.paid),
+    chargedBy: entry.charged_by,
+    chargedAt: entry.charged_at,
+    awardedBy: entry.awarded_by,
+    awardedAt: entry.awarded_at,
+    paidBy: entry.paid_by,
+    paidAt: entry.paid_at,
+    metadata: entry.metadata || {},
+    createdAt: entry.created_at
+  };
+}
 
+async function readLedger({ supabase, actor }) {
+  const { data: children, error: childError } = await supabase
+    .from("family_members")
+    .select("id,profile_key,display_name,account_balance")
+    .eq("family_id", actor.family_id)
+    .eq("role", "child");
+  if (childError) return json(500, { error: childError.message });
+
+  const { data: entries, error } = await supabase
+    .from("ledger_entries")
+    .select("*")
+    .eq("family_id", actor.family_id)
+    .order("created_at", { ascending: false });
+  if (error) return json(500, { error: error.message });
+
+  return json(200, {
+    children: (children || []).map(child => ({
+      id: child.id,
+      profileKey: child.profile_key,
+      displayName: child.display_name,
+      accountBalance: Number(child.account_balance || 0)
+    })),
+    ledgerEntries: (entries || []).map(publicLedgerEntry)
+  });
+}
+
+exports.handler = async (event) => {
   const actor = await memberFromAuthHeader(event);
   if (!actor) return json(401, { error: "Sign in required." });
+
+  const supabase = serviceClient();
+
+  if (event.httpMethod === "GET") return readLedger({ supabase, actor });
+
+  if (event.httpMethod !== "POST") return json(405, { error: "Method not allowed" });
   if (!requireAdmin(actor)) return json(403, { error: "Only Brigham or Karmel can change money ledger records." });
 
   const body = parseBody(event);
@@ -211,7 +262,6 @@ exports.handler = async (event) => {
     return json(400, { error: `Type ${MONEY_CONFIRMATION} before changing money records.` });
   }
 
-  const supabase = serviceClient();
   const action = cleanText(body.action);
   if (action === "charge_fine") return chargeFine({ supabase, actor, body });
   if (action === "award_bonus") return awardBonus({ supabase, actor, body });

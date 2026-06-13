@@ -3119,6 +3119,67 @@
       }, {});
     }
 
+    function dateLabelFromKey(value, fallback = "Date not recorded") {
+      const key = normalizeDateKey(value, "");
+      if (!key) return fallback;
+      const [year, month, day] = key.split("-").map(Number);
+      return new Date(year, month - 1, day).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    }
+
+    function hydrateProductionMoneyLedger(payload) {
+      const childByBackendId = new Map((payload.children || []).map(child => [child.id, child]));
+      ledger = normalizeChildLedgerSet({}, "fine");
+      bonusLedger = normalizeChildLedgerSet({}, "bonus");
+      children.forEach(child => {
+        const backendChild = (payload.children || []).find(item => item.profileKey === child.id);
+        child.openFines = 0;
+        child.paidFines = 0;
+        if (backendChild) child.accountBalance = safeStoredNumber(backendChild.accountBalance, child.accountBalance);
+      });
+      (payload.ledgerEntries || []).forEach((entry, index) => {
+        const backendChild = childByBackendId.get(entry.childId);
+        const childId = normalizeChildId(backendChild?.profileKey, "");
+        if (!childId) return;
+        const amount = moneyAmount(entry.amount);
+        if (entry.kind === "fine") {
+          ledger[childId].push(normalizeLedgerRecord({
+            title: entry.title,
+            dateKey: entry.serviceDate || "",
+            date: dateLabelFromKey(entry.serviceDate),
+            amount: `$${amount}`,
+            paid: Boolean(entry.paid),
+            backendLedgerEntryId: entry.id,
+            deadline: entry.metadata?.deadline || "",
+            chargedBy: entry.chargedBy ? "Backend admin" : "",
+            chargedAt: entry.chargedAt,
+            paidBy: entry.paidBy ? "Backend admin" : "",
+            paidAt: entry.paidAt
+          }, index, "fine"));
+          const child = children.find(item => item.id === childId);
+          if (child) {
+            if (entry.paid) child.paidFines = Number((child.paidFines + amount).toFixed(2));
+            else child.openFines = Number((child.openFines + amount).toFixed(2));
+          }
+        }
+        if (entry.kind === "bonus") {
+          bonusLedger[childId].push(normalizeLedgerRecord({
+            title: entry.title,
+            type: entry.metadata?.bonusType || "",
+            days: entry.metadata?.days || undefined,
+            rank: entry.metadata?.rank || undefined,
+            points: entry.metadata?.points || undefined,
+            date: entry.period || dateLabelFromKey(entry.serviceDate, "Bonus period not recorded"),
+            period: entry.period || "",
+            amount: `$${amount}`,
+            paid: Boolean(entry.paid),
+            backendLedgerEntryId: entry.id,
+            awardedBy: entry.awardedBy ? "Backend admin" : "",
+            awardedAt: entry.awardedAt
+          }, index, "bonus"));
+        }
+      });
+    }
+
     const helperTaskColumns = ["daily", "projects", "oneoff"];
 
     function normalizeHelperTaskRecord(task, index = 0) {
@@ -3888,6 +3949,14 @@
       });
     }
 
+    async function loadProductionMoneyLedger() {
+      await loadProductionBackend();
+      if (!productionBackend.ready || !productionBackend.session?.access_token) return null;
+      return fetchJson("/.netlify/functions/money-ledger", {
+        headers: productionAuthHeader()
+      });
+    }
+
     async function saveProductionChoreRecord(action, child, chore, choreType, extra = {}) {
       await loadProductionBackend();
       if (!productionBackend.ready) return null;
@@ -3968,9 +4037,10 @@
 
     async function hydrateProductionBackendData() {
       if (!productionBackend.ready || !productionBackend.session?.access_token) return;
-      const [settingsResult, choreResult] = await Promise.allSettled([
+      const [settingsResult, choreResult, ledgerResult] = await Promise.allSettled([
         loadProductionFamilySettings(),
-        loadProductionChoreLibrary()
+        loadProductionChoreLibrary(),
+        loadProductionMoneyLedger()
       ]);
       if (settingsResult.status === "fulfilled" && settingsResult.value?.settings) {
         familySettings = normalizeFamilySettingsRecord(settingsResult.value.settings);
@@ -3978,6 +4048,9 @@
       }
       if (choreResult.status === "fulfilled" && Array.isArray(choreResult.value?.chores)) {
         choreLibrary.splice(0, choreLibrary.length, ...choreResult.value.chores.map(normalizeChoreRecord));
+      }
+      if (ledgerResult.status === "fulfilled" && Array.isArray(ledgerResult.value?.ledgerEntries)) {
+        hydrateProductionMoneyLedger(ledgerResult.value);
       }
       persistBetaData();
     }

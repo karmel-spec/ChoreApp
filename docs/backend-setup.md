@@ -55,7 +55,7 @@ Never expose `SUPABASE_SERVICE_ROLE_KEY` or Twilio secrets in browser JavaScript
 - `family-settings`: lets parent admins save default deadline, noon review reminder time, extension approver/contact, and review recipient/contact.
 - `chore-library`: lets signed-in family members read the master chore rotation, and lets parent admins add, update, toggle, and delete items with difficulty, timing, frequency, fit, notice, and training notes.
 - `member-contact`: lets admins update any child phone/text opt-in and lets children update only their own setting.
-- `money-ledger`: requires a verified parent admin token plus the `CONFIRM MONEY` guardrail before charging fines, awarding bonuses, or marking fines paid.
+- `money-ledger`: lets signed-in family members read child ledger/account history, and requires a verified parent admin token plus the `CONFIRM MONEY` guardrail before charging fines, awarding bonuses, or marking fines paid.
 - `photo-upload-url`: creates a private Supabase Storage signed upload URL for family photos.
 - `photo-record`: records or clears uploaded family hero, profile, proof, and feed photos in Supabase with role checks.
 - `send-sms`: lets parent admins send trusted Twilio SMS reminders and logs each send.
@@ -79,7 +79,7 @@ The browser prototype currently hides admin controls in the UI. Production must 
 
 The `supabase/schema.sql` file includes initial row-level security policies for those boundaries.
 
-The `money-ledger` function is the production money gate. Browser confirmation remains a user-facing speed bump, but the backend function is the authority: it rejects children/helpers, requires the exact `CONFIRM MONEY` confirmation text, blocks duplicate same-day fine titles and duplicate bonus-period awards, and records who charged, awarded, or marked a fine paid.
+The `money-ledger` function is the production money gate and the reload source for child account panels. Browser confirmation remains a user-facing speed bump, but the backend function is the authority: it rejects children/helpers for money changes, requires the exact `CONFIRM MONEY` confirmation text, blocks duplicate same-day fine titles and duplicate bonus-period awards, records who charged, awarded, or marked a fine paid, and lets signed-in family members read the resulting ledger history.
 
 The `chore-record` function is the production chore-completion gate. Children can complete or reopen only their own chores, parent admins can manage any child, and only parent admins can approve inspected chores or send them back for redo. Proof photos attach to these server chore records through `photo-record`.
 
