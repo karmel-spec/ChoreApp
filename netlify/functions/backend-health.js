@@ -58,6 +58,7 @@ exports.handler = async (event) => {
     members: [],
     storage: { ok: false, message: "Supabase Storage has not been checked." },
     notifications: { ok: false, message: "Notification table has not been checked." },
+    adminConfig: { ok: false, message: "Family settings and chore library have not been checked." },
     choreRecords: { ok: false, message: "Chore record table has not been checked." },
     money: { ok: false, message: "Money ledger table has not been checked." },
     sms: {
@@ -108,6 +109,19 @@ exports.handler = async (event) => {
         message: notificationError ? notificationError.message : "Notification log table is reachable."
       };
 
+      const { error: familySettingsError } = await supabase
+        .from("family_settings")
+        .select("family_id")
+        .limit(1);
+      const { error: choresError } = await supabase
+        .from("chores")
+        .select("id")
+        .limit(1);
+      checks.adminConfig = {
+        ok: !familySettingsError && !choresError,
+        message: familySettingsError?.message || choresError?.message || "Family settings and chore library tables are reachable."
+      };
+
       const { error: choreRecordError } = await supabase
         .from("chore_records")
         .select("id")
@@ -137,7 +151,7 @@ exports.handler = async (event) => {
   const authLinked = checks.members.length > 0 && checks.members.every(member => member.authLinked);
   const gmailLinked = checks.members.length > 0 && checks.members.every(member => member.gmailLinked);
   const envOk = boolsReady(env, Object.keys(env));
-  const ready = Boolean(envOk && checks.database.ok && checks.storage.ok && checks.notifications.ok && checks.choreRecords.ok && checks.money.ok && checks.sms.ok && checks.google.ok && membersPresent && authLinked && gmailLinked);
+  const ready = Boolean(envOk && checks.database.ok && checks.storage.ok && checks.notifications.ok && checks.adminConfig.ok && checks.choreRecords.ok && checks.money.ok && checks.sms.ok && checks.google.ok && membersPresent && authLinked && gmailLinked);
 
   return json(200, {
     ready,
@@ -147,6 +161,7 @@ exports.handler = async (event) => {
     nextSteps: ready ? [] : [
       !envOk ? "Add all Supabase, Google, Twilio, and family phone environment variables in Netlify." : "",
       !checks.database.ok ? "Apply supabase/schema.sql and confirm Supabase service-role access." : "",
+      !checks.adminConfig.ok ? "Confirm family_settings and chores exist so parent admin rules and chore library edits save server-side." : "",
       !checks.choreRecords.ok ? "Confirm chore_records exists so completion, proof, approval, and redo records can be saved server-side." : "",
       !checks.money.ok ? "Confirm ledger_entries exists so fines, bonuses, and paid-fine records can be saved server-side." : "",
       !membersPresent ? "Seed all expected family member records with the correct roles." : "",

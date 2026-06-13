@@ -3901,6 +3901,32 @@
       return { choreRecordId, storagePath: upload.storagePath };
     }
 
+    async function saveProductionFamilySettings(settings) {
+      await loadProductionBackend();
+      if (!productionBackend.ready) return null;
+      if (!productionBackend.session?.access_token) {
+        throw new Error("Sign in with Google before saving family rules in production mode.");
+      }
+      return fetchJson("/.netlify/functions/family-settings", {
+        method: "PATCH",
+        headers: productionAuthHeader(),
+        body: JSON.stringify(settings)
+      });
+    }
+
+    async function saveProductionChoreLibrary(action, chore) {
+      await loadProductionBackend();
+      if (!productionBackend.ready) return null;
+      if (!productionBackend.session?.access_token) {
+        throw new Error("Sign in with Google before editing the master chore list in production mode.");
+      }
+      return fetchJson("/.netlify/functions/chore-library", {
+        method: "POST",
+        headers: productionAuthHeader(),
+        body: JSON.stringify({ action, ...chore })
+      });
+    }
+
     function roleLabel(account) {
       if (!account) return "Not signed in";
       if (account.role === "admin") return `${account.name} admin`;
@@ -4053,7 +4079,7 @@
       }
     }
 
-    function saveFamilySettings() {
+    async function saveFamilySettings() {
       if (!isAdmin()) {
         document.getElementById("familySettingsStatus").textContent = "Only Brigham or Karmel can edit family rule settings.";
         return;
@@ -4070,7 +4096,7 @@
         document.getElementById("familySettingsStatus").textContent = "Use 10-digit text numbers for Dad extensions and Mom Karmel review reminders.";
         return;
       }
-      familySettings = {
+      const nextSettings = {
         defaultDeadline,
         reviewReminderTime,
         extensionApprover: document.getElementById("extensionApproverInput").value.trim() || "Brigham-dad",
@@ -4080,6 +4106,13 @@
         updatedBy: currentUser?.name || "Admin",
         updatedAt: new Date().toISOString()
       };
+      try {
+        await saveProductionFamilySettings(nextSettings);
+      } catch (error) {
+        document.getElementById("familySettingsStatus").textContent = `Cloud family rules save failed: ${error.message}`;
+        return;
+      }
+      familySettings = nextSettings;
       normalizeFamilyReviewContact();
       persistBetaData();
       render();
@@ -6288,13 +6321,26 @@
         </tr>
       `).join("");
       document.querySelectorAll("[data-chore-index]").forEach(button => {
-        button.addEventListener("click", () => {
+        button.addEventListener("click", async () => {
           if (!isAdmin()) {
             document.getElementById("adminStatus").textContent = "Only Brigham or Karmel can change the master chore rotation.";
             return;
           }
           const chore = choreLibrary[Number(button.dataset.choreIndex)];
-          chore.active = chore.active === false;
+          const nextActive = chore.active === false;
+          try {
+            const payload = await saveProductionChoreLibrary("toggle", {
+              choreId: chore.backendChoreId || chore.id || "",
+              originalName: chore.name,
+              name: chore.name,
+              active: nextActive
+            });
+            if (payload?.chore?.id) chore.backendChoreId = payload.chore.id;
+          } catch (error) {
+            document.getElementById("adminStatus").textContent = `Cloud chore toggle failed: ${error.message}`;
+            return;
+          }
+          chore.active = nextActive;
           chore.updatedBy = currentUser?.name || "Admin";
           chore.updatedAt = new Date().toISOString();
           shuffleOffset += 5;
@@ -6315,7 +6361,7 @@
       return document.querySelector(`[${selector}="${index}"]`)?.value || "";
     }
 
-    function saveChoreEdit(index) {
+    async function saveChoreEdit(index) {
       if (!isAdmin()) {
         document.getElementById("adminStatus").textContent = "Only Brigham or Karmel can edit chores in the master rotation.";
         return;
@@ -6350,7 +6396,27 @@
         document.getElementById("adminStatus").textContent = `${name} already exists in the master chore list. Keep chore names unique for scheduling and review history.`;
         return;
       }
+      let backendChoreId = chore.backendChoreId || chore.id || "";
+      try {
+        const payload = await saveProductionChoreLibrary("update", {
+          choreId: backendChoreId,
+          originalName: chore.name,
+          name,
+          minutes,
+          difficulty,
+          frequency,
+          fit,
+          notice,
+          trainingNotes,
+          active: chore.active !== false
+        });
+        backendChoreId = payload?.chore?.id || backendChoreId;
+      } catch (error) {
+        document.getElementById("adminStatus").textContent = `Cloud chore edit failed: ${error.message}`;
+        return;
+      }
       Object.assign(chore, {
+        backendChoreId,
         name,
         minutes,
         difficulty,
@@ -6367,7 +6433,7 @@
       document.getElementById("adminStatus").textContent = `${name} updated by ${chore.updatedBy}. Future rotations and fairness previews now use the new settings.`;
     }
 
-    function deleteChore(index) {
+    async function deleteChore(index) {
       if (!isAdmin()) {
         document.getElementById("adminStatus").textContent = "Only Brigham or Karmel can delete chores from the master rotation.";
         return;
@@ -6376,6 +6442,16 @@
       if (!chore) return;
       if (!window.confirm(`Delete ${chore.name} from the master chore list? This removes it from future rotations.`)) {
         document.getElementById("adminStatus").textContent = "Delete cancelled.";
+        return;
+      }
+      try {
+        await saveProductionChoreLibrary("delete", {
+          choreId: chore.backendChoreId || chore.id || "",
+          originalName: chore.name,
+          name: chore.name
+        });
+      } catch (error) {
+        document.getElementById("adminStatus").textContent = `Cloud chore delete failed: ${error.message}`;
         return;
       }
       choreLibrary.splice(index, 1);
@@ -6884,7 +6960,7 @@
       });
     }
 
-    function addAdminChore() {
+    async function addAdminChore() {
       if (!isAdmin()) {
         document.getElementById("adminStatus").textContent = "Only Brigham or Karmel can add chores to the master rotation.";
         return;
@@ -6913,7 +6989,25 @@
         document.getElementById("adminStatus").textContent = `${name} is already in the master chore list. Toggle it on or edit the existing chore before adding a duplicate.`;
         return;
       }
+      let backendChoreId = "";
+      try {
+        const payload = await saveProductionChoreLibrary("add", {
+          name,
+          minutes,
+          difficulty,
+          fit,
+          frequency,
+          notice,
+          trainingNotes,
+          active: true
+        });
+        backendChoreId = payload?.chore?.id || "";
+      } catch (error) {
+        document.getElementById("adminStatus").textContent = `Cloud chore add failed: ${error.message}`;
+        return;
+      }
       choreLibrary.unshift({
+        backendChoreId,
         name,
         minutes,
         difficulty,

@@ -82,6 +82,36 @@ insert into storage.buckets (id, name, public)
 values ('family-photos', 'family-photos', false)
 on conflict (id) do update set public = false;
 
+with family as (
+  select id from families where name = 'Teamwork Chores' order by created_at limit 1
+)
+insert into family_settings (
+  family_id,
+  default_deadline,
+  review_reminder_time,
+  extension_approver,
+  extension_contact,
+  review_recipient,
+  review_contact
+)
+select
+  id,
+  '12:00 PM',
+  '12:00 PM',
+  'Brigham-dad',
+  '801-830-0011',
+  'Mom Karmel',
+  '801-427-9293'
+from family
+on conflict (family_id) do update set
+  default_deadline = excluded.default_deadline,
+  review_reminder_time = excluded.review_reminder_time,
+  extension_approver = excluded.extension_approver,
+  extension_contact = excluded.extension_contact,
+  review_recipient = excluded.review_recipient,
+  review_contact = excluded.review_contact,
+  updated_at = now();
+
 drop policy if exists "family photo uploads require auth" on storage.objects;
 create policy "family photo uploads require auth"
 on storage.objects for insert

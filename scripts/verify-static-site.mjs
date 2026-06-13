@@ -41,8 +41,10 @@ const requiredFiles = [
   "netlify/functions/auth-google.js",
   "netlify/functions/backend-health.js",
   "netlify/functions/chore-record.js",
+  "netlify/functions/chore-library.js",
   "netlify/functions/extension-decision.js",
   "netlify/functions/extension-request.js",
+  "netlify/functions/family-settings.js",
   "netlify/functions/link-google-member.js",
   "netlify/functions/member-contact.js",
   "netlify/functions/money-ledger.js",
@@ -85,8 +87,10 @@ const supabaseHelperFunction = await readFile("netlify/functions/_supabase.js", 
 const authFunction = await readFile("netlify/functions/auth-google.js", "utf8");
 const backendHealthFunction = await readFile("netlify/functions/backend-health.js", "utf8");
 const choreRecordFunction = await readFile("netlify/functions/chore-record.js", "utf8");
+const choreLibraryFunction = await readFile("netlify/functions/chore-library.js", "utf8");
 const extensionDecisionFunction = await readFile("netlify/functions/extension-decision.js", "utf8");
 const extensionRequestFunction = await readFile("netlify/functions/extension-request.js", "utf8");
+const familySettingsFunction = await readFile("netlify/functions/family-settings.js", "utf8");
 const linkGoogleFunction = await readFile("netlify/functions/link-google-member.js", "utf8");
 const memberContactFunction = await readFile("netlify/functions/member-contact.js", "utf8");
 const moneyLedgerFunction = await readFile("netlify/functions/money-ledger.js", "utf8");
@@ -371,6 +375,15 @@ const requiredMarkers = [
   "Cloud chore completion failed",
   "Cloud proof photo save failed",
   "Cloud chore review failed",
+  "saveProductionFamilySettings",
+  "saveProductionChoreLibrary",
+  "family-settings",
+  "chore-library",
+  "Cloud family rules save failed",
+  "Cloud chore add failed",
+  "Cloud chore edit failed",
+  "Cloud chore toggle failed",
+  "Cloud chore delete failed",
   "saveProductionMoneyLedger",
   "money-ledger",
   "CONFIRM MONEY",
@@ -668,6 +681,8 @@ const requiredGuideMarkers = [
   "links that Gmail to the matching family member record",
   "chore-record",
   "completion/review guardrail",
+  "family-settings",
+  "chore-library",
   "parent-admin",
   "money-ledger",
   "child cell phone field, toggle text reminder permission"
@@ -896,10 +911,14 @@ const requiredBackendMarkers = [
   "Netlify Function Contracts",
   "backend-health",
   "chore-record",
+  "chore-library",
+  "family-settings",
   "link-google-member",
   "money-ledger",
   "CONFIRM MONEY",
   "production chore-completion gate",
+  "family_settings",
+  "parent admin controls",
   "Family Seed Data",
   "seed-teamwork-chores.sql",
   "readyForWorkflowBeta",
@@ -920,6 +939,7 @@ const requiredSchemaMarkers = [
   "cell_phone text",
   "text_reminders_enabled boolean",
   "create table chores",
+  "create table family_settings",
   "create table chore_records",
   "create table ledger_entries",
   "create table photos",
@@ -927,6 +947,7 @@ const requiredSchemaMarkers = [
   "create table notification_log",
   "alter table family_members enable row level security",
   "create policy \"admins manage chores\"",
+  "create policy \"admins manage family settings\"",
   "create policy \"members update own notification preferences\""
 ];
 
@@ -941,6 +962,8 @@ const requiredSeedMarkers = [
   "profile_key",
   "notification_preferences",
   "family-photos",
+  "family_settings",
+  "801-427-9293",
   "Make 10 layered salad jars",
   "account_balance",
   "daily_work_target_minutes",
@@ -957,6 +980,35 @@ for (const marker of requiredSeedMarkers) {
 
 if (!authFunction.includes("memberFromAuthHeader") || !authFunction.includes("Google session is not linked")) {
   throw new Error("Google auth function is missing member verification behavior.");
+}
+
+for (const marker of [
+  "Only Brigham or Karmel can edit family rule settings",
+  "default_deadline",
+  "review_reminder_time",
+  "extension_contact",
+  "review_contact",
+  "Use 10-digit text numbers for Dad extensions and Mom Karmel review reminders"
+]) {
+  if (!familySettingsFunction.includes(marker)) {
+    throw new Error(`Family settings function is missing: ${marker}`);
+  }
+}
+
+for (const marker of [
+  "Only Brigham or Karmel can change the master chore rotation",
+  "add",
+  "update",
+  "toggle",
+  "delete",
+  "training_notes",
+  "difficulty",
+  "Starts after 24 hours",
+  "chores"
+]) {
+  if (!choreLibraryFunction.includes(marker)) {
+    throw new Error(`Chore library function is missing: ${marker}`);
+  }
 }
 
 for (const marker of [
@@ -999,7 +1051,7 @@ for (const marker of [
   }
 }
 
-for (const marker of ["expectedMembers", "family-photos", "notification_log", "chore_records", "Chore record table is reachable", "ledger_entries", "Money ledger table is reachable", "readyForWorkflowBeta", "TWILIO_MESSAGING_SERVICE_SID", "authLinked", "gmailLinked"]) {
+for (const marker of ["expectedMembers", "family-photos", "notification_log", "family_settings", "Family settings and chore library tables are reachable", "chore_records", "Chore record table is reachable", "ledger_entries", "Money ledger table is reachable", "readyForWorkflowBeta", "TWILIO_MESSAGING_SERVICE_SID", "authLinked", "gmailLinked"]) {
   if (!backendHealthFunction.includes(marker)) {
     throw new Error(`Backend health function is missing readiness marker: ${marker}`);
   }

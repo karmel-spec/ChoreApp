@@ -59,6 +59,18 @@ create table chores (
 
 create unique index chores_family_lower_name_key on chores(family_id, lower(name));
 
+create table family_settings (
+  family_id uuid primary key references families(id) on delete cascade,
+  default_deadline text not null default '12:00 PM',
+  review_reminder_time text not null default '12:00 PM',
+  extension_approver text not null default 'Brigham-dad',
+  extension_contact text not null default '801-830-0011',
+  review_recipient text not null default 'Mom Karmel',
+  review_contact text not null default '801-427-9293',
+  updated_by uuid references family_members(id),
+  updated_at timestamptz not null default now()
+);
+
 create table chore_records (
   id uuid primary key default gen_random_uuid(),
   family_id uuid not null references families(id) on delete cascade,
@@ -167,6 +179,7 @@ create table notification_log (
 alter table families enable row level security;
 alter table family_members enable row level security;
 alter table chores enable row level security;
+alter table family_settings enable row level security;
 alter table chore_records enable row level security;
 alter table ledger_entries enable row level security;
 alter table availability_holds enable row level security;
@@ -208,6 +221,9 @@ create policy "admins can manage members" on family_members for all using (is_ad
 
 create policy "members can read chores" on chores for select using (auth.uid() is not null);
 create policy "admins manage chores" on chores for all using (is_admin()) with check (is_admin());
+
+create policy "members read family settings" on family_settings for select using (auth.uid() is not null);
+create policy "admins manage family settings" on family_settings for all using (is_admin()) with check (is_admin());
 
 create policy "members read chore records" on chore_records for select using (auth.uid() is not null);
 create policy "children update own chore records" on chore_records for update using (child_id = current_member_id()) with check (child_id = current_member_id());
