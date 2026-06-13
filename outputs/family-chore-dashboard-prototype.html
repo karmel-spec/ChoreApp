@@ -2371,7 +2371,7 @@
     <section class="login-card" aria-label="Sign in to Teamwork Chores">
       <h2>Sign In</h2>
       <p>Choose your family profile. Admin controls are available only for Brigham and Karmel.</p>
-      <div class="login-note">Google login prototype: select a profile and enter the Gmail address that belongs to that person. Production sign-in will use Google Identity Services with a real OAuth client ID after the Netlify URL is ready.</div>
+      <div class="login-note" id="backendModeStatus">Google login prototype: select a profile and enter the Gmail address that belongs to that person. Production sign-in will use Supabase Google Auth when the backend environment is configured.</div>
       <div class="login-grid" id="loginGrid"></div>
       <div class="login-actions">
         <div>
@@ -2552,6 +2552,14 @@
     const defaultReviewRecipient = "Mom Karmel";
     const defaultReviewContact = "801-427-9293";
     const rotatingDailyMinuteCap = 30;
+    const productionBackend = {
+      checked: false,
+      ready: false,
+      config: null,
+      client: null,
+      session: null,
+      member: null
+    };
     const accounts = [
       { id: "karmel", name: "Karmel", initials: "K", role: "admin", label: "Mom admin", gmail: "" },
       { id: "brigham", name: "Brigham", initials: "BR", role: "admin", label: "Dad admin", gmail: "" },
@@ -3616,6 +3624,130 @@
       document.getElementById("loginEmail").value = account ? gmailForAccount(account) : "";
     }
 
+    function backendStatusMessage(message) {
+      const status = document.getElementById("backendModeStatus");
+      if (status) status.textContent = message;
+    }
+
+    async function fetchJson(url, options = {}) {
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          "content-type": "application/json",
+          ...(options.headers || {})
+        }
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || `Request failed with ${response.status}`);
+      return payload;
+    }
+
+    async function loadProductionBackend() {
+      if (productionBackend.checked) return productionBackend;
+      productionBackend.checked = true;
+      try {
+        const config = await fetchJson("/.netlify/functions/runtime-config", { headers: {} });
+        productionBackend.config = config;
+        productionBackend.ready = Boolean(config.backendReady && config.supabaseUrl && config.supabaseAnonKey);
+        if (!productionBackend.ready) {
+          backendStatusMessage("Browser beta mode is active. Real Google login, cloud photos, and server-side saves will turn on after Supabase/Twilio environment variables are configured.");
+          return productionBackend;
+        }
+        const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+        productionBackend.client = createClient(config.supabaseUrl, config.supabaseAnonKey, {
+          auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true
+          }
+        });
+        const { data } = await productionBackend.client.auth.getSession();
+        productionBackend.session = data?.session || null;
+        if (productionBackend.session?.access_token) {
+          await verifyProductionSession();
+        } else {
+          backendStatusMessage("Production backend is configured. Continue with Google to use server-side permissions, cloud photos, and real text settings.");
+        }
+      } catch (error) {
+        productionBackend.ready = false;
+        backendStatusMessage(`Browser beta mode is active because the production backend is not reachable yet: ${error.message}`);
+      }
+      return productionBackend;
+    }
+
+    function accountForBackendMember(member) {
+      if (!member) return null;
+      const profileKey = member.profileKey || "";
+      const role = member.role || "";
+      if (role === "child") return getAccountById(profileKey);
+      if (profileKey === "karmel") return getAccountById("karmel");
+      if (profileKey === "brigham") return getAccountById("brigham");
+      if (profileKey === "vanessa") return getAccountById("vanessa");
+      return accounts.find(account => account.name === member.displayName) || null;
+    }
+
+    async function verifyProductionSession() {
+      if (!productionBackend.session?.access_token) return null;
+      const payload = await fetchJson("/.netlify/functions/auth-google", {
+        headers: { authorization: `Bearer ${productionBackend.session.access_token}` }
+      });
+      productionBackend.member = payload.member;
+      const account = accountForBackendMember(payload.member);
+      if (!account) throw new Error("This Google account is verified, but it is not linked to a visible Teamwork Chores profile yet.");
+      applyAccount(account);
+      renderLoginGrid();
+      render();
+      backendStatusMessage(`${payload.member.displayName} is signed in with real Google auth. Server-side permissions are active for backend saves.`);
+      document.getElementById("loginStatus").textContent = `${payload.member.displayName} is signed in with real Google auth.`;
+      return payload.member;
+    }
+
+    function productionAuthHeader() {
+      return productionBackend.session?.access_token
+        ? { authorization: `Bearer ${productionBackend.session.access_token}` }
+        : {};
+    }
+
+    async function saveProductionChildContact(child, phone, wantsReminders) {
+      await loadProductionBackend();
+      if (!productionBackend.ready || !productionBackend.session?.access_token) return null;
+      const payload = await fetchJson(`/.netlify/functions/member-contact?profileKey=${encodeURIComponent(child.id)}`, {
+        method: "PATCH",
+        headers: productionAuthHeader(),
+        body: JSON.stringify({
+          cellPhone: phone,
+          textRemindersEnabled: wantsReminders
+        })
+      });
+      return payload.member;
+    }
+
+    async function saveProductionProfilePhoto(child, file) {
+      await loadProductionBackend();
+      if (!productionBackend.ready || !productionBackend.session?.access_token || !productionBackend.client || !file) return null;
+      const extension = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const upload = await fetchJson("/.netlify/functions/photo-upload-url", {
+        method: "POST",
+        headers: productionAuthHeader(),
+        body: JSON.stringify({ kind: "profile", extension })
+      });
+      const { error } = await productionBackend.client.storage
+        .from("family-photos")
+        .uploadToSignedUrl(upload.storagePath, upload.token, file);
+      if (error) throw new Error(error.message);
+      await fetchJson("/.netlify/functions/photo-record", {
+        method: "POST",
+        headers: productionAuthHeader(),
+        body: JSON.stringify({
+          kind: "profile",
+          profileKey: child.id,
+          storagePath: upload.storagePath,
+          caption: `${child.name} profile photo`
+        })
+      });
+      return upload.storagePath;
+    }
+
     function roleLabel(account) {
       if (!account) return "Not signed in";
       if (account.role === "admin") return `${account.name} admin`;
@@ -3867,11 +3999,29 @@
       document.getElementById("loginStatus").textContent = "Profile login used. Use Continue with Google to link a Gmail address.";
     }
 
-    function loginWithGoogle() {
+    async function loginWithGoogle() {
       const account = getAccountById(selectedLoginId);
       const email = document.getElementById("loginEmail").value.trim().toLowerCase();
       if (!account) {
         document.getElementById("loginStatus").textContent = "Choose a family member first.";
+        return;
+      }
+      await loadProductionBackend();
+      if (productionBackend.ready && productionBackend.client) {
+        if (productionBackend.session?.access_token) {
+          await verifyProductionSession();
+          return;
+        }
+        document.getElementById("loginStatus").textContent = "Opening real Google sign-in...";
+        const { error } = await productionBackend.client.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: `${window.location.origin}${window.location.pathname}${window.location.search}`
+          }
+        });
+        if (error) {
+          document.getElementById("loginStatus").textContent = error.message;
+        }
         return;
       }
       if (!/^[^\s@]+@gmail\.com$/.test(email)) {
@@ -5085,7 +5235,7 @@
         : "Only this child or Brigham/Karmel can update text reminder settings.";
     }
 
-    function saveChildContactSettings() {
+    async function saveChildContactSettings() {
       const child = children.find(item => item.id === selectedChildId);
       if (!canManageChildProfile(child)) {
         document.getElementById("childContactStatus").textContent = "Only this child or Brigham/Karmel can update text reminder settings.";
@@ -5098,13 +5248,25 @@
         document.getElementById("childContactStatus").textContent = "Add a 10-digit cell phone number before turning on text reminders.";
         return;
       }
-      child.cellPhone = formattedPhone || "";
-      child.textReminders = wantsReminders && Boolean(formattedPhone);
+      document.getElementById("childContactStatus").textContent = "Saving text reminder settings...";
+      try {
+        const savedMember = await saveProductionChildContact(child, formattedPhone || "", wantsReminders);
+        if (savedMember) {
+          child.cellPhone = formatPhoneNumber(savedMember.cellPhone) || "";
+          child.textReminders = Boolean(savedMember.textRemindersEnabled);
+        } else {
+          child.cellPhone = formattedPhone || "";
+          child.textReminders = wantsReminders && Boolean(formattedPhone);
+        }
+      } catch (error) {
+        document.getElementById("childContactStatus").textContent = `Text reminder settings were not saved to the backend: ${error.message}`;
+        return;
+      }
       persistBetaData();
       renderChildContactSettings(child);
       document.getElementById("childContactStatus").textContent = child.textReminders
-        ? `${child.name}'s text reminders are on for ${child.cellPhone}.`
-        : `${child.name}'s text reminders are off.`;
+        ? `${child.name}'s text reminders are on for ${child.cellPhone}${productionBackend.ready && productionBackend.session ? " and saved to the backend" : ""}.`
+        : `${child.name}'s text reminders are off${productionBackend.ready && productionBackend.session ? " and saved to the backend" : ""}.`;
     }
 
     function ensureCurrentMonthlyStreakPeriod(child) {
@@ -5157,7 +5319,7 @@
     function renderProfilePanel(child) {
       document.getElementById("profileName").textContent = child.name;
       document.getElementById("profileImageUrl").value = child.profileImage && !child.profileImage.startsWith("data:") ? child.profileImage : "";
-      document.getElementById("profileStatus").textContent = child.profileImage ? `${child.name}'s profile photo is set.` : `${child.name} is using initials until an admin adds a photo.`;
+      document.getElementById("profileStatus").textContent = child.profileImage ? `${child.name}'s profile photo is set.` : `${child.name} is using initials until ${child.name} or an admin adds a photo.`;
     }
 
     function saveBonusRules() {
@@ -5588,12 +5750,12 @@
       document.getElementById("fineRateStatus").textContent = `${child.name}'s ${item.title.toLowerCase()} fine was marked paid.`;
     }
 
-    function saveProfileImage() {
-      if (!isAdmin()) {
-        document.getElementById("profileStatus").textContent = "Only Brigham or Karmel can edit profile photos.";
+    async function saveProfileImage() {
+      const child = children.find(item => item.id === selectedChildId);
+      if (!canManageChildProfile(child)) {
+        document.getElementById("profileStatus").textContent = `Only ${child.name} or Brigham/Karmel can edit this profile photo.`;
         return;
       }
-      const child = children.find(item => item.id === selectedChildId);
       const file = document.getElementById("profilePhotoFile").files[0];
       const url = document.getElementById("profileImageUrl").value.trim();
       if (file) {
@@ -5603,12 +5765,22 @@
           document.getElementById("profilePhotoFile").value = "";
           return;
         }
+        let backendPhotoSaved = false;
+        try {
+          const storagePath = await saveProductionProfilePhoto(child, file);
+          backendPhotoSaved = Boolean(storagePath);
+        } catch (error) {
+          document.getElementById("profileStatus").textContent = `Cloud photo upload failed: ${error.message}`;
+          return;
+        }
         const reader = new FileReader();
         reader.onload = event => {
           child.profileImage = event.target.result;
           saveStoredChildPhoto(child.id, child.profileImage);
           render();
-          document.getElementById("profileStatus").textContent = `${child.name}'s profile photo was updated from a local file.`;
+          document.getElementById("profileStatus").textContent = backendPhotoSaved
+            ? `${child.name}'s profile photo was uploaded to cloud storage and saved for local preview.`
+            : `${child.name}'s profile photo was updated from a local file.`;
         };
         reader.onerror = () => {
           document.getElementById("profileStatus").textContent = "The browser could not read that profile photo. Try a smaller image or choose a different file.";
@@ -5628,11 +5800,11 @@
     }
 
     function clearProfileImage() {
-      if (!isAdmin()) {
-        document.getElementById("profileStatus").textContent = "Only Brigham or Karmel can edit profile photos.";
+      const child = children.find(item => item.id === selectedChildId);
+      if (!canManageChildProfile(child)) {
+        document.getElementById("profileStatus").textContent = `Only ${child.name} or Brigham/Karmel can edit this profile photo.`;
         return;
       }
-      const child = children.find(item => item.id === selectedChildId);
       child.profileImage = "";
       saveStoredChildPhoto(child.id, "");
       document.getElementById("profilePhotoFile").value = "";
@@ -6534,6 +6706,9 @@
     renderLoginGrid();
     restoreLogin();
     render();
+    loadProductionBackend().catch(error => {
+      backendStatusMessage(`Browser beta mode is active because the production backend did not initialize: ${error.message}`);
+    });
     restorePendingBetaStatus();
     setInterval(updateReviewCueState, 30000);
   </script>

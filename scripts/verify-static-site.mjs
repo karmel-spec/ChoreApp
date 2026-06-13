@@ -334,6 +334,7 @@ const requiredMarkers = [
   "childCellPhoneInput",
   "childTextReminderConsent",
   "saveChildContactSettings",
+  "saveProductionChildContact",
   "textReminders",
   "Add a 10-digit cell phone number before turning on text reminders",
   "teamworkChoresSidebarCollapsed",
@@ -349,6 +350,13 @@ const requiredMarkers = [
   "Choose an image file",
   "The browser could not read that proof photo",
   "The browser could not read that profile photo",
+  "loadProductionBackend",
+  "backendModeStatus",
+  "signInWithOAuth",
+  "auth-google",
+  "uploadToSignedUrl",
+  "saveProductionProfilePhoto",
+  "Only ${child.name} or Brigham/Karmel can edit this profile photo",
   "Use valid bonus amounts like 5, 10.50, or 100",
   "Use a valid fine amount like 2, 5, or 7.50",
   "Use a valid hourly rate like 17 or 17.50",
@@ -854,7 +862,7 @@ if (!runtimeConfigFunction.includes("SUPABASE_ANON_KEY") || !runtimeConfigFuncti
   throw new Error("Runtime config function is missing public backend readiness configuration.");
 }
 
-if (!memberContactFunction.includes("canManageMember") || !memberContactFunction.includes("Add a 10-digit cell phone number before turning on text reminders")) {
+if (!memberContactFunction.includes("canManageMember") || !memberContactFunction.includes("profileKey") || !memberContactFunction.includes("Add a 10-digit cell phone number before turning on text reminders")) {
   throw new Error("Member contact function is missing child/admin phone reminder permission behavior.");
 }
 
@@ -862,7 +870,7 @@ if (!photoFunction.includes("createSignedUploadUrl") || !photoFunction.includes(
   throw new Error("Photo upload function is missing Supabase Storage signed upload behavior.");
 }
 
-if (!photoRecordFunction.includes("family_hero") || !photoRecordFunction.includes("profile_photo_path") || !photoRecordFunction.includes("proof_photo_path")) {
+if (!photoRecordFunction.includes("family_hero") || !photoRecordFunction.includes("profileKey") || !photoRecordFunction.includes("profile_photo_path") || !photoRecordFunction.includes("proof_photo_path")) {
   throw new Error("Photo record function is missing family/profile/proof storage record behavior.");
 }
 

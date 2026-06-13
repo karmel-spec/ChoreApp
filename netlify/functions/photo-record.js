@@ -40,17 +40,23 @@ exports.handler = async (event) => {
 
   if (kind === "profile") {
     memberId = body.memberId || actor.id;
-    const { data: target, error: targetError } = await supabase
+    let targetQuery = supabase
       .from("family_members")
       .select("id,family_id,display_name")
-      .eq("id", memberId)
-      .single();
+      .eq("family_id", actor.family_id);
+    if (body.profileKey) {
+      targetQuery = targetQuery.eq("profile_key", body.profileKey);
+    } else {
+      targetQuery = targetQuery.eq("id", memberId);
+    }
+    const { data: target, error: targetError } = await targetQuery.single();
     if (targetError || !target || target.family_id !== actor.family_id) {
       return json(404, { error: "Profile member not found." });
     }
     if (!canManageMember(actor, target)) {
       return json(403, { error: "You can update only your own profile photo unless you are Brigham or Karmel." });
     }
+    memberId = target.id;
     const { error } = await supabase
       .from("family_members")
       .update({ profile_photo_path: storagePath, updated_at: new Date().toISOString() })

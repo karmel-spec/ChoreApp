@@ -7,13 +7,17 @@ const {
   serviceClient
 } = require("./_supabase");
 
-async function findTargetMember(supabase, actor, targetMemberId) {
-  const id = targetMemberId || actor.id;
-  const { data, error } = await supabase
+async function findTargetMember(supabase, actor, targetMemberId, targetProfileKey) {
+  let query = supabase
     .from("family_members")
     .select("id,family_id,display_name,role,cell_phone,text_reminders_enabled")
-    .eq("id", id)
-    .single();
+    .eq("family_id", actor.family_id);
+  if (targetProfileKey) {
+    query = query.eq("profile_key", targetProfileKey);
+  } else {
+    query = query.eq("id", targetMemberId || actor.id);
+  }
+  const { data, error } = await query.single();
   if (error || !data || data.family_id !== actor.family_id) return null;
   return data;
 }
@@ -24,7 +28,8 @@ exports.handler = async (event) => {
 
   const supabase = serviceClient();
   const targetMemberId = event.queryStringParameters?.memberId;
-  const target = await findTargetMember(supabase, actor, targetMemberId);
+  const targetProfileKey = event.queryStringParameters?.profileKey;
+  const target = await findTargetMember(supabase, actor, targetMemberId, targetProfileKey);
   if (!canManageMember(actor, target)) return json(403, { error: "You can update only your own phone settings unless you are Brigham or Karmel." });
 
   if (event.httpMethod === "GET") {
