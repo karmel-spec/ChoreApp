@@ -25,6 +25,8 @@ function checkEnv() {
     twilioAccountSid: envReady("TWILIO_ACCOUNT_SID"),
     twilioAuthToken: envReady("TWILIO_AUTH_TOKEN"),
     twilioMessagingServiceSid: envReady("TWILIO_MESSAGING_SERVICE_SID"),
+    webPushVapidPublicKey: envReady("WEB_PUSH_VAPID_PUBLIC_KEY"),
+    webPushVapidPrivateKey: envReady("WEB_PUSH_VAPID_PRIVATE_KEY"),
     karmelNoonReviewPhone: envReady("KARMEL_NOON_REVIEW_PHONE"),
     brighamExtensionPhone: envReady("BRIGHAM_EXTENSION_PHONE")
   };
@@ -59,6 +61,10 @@ exports.handler = async (event) => {
     storage: { ok: false, message: "Supabase Storage has not been checked." },
     notifications: { ok: false, message: "Notification table has not been checked." },
     reminderPreferences: { ok: false, message: "Teen reminder preferences have not been checked." },
+    push: {
+      ok: boolsReady(env, ["webPushVapidPublicKey", "webPushVapidPrivateKey"]),
+      message: "Web Push VAPID keys must be configured."
+    },
     adminConfig: { ok: false, message: "Family settings and chore library have not been checked." },
     choreRecords: { ok: false, message: "Chore record table has not been checked." },
     money: { ok: false, message: "Money ledger table has not been checked." },
@@ -114,9 +120,13 @@ exports.handler = async (event) => {
         .from("notification_preferences")
         .select("member_id,sms_enabled,notify_redo,notify_teen_reminders")
         .limit(1);
+      const { error: pushSubscriptionError } = await supabase
+        .from("push_subscriptions")
+        .select("id,member_id,enabled")
+        .limit(1);
       checks.reminderPreferences = {
-        ok: !preferenceError,
-        message: preferenceError ? preferenceError.message : "Teen reminder preference rows are reachable."
+        ok: !preferenceError && !pushSubscriptionError,
+        message: preferenceError?.message || pushSubscriptionError?.message || "Teen reminder preference and push subscription rows are reachable."
       };
 
       const { error: familySettingsError } = await supabase
@@ -161,7 +171,7 @@ exports.handler = async (event) => {
   const authLinked = checks.members.length > 0 && checks.members.every(member => member.authLinked);
   const gmailLinked = checks.members.length > 0 && checks.members.every(member => member.gmailLinked);
   const envOk = boolsReady(env, Object.keys(env));
-  const ready = Boolean(envOk && checks.database.ok && checks.storage.ok && checks.notifications.ok && checks.reminderPreferences.ok && checks.adminConfig.ok && checks.choreRecords.ok && checks.money.ok && checks.sms.ok && checks.google.ok && membersPresent && authLinked && gmailLinked);
+  const ready = Boolean(envOk && checks.database.ok && checks.storage.ok && checks.notifications.ok && checks.reminderPreferences.ok && checks.push.ok && checks.adminConfig.ok && checks.choreRecords.ok && checks.money.ok && checks.sms.ok && checks.google.ok && membersPresent && authLinked && gmailLinked);
 
   return json(200, {
     ready,
@@ -171,7 +181,8 @@ exports.handler = async (event) => {
     nextSteps: ready ? [] : [
       !envOk ? "Add all Supabase, Google, Twilio, and family phone environment variables in Netlify." : "",
       !checks.database.ok ? "Apply supabase/schema.sql and confirm Supabase service-role access." : "",
-      !checks.reminderPreferences.ok ? "Confirm notification_preferences exists so teen reminder and redo text opt-ins can be enforced." : "",
+      !checks.reminderPreferences.ok ? "Confirm notification_preferences and push_subscriptions exist so teen reminder, redo text, and push opt-ins can be enforced." : "",
+      !checks.push.ok ? "Configure Web Push VAPID public and private keys." : "",
       !checks.adminConfig.ok ? "Confirm family_settings and chores exist so parent admin rules and chore library edits save server-side." : "",
       !checks.choreRecords.ok ? "Confirm chore_records exists so completion, proof, approval, and redo records can be saved server-side." : "",
       !checks.money.ok ? "Confirm ledger_entries exists so fines, bonuses, and paid-fine records can be saved server-side." : "",

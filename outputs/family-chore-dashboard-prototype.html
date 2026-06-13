@@ -1968,6 +1968,7 @@
                 Receive text reminders for chores, noon review, extensions, and redo requests
               </label>
               <button class="primary-btn" type="button" id="saveChildContactBtn">Save Text Settings</button>
+              <button class="ghost-btn" type="button" id="enablePushBtn">Enable Push</button>
               <div class="admin-status" id="childContactStatus"></div>
             </div>
           </div>
@@ -3945,6 +3946,43 @@
       });
     }
 
+    function urlBase64ToUint8Array(value) {
+      const padding = "=".repeat((4 - value.length % 4) % 4);
+      const base64 = (value + padding).replace(/-/g, "+").replace(/_/g, "/");
+      const raw = window.atob(base64);
+      return Uint8Array.from([...raw].map(character => character.charCodeAt(0)));
+    }
+
+    async function saveProductionPushSubscription(child) {
+      await loadProductionBackend();
+      if (!productionBackend.ready) return null;
+      if (!productionBackend.session?.access_token) {
+        throw new Error("Sign in with Google before enabling push notifications.");
+      }
+      const publicKey = productionBackend.config?.webPushVapidPublicKey || "";
+      if (!publicKey) throw new Error("Web Push public key is not configured yet.");
+      if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+        throw new Error("This browser does not support web push notifications.");
+      }
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") throw new Error("Push notification permission was not granted.");
+      const registration = await navigator.serviceWorker.ready;
+      const existingSubscription = await registration.pushManager.getSubscription();
+      const subscription = existingSubscription || await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey)
+      });
+      return fetchJson("/.netlify/functions/push-subscription", {
+        method: "POST",
+        headers: productionAuthHeader(),
+        body: JSON.stringify({
+          profileKey: child.id,
+          subscription: subscription.toJSON(),
+          userAgent: navigator.userAgent
+        })
+      });
+    }
+
     function roleLabel(account) {
       if (!account) return "Not signed in";
       if (account.role === "admin") return `${account.name} admin`;
@@ -5484,6 +5522,7 @@
       document.getElementById("childCellPhoneInput").disabled = !canEdit;
       document.getElementById("childTextReminderConsent").disabled = !canEdit;
       document.getElementById("saveChildContactBtn").disabled = !canEdit;
+      document.getElementById("enablePushBtn").disabled = !canEdit;
       document.getElementById("childContactStatus").textContent = canEdit
         ? `${child.name}'s text reminders are ${child.textReminders && child.cellPhone ? `on for ${child.cellPhone}` : "off until a phone number and opt-in are saved"}.`
         : "Only this child or Brigham/Karmel can update text reminder settings.";
@@ -5521,6 +5560,23 @@
       document.getElementById("childContactStatus").textContent = child.textReminders
         ? `${child.name}'s text reminders are on for ${child.cellPhone}${productionBackend.ready && productionBackend.session ? " and saved to the backend" : ""}.`
         : `${child.name}'s text reminders are off${productionBackend.ready && productionBackend.session ? " and saved to the backend" : ""}.`;
+    }
+
+    async function enableChildPushNotifications() {
+      const child = children.find(item => item.id === selectedChildId);
+      if (!canManageChildProfile(child)) {
+        document.getElementById("childContactStatus").textContent = "Only this child or Brigham/Karmel can update push notification settings.";
+        return;
+      }
+      document.getElementById("childContactStatus").textContent = "Opening browser push permission...";
+      try {
+        const saved = await saveProductionPushSubscription(child);
+        document.getElementById("childContactStatus").textContent = saved
+          ? `${child.name}'s browser push notifications are enabled for this device.`
+          : "Production push is not configured yet. Text reminders can still be used.";
+      } catch (error) {
+        document.getElementById("childContactStatus").textContent = `Push notifications were not enabled: ${error.message}`;
+      }
     }
 
     function ensureCurrentMonthlyStreakPeriod(child) {
@@ -7187,6 +7243,8 @@
     document.getElementById("checkBackendReadinessBtn").addEventListener("click", checkBackendReadiness);
 
     document.getElementById("saveChildContactBtn").addEventListener("click", saveChildContactSettings);
+
+    document.getElementById("enablePushBtn").addEventListener("click", enableChildPushNotifications);
 
     document.getElementById("saveFineRateBtn").addEventListener("click", saveFineRate);
 

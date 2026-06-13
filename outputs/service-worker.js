@@ -61,3 +61,29 @@ self.addEventListener("fetch", event => {
     })
   );
 });
+
+self.addEventListener("push", event => {
+  const payload = event.data?.json?.() || {};
+  const title = payload.title || "Teamwork Chores";
+  const options = {
+    body: payload.body || "You have a Teamwork Chores update.",
+    icon: "/icons/teamwork-chores-icon.svg",
+    badge: "/icons/teamwork-chores-icon.svg",
+    data: {
+      url: payload.url || "/app"
+    }
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", event => {
+  event.notification.close();
+  const url = event.notification.data?.url || "/app";
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then(windows => {
+      const existing = windows.find(client => client.url.includes(url));
+      if (existing) return existing.focus();
+      return clients.openWindow(url);
+    })
+  );
+});

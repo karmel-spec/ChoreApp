@@ -23,6 +23,9 @@ Copy `.env.example` into Netlify environment variables:
 - `TWILIO_ACCOUNT_SID`
 - `TWILIO_AUTH_TOKEN`
 - `TWILIO_MESSAGING_SERVICE_SID`
+- `WEB_PUSH_VAPID_PUBLIC_KEY`
+- `WEB_PUSH_VAPID_PRIVATE_KEY`
+- `WEB_PUSH_SUBJECT`
 - `TEAMWORK_CHORES_SITE_URL`
 - `KARMEL_NOON_REVIEW_PHONE`
 - `BRIGHAM_EXTENSION_PHONE`
@@ -57,6 +60,8 @@ Never expose `SUPABASE_SERVICE_ROLE_KEY` or Twilio secrets in browser JavaScript
 - `photo-record`: records uploaded family hero, profile, proof, and feed photos in Supabase with role checks.
 - `send-sms`: lets parent admins send trusted Twilio SMS reminders and logs each send.
 - `teen-reminder`: lets parent admins send opted-in child chore reminder or redo texts and logs each send.
+- `push-subscription`: lets signed-in members save or disable their own browser push subscription, while parent admins can manage family member subscriptions.
+- `send-push`: lets parent admins send Web Push reminders to opted-in members with active browser subscriptions.
 - `extension-request`: lets a child or admin create an extension petition and text Brigham.
 - `extension-decision`: lets only Brigham approve or deny an extension and optionally text the child.
 - `scheduled-noon-review`: sends Mom Karmel the noon review reminder through Twilio and prevents duplicate same-day sends.
@@ -91,6 +96,7 @@ The `family-settings` and `chore-library` functions move parent admin controls o
 - Default work-minute targets, fine rates, difficulty approvals, and zero account balances
 - Default family rule settings for 12:00 PM deadlines, Karmel noon review texts, and Brigham extension approvals
 - Notification preference rows for every family member
+- Push subscription storage through `push_subscriptions`
 - The private `family-photos` storage bucket and authenticated storage policies
 - Starter chore library rows, including cooking/food prep chores and inactive harder one-off chores
 
@@ -107,7 +113,7 @@ Phase-one SMS should use Twilio through Netlify Functions:
 
 The current scheduled functions are `scheduled-noon-review` with the cron expression `0 18 * * *`, which is noon Mountain Daylight Time, and `scheduled-teen-reminders` with `0 15 * * *`, which is 9:00 AM Mountain Daylight Time. If the family wants exact local times through daylight-saving changes, configure a timezone-aware scheduler or adjust the cron seasonally.
 
-Push notifications can be added later with Web Push, Firebase Cloud Messaging, or OneSignal once the SMS workflow is proven.
+Push notifications use browser Web Push with VAPID keys. A child or parent admin can enable push from the child dashboard on each device after Google sign-in. Parent admins can then use `send-push` for trusted reminders; each send is logged in `notification_log`.
 
 ## Photo Storage
 

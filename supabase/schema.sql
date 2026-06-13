@@ -163,6 +163,20 @@ create table notification_preferences (
   unique(member_id)
 );
 
+create table push_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  family_id uuid not null references families(id) on delete cascade,
+  member_id uuid not null references family_members(id) on delete cascade,
+  endpoint text not null,
+  p256dh text not null,
+  auth text not null,
+  user_agent text,
+  enabled boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique(member_id, endpoint)
+);
+
 create table notification_log (
   id uuid primary key default gen_random_uuid(),
   family_id uuid not null references families(id) on delete cascade,
@@ -186,6 +200,7 @@ alter table availability_holds enable row level security;
 alter table extension_requests enable row level security;
 alter table photos enable row level security;
 alter table notification_preferences enable row level security;
+alter table push_subscriptions enable row level security;
 alter table notification_log enable row level security;
 
 create or replace function current_member_role()
@@ -246,6 +261,9 @@ create policy "admins manage photos" on photos for all using (is_admin()) with c
 create policy "members read notification preferences" on notification_preferences for select using (auth.uid() is not null);
 create policy "members update own notification preferences" on notification_preferences for update using (member_id = current_member_id()) with check (member_id = current_member_id());
 create policy "admins manage notification preferences" on notification_preferences for all using (is_admin()) with check (is_admin());
+
+create policy "members manage own push subscriptions" on push_subscriptions for all using (member_id = current_member_id()) with check (member_id = current_member_id());
+create policy "admins manage push subscriptions" on push_subscriptions for all using (is_admin()) with check (is_admin());
 
 create policy "admins read notification logs" on notification_log for select using (is_admin());
 create policy "admins create notification logs" on notification_log for insert with check (is_admin());

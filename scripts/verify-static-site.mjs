@@ -50,10 +50,12 @@ const requiredFiles = [
   "netlify/functions/money-ledger.js",
   "netlify/functions/photo-record.js",
   "netlify/functions/photo-upload-url.js",
+  "netlify/functions/push-subscription.js",
   "netlify/functions/runtime-config.js",
   "netlify/functions/scheduled-noon-review.js",
   "netlify/functions/scheduled-teen-reminders.js",
   "netlify/functions/send-sms.js",
+  "netlify/functions/send-push.js",
   "netlify/functions/teen-reminder.js",
   "outputs/index.html",
   "outputs/family-chore-dashboard-prototype.html",
@@ -98,10 +100,12 @@ const memberContactFunction = await readFile("netlify/functions/member-contact.j
 const moneyLedgerFunction = await readFile("netlify/functions/money-ledger.js", "utf8");
 const photoRecordFunction = await readFile("netlify/functions/photo-record.js", "utf8");
 const photoFunction = await readFile("netlify/functions/photo-upload-url.js", "utf8");
+const pushSubscriptionFunction = await readFile("netlify/functions/push-subscription.js", "utf8");
 const runtimeConfigFunction = await readFile("netlify/functions/runtime-config.js", "utf8");
 const scheduledNoonFunction = await readFile("netlify/functions/scheduled-noon-review.js", "utf8");
 const scheduledTeenFunction = await readFile("netlify/functions/scheduled-teen-reminders.js", "utf8");
 const smsFunction = await readFile("netlify/functions/send-sms.js", "utf8");
+const pushFunction = await readFile("netlify/functions/send-push.js", "utf8");
 const teenReminderFunction = await readFile("netlify/functions/teen-reminder.js", "utf8");
 const manifest = JSON.parse(await readFile("outputs/manifest.webmanifest", "utf8"));
 const serviceWorker = await readFile("outputs/service-worker.js", "utf8");
@@ -382,9 +386,14 @@ const requiredMarkers = [
   "saveProductionFamilySettings",
   "saveProductionChoreLibrary",
   "sendProductionTeenReminder",
+  "saveProductionPushSubscription",
+  "enableChildPushNotifications",
+  "urlBase64ToUint8Array",
   "family-settings",
   "chore-library",
   "teen-reminder",
+  "push-subscription",
+  "Enable Push",
   "Cloud family rules save failed",
   "Cloud chore add failed",
   "Cloud chore edit failed",
@@ -693,6 +702,8 @@ const requiredGuideMarkers = [
   "family-settings",
   "chore-library",
   "scheduled opted-in teen reminder texts",
+  "Web Push subscriptions",
+  "Web Push VAPID",
   "redo texts",
   "parent-admin",
   "money-ledger",
@@ -891,8 +902,8 @@ for (const marker of requiredDeployWorkflowMarkers) {
   }
 }
 
-if (!packageJson.dependencies?.["@supabase/supabase-js"] || !packageJson.dependencies?.twilio) {
-  throw new Error("Package dependencies must include Supabase and Twilio for production backend functions.");
+if (!packageJson.dependencies?.["@supabase/supabase-js"] || !packageJson.dependencies?.twilio || !packageJson.dependencies?.["web-push"]) {
+  throw new Error("Package dependencies must include Supabase, Twilio, and Web Push for production backend functions.");
 }
 
 const requiredEnvMarkers = [
@@ -903,6 +914,9 @@ const requiredEnvMarkers = [
   "TWILIO_ACCOUNT_SID",
   "TWILIO_AUTH_TOKEN",
   "TWILIO_MESSAGING_SERVICE_SID",
+  "WEB_PUSH_VAPID_PUBLIC_KEY",
+  "WEB_PUSH_VAPID_PRIVATE_KEY",
+  "WEB_PUSH_SUBJECT",
   "KARMEL_NOON_REVIEW_PHONE",
   "BRIGHAM_EXTENSION_PHONE"
 ];
@@ -926,6 +940,8 @@ const requiredBackendMarkers = [
   "family-settings",
   "teen-reminder",
   "scheduled-teen-reminders",
+  "push-subscription",
+  "send-push",
   "link-google-member",
   "money-ledger",
   "CONFIRM MONEY",
@@ -934,6 +950,8 @@ const requiredBackendMarkers = [
   "parent admin controls",
   "scheduled-teen-reminders",
   "once-daily morning chore reminder",
+  "push_subscriptions",
+  "VAPID",
   "Family Seed Data",
   "seed-teamwork-chores.sql",
   "readyForWorkflowBeta",
@@ -959,11 +977,13 @@ const requiredSchemaMarkers = [
   "create table ledger_entries",
   "create table photos",
   "create table notification_preferences",
+  "create table push_subscriptions",
   "create table notification_log",
   "alter table family_members enable row level security",
   "create policy \"admins manage chores\"",
   "create policy \"admins manage family settings\"",
-  "create policy \"members update own notification preferences\""
+  "create policy \"members update own notification preferences\"",
+  "create policy \"members manage own push subscriptions\""
 ];
 
 for (const marker of requiredSchemaMarkers) {
@@ -1066,13 +1086,13 @@ for (const marker of [
   }
 }
 
-for (const marker of ["expectedMembers", "family-photos", "notification_log", "notification_preferences", "Teen reminder preference rows are reachable", "family_settings", "Family settings and chore library tables are reachable", "chore_records", "Chore record table is reachable", "ledger_entries", "Money ledger table is reachable", "readyForWorkflowBeta", "TWILIO_MESSAGING_SERVICE_SID", "authLinked", "gmailLinked"]) {
+for (const marker of ["expectedMembers", "family-photos", "notification_log", "notification_preferences", "push_subscriptions", "Teen reminder preference and push subscription rows are reachable", "WEB_PUSH_VAPID_PUBLIC_KEY", "WEB_PUSH_VAPID_PRIVATE_KEY", "Family settings and chore library tables are reachable", "family_settings", "chore_records", "Chore record table is reachable", "ledger_entries", "Money ledger table is reachable", "readyForWorkflowBeta", "TWILIO_MESSAGING_SERVICE_SID", "authLinked", "gmailLinked"]) {
   if (!backendHealthFunction.includes(marker)) {
     throw new Error(`Backend health function is missing readiness marker: ${marker}`);
   }
 }
 
-if (!runtimeConfigFunction.includes("SUPABASE_ANON_KEY") || !runtimeConfigFunction.includes("backendReady")) {
+if (!runtimeConfigFunction.includes("SUPABASE_ANON_KEY") || !runtimeConfigFunction.includes("webPushVapidPublicKey") || !runtimeConfigFunction.includes("backendReady")) {
   throw new Error("Runtime config function is missing public backend readiness configuration.");
 }
 
@@ -1088,8 +1108,36 @@ if (!photoRecordFunction.includes("family_hero") || !photoRecordFunction.include
   throw new Error("Photo record function is missing family/profile/proof storage record behavior.");
 }
 
+for (const marker of [
+  "You can manage only your own push subscription unless you are Brigham or Karmel",
+  "push_subscriptions",
+  "notification_preferences",
+  "push_enabled",
+  "endpoint",
+  "p256dh",
+  "auth"
+]) {
+  if (!pushSubscriptionFunction.includes(marker)) {
+    throw new Error(`Push subscription function is missing: ${marker}`);
+  }
+}
+
 if (!supabaseHelperFunction.includes("TWILIO_MESSAGING_SERVICE_SID") || !supabaseHelperFunction.includes("sendSms") || !smsFunction.includes("Only parent admins can send SMS reminders")) {
   throw new Error("SMS function is missing Twilio/admin guard behavior.");
+}
+
+for (const marker of [
+  "WEB_PUSH_VAPID_PUBLIC_KEY",
+  "WEB_PUSH_VAPID_PRIVATE_KEY",
+  "Only Brigham or Karmel can send push reminders",
+  "webPush.sendNotification",
+  "push_subscriptions",
+  "has not opted in to push notifications",
+  "logNotification"
+]) {
+  if (!pushFunction.includes(marker)) {
+    throw new Error(`Push send function is missing: ${marker}`);
+  }
 }
 
 for (const marker of [
@@ -1147,7 +1195,11 @@ const requiredServiceWorkerMarkers = [
   'caches.match("/offline.html")',
   "response.ok",
   "new URL(event.request.url).origin === self.location.origin",
-  "cached || refresh"
+  "cached || refresh",
+  "self.addEventListener(\"push\"",
+  "showNotification",
+  "notificationclick",
+  "clients.openWindow"
 ];
 
 for (const marker of requiredServiceWorkerMarkers) {
