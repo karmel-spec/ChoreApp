@@ -32,6 +32,7 @@ Each child should test:
 8. Try a non-image or oversized proof photo and confirm the app blocks it before saving.
 9. Check the 7-day view and notice whether future assignments look understandable.
 10. Watch for celebration messages and whether they feel age-appropriate.
+11. Add or update the child cell phone field, toggle text reminder permission, and confirm only that child or a parent admin can edit the setting.
 
 ## Parent Noon Review Test
 
@@ -144,6 +145,10 @@ Once per week:
 - Text reminders are queued as prototype messages; real SMS requires a notification service.
 - Photo proof is stored locally in browser data and backups.
 - Walmart opens externally; direct cart integration requires a secure approved integration.
+
+## Backend Setup Track
+
+Use `docs/backend-setup.md` and `supabase/schema.sql` when moving from browser beta storage to the real backend. The repository now includes Netlify Function scaffolding for Google session verification, Supabase Storage photo upload URLs, and Twilio SMS sends, but those functions require real Supabase and Twilio environment variables before they can be used on the hosted site.
 
 ## What To Track
 

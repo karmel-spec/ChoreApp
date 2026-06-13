@@ -126,6 +126,56 @@
       font-weight: 800;
     }
 
+    .checklist-tools {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-top: 6px;
+    }
+
+    .checklist-progress {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--white);
+      padding: 10px 12px;
+      color: var(--blue);
+      font-weight: 900;
+    }
+
+    .reset-checklist {
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--white);
+      color: var(--ink);
+      padding: 0 12px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .check-item {
+      display: grid;
+      grid-template-columns: 22px minmax(0, 1fr);
+      gap: 8px;
+      align-items: start;
+      color: var(--muted);
+    }
+
+    .check-item input {
+      width: 18px;
+      height: 18px;
+      margin: 3px 0 0;
+      accent-color: var(--blue);
+    }
+
+    .check-item.done {
+      color: #758195;
+      text-decoration: line-through;
+      text-decoration-thickness: 2px;
+      text-decoration-color: rgba(47, 110, 219, .35);
+    }
+
     @media (max-width: 760px) {
       .guide-grid {
         grid-template-columns: 1fr;
@@ -142,6 +192,10 @@
     </div>
     <h1>Beta Testing Guide</h1>
     <p class="intro">Use this guide for the first 2-4 weeks of Teamwork Chores website beta testing before moving toward production web app work or app-store packaging.</p>
+    <div class="checklist-tools">
+      <div class="checklist-progress" id="checklistProgress">0 of 0 complete</div>
+      <button class="reset-checklist" type="button" id="resetChecklistBtn">Reset Checklist</button>
+    </div>
   </header>
 
   <main>
@@ -172,6 +226,7 @@
           <li>Add at least one photo proof during the week and confirm photo-first proof marks the chore ready for review.</li>
           <li>Try a non-image or oversized proof photo and confirm the app blocks it before saving.</li>
           <li>Check the 7-day view and celebration messages.</li>
+          <li>Add or update the child cell phone field, toggle text reminder permission, and confirm only that child or a parent admin can edit the setting.</li>
         </ol>
       </section>
 
@@ -288,11 +343,16 @@
         <h2>Known Prototype Limits</h2>
         <ul>
           <li>Data is saved in the browser during beta, not in a shared cloud database.</li>
-          <li>Google login is a Gmail-linking prototype until real OAuth and backend token verification are connected.</li>
+          <li>Google login is a Gmail-linking prototype until Google Identity Services and backend token verification are connected.</li>
           <li>Text reminders are queued as prototype messages; real SMS requires a notification service.</li>
           <li>Photo proof is stored locally in browser data and backups.</li>
           <li>Walmart opens externally; direct cart integration requires a secure approved integration.</li>
         </ul>
+      </section>
+
+      <section class="card">
+        <h2>Backend Setup Track</h2>
+        <p>Use <code>docs/backend-setup.md</code> and <code>supabase/schema.sql</code> when moving from browser beta storage to the real backend. The repository now includes Netlify Function scaffolding for Google session verification, Supabase Storage photo upload URLs, and Twilio SMS sends, but those functions require real Supabase and Twilio environment variables before they can be used on the hosted site.</p>
       </section>
 
       <section class="card">
@@ -329,6 +389,62 @@
   </main>
 
   <script>
+    const checklistStoreKey = "teamworkChoresBetaGuideChecklist";
+
+    function readChecklistState() {
+      try {
+        return JSON.parse(localStorage.getItem(checklistStoreKey) || "{}");
+      } catch {
+        return {};
+      }
+    }
+
+    function writeChecklistState(state) {
+      localStorage.setItem(checklistStoreKey, JSON.stringify(state));
+    }
+
+    function updateChecklistProgress() {
+      const checkboxes = [...document.querySelectorAll("[data-checklist-id]")];
+      const done = checkboxes.filter(checkbox => checkbox.checked).length;
+      document.getElementById("checklistProgress").textContent = `${done} of ${checkboxes.length} complete`;
+    }
+
+    function makeBetaGuideChecklist() {
+      const state = readChecklistState();
+      document.querySelectorAll("main li").forEach((item, index) => {
+        const checklistId = `beta-item-${index}`;
+        const content = document.createElement("span");
+        content.innerHTML = item.innerHTML;
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.dataset.checklistId = checklistId;
+        checkbox.checked = Boolean(state[checklistId]);
+        item.classList.add("check-item");
+        item.classList.toggle("done", checkbox.checked);
+        item.innerHTML = "";
+        item.append(checkbox, content);
+        checkbox.addEventListener("change", () => {
+          const nextState = readChecklistState();
+          nextState[checklistId] = checkbox.checked;
+          writeChecklistState(nextState);
+          item.classList.toggle("done", checkbox.checked);
+          updateChecklistProgress();
+        });
+      });
+      updateChecklistProgress();
+    }
+
+    document.getElementById("resetChecklistBtn").addEventListener("click", () => {
+      localStorage.removeItem(checklistStoreKey);
+      document.querySelectorAll("[data-checklist-id]").forEach(checkbox => {
+        checkbox.checked = false;
+        checkbox.closest("li")?.classList.remove("done");
+      });
+      updateChecklistProgress();
+    });
+
+    makeBetaGuideChecklist();
+
     if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("/service-worker.js").catch(() => {});

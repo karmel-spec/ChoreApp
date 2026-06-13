@@ -22,6 +22,7 @@ Core web app features:
 - Family and child photos displayed on the home hub, with editing kept in the backend admin dashboard
 - Completion checkbox plus optional photo proof
 - Noon text reminder for Mom to physically inspect chores
+- Child cell phone and opt-in settings for teen chore/reminder texts
 - Fine ledger with paid/unpaid tracking
 - Editable per-child daily fine rates for missed 12:00 PM deadlines
 - Extension petition flow where only Brigham-dad can approve deadline changes by text
@@ -33,6 +34,7 @@ Core web app features:
 - Monthly bonus streaks that restart on the first of each month while overall streaks continue
 - Long-term super bonuses for larger overall streak milestones
 - In-app beta readiness checklist that separates ready-to-test website features from production backend and app-store requirements
+- Production backend scaffold for Supabase database, Google auth verification, photo storage, SMS functions, and server-side role policies
 
 Recommended web stack:
 - Responsive PWA-style web app
@@ -67,6 +69,9 @@ Production web app requirements:
 - Role-based authorization enforced on the backend, not only in the browser
 - Scheduled notification service for noon review reminders, extensions, and overdue prompts
 - Durable photo proof storage with privacy controls and retention rules
+- Supabase Storage-backed family hero, child profile, proof, and feed photo records
+- Twilio-backed SMS functions for parent alerts and opted-in teen reminders
+- Child phone-number and reminder-consent records tied to each authenticated user
 - Audit history for parent review, fines, bonus awards, extension approvals, and helper pay edits
 - Device-safe backup/export policy for family records
 - Environment-based configuration for secrets, OAuth client IDs, SMS/push providers, and storage

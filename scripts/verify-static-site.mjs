@@ -34,7 +34,13 @@ function assertScriptParses(html, file) {
 }
 
 const requiredFiles = [
+  ".env.example",
   ".github/workflows/deploy-netlify.yml",
+  "docs/backend-setup.md",
+  "netlify/functions/_supabase.js",
+  "netlify/functions/auth-google.js",
+  "netlify/functions/photo-upload-url.js",
+  "netlify/functions/send-sms.js",
   "outputs/index.html",
   "outputs/family-chore-dashboard-prototype.html",
   "outputs/chore-app-designs.html",
@@ -44,7 +50,8 @@ const requiredFiles = [
   "outputs/manifest.webmanifest",
   "outputs/service-worker.js",
   "outputs/offline.html",
-  "outputs/icons/teamwork-chores-icon.svg"
+  "outputs/icons/teamwork-chores-icon.svg",
+  "supabase/schema.sql"
 ];
 
 for (const file of requiredFiles) {
@@ -58,6 +65,13 @@ const betaGuideHtml = await readFile("outputs/beta-testing-guide.html", "utf8");
 const phasePlan = await readFile("outputs/chore-app-phase-plan.md", "utf8");
 const netlifyConfig = await readFile("netlify.toml", "utf8");
 const deployWorkflow = await readFile(".github/workflows/deploy-netlify.yml", "utf8");
+const packageJson = JSON.parse(await readFile("package.json", "utf8"));
+const envExample = await readFile(".env.example", "utf8");
+const backendSetup = await readFile("docs/backend-setup.md", "utf8");
+const supabaseSchema = await readFile("supabase/schema.sql", "utf8");
+const authFunction = await readFile("netlify/functions/auth-google.js", "utf8");
+const photoFunction = await readFile("netlify/functions/photo-upload-url.js", "utf8");
+const smsFunction = await readFile("netlify/functions/send-sms.js", "utf8");
 const manifest = JSON.parse(await readFile("outputs/manifest.webmanifest", "utf8"));
 const serviceWorker = await readFile("outputs/service-worker.js", "utf8");
 const expectedCacheName = "teamwork-chores-beta-2026-06-12";
@@ -303,6 +317,16 @@ const requiredMarkers = [
   "Net chore account after open fines",
   "accountActivityLedger",
   "Bonuses and fines will appear here together once beta testing starts",
+  "Text Reminder Settings",
+  "childCellPhoneInput",
+  "childTextReminderConsent",
+  "saveChildContactSettings",
+  "textReminders",
+  "Add a 10-digit cell phone number before turning on text reminders",
+  "teamworkChoresSidebarCollapsed",
+  "sidebar-collapsed",
+  "Hide Family Sidebar",
+  "Show Family Sidebar",
   "fineAuditDate",
   "fineAuditDetail",
   "parseCurrencyInput",
@@ -561,7 +585,9 @@ const requiredGuideMarkers = [
   "Beta Feedback Log",
   "Anyone can add feedback",
   "Known Prototype Limits",
-  "Ready For Production When"
+  "Ready For Production When",
+  "Backend Setup Track",
+  "child cell phone field, toggle text reminder permission"
 ];
 
 for (const marker of requiredGuideMarkers) {
@@ -570,6 +596,19 @@ for (const marker of requiredGuideMarkers) {
   }
   if (!betaGuideHtml.includes(marker)) {
     throw new Error(`Missing expected beta guide HTML marker: ${marker}`);
+  }
+}
+
+const requiredGuideHtmlOnlyMarkers = [
+  "teamworkChoresBetaGuideChecklist",
+  "Reset Checklist",
+  "updateChecklistProgress",
+  "check-item.done"
+];
+
+for (const marker of requiredGuideHtmlOnlyMarkers) {
+  if (!betaGuideHtml.includes(marker)) {
+    throw new Error(`Missing expected checklist guide HTML marker: ${marker}`);
   }
 }
 
@@ -592,6 +631,8 @@ for (const marker of requiredPhasePlanMarkers) {
 const requiredAppIds = [
   "loginOverlay",
   "googleLoginBtn",
+  "toggleSidebarBtn",
+  "appShell",
   "familySettingsForm",
   "saveFamilySettingsBtn",
   "extensionStatus",
@@ -729,6 +770,75 @@ for (const marker of requiredDeployWorkflowMarkers) {
   if (!deployWorkflow.includes(marker)) {
     throw new Error(`Deploy workflow is missing: ${marker}`);
   }
+}
+
+if (!packageJson.dependencies?.["@supabase/supabase-js"] || !packageJson.dependencies?.twilio) {
+  throw new Error("Package dependencies must include Supabase and Twilio for production backend functions.");
+}
+
+const requiredEnvMarkers = [
+  "SUPABASE_URL",
+  "SUPABASE_ANON_KEY",
+  "SUPABASE_SERVICE_ROLE_KEY",
+  "GOOGLE_CLIENT_ID",
+  "TWILIO_ACCOUNT_SID",
+  "TWILIO_AUTH_TOKEN",
+  "TWILIO_MESSAGING_SERVICE_SID"
+];
+
+for (const marker of requiredEnvMarkers) {
+  if (!envExample.includes(marker)) {
+    throw new Error(`.env.example is missing backend env var: ${marker}`);
+  }
+}
+
+const requiredBackendMarkers = [
+  "Supabase Postgres",
+  "Supabase Auth with Google sign-in",
+  "Supabase Storage",
+  "Netlify Functions",
+  "Twilio",
+  "Server-Side Permissions",
+  "Web Beta Ready Gate"
+];
+
+for (const marker of requiredBackendMarkers) {
+  if (!backendSetup.includes(marker)) {
+    throw new Error(`Backend setup guide is missing: ${marker}`);
+  }
+}
+
+const requiredSchemaMarkers = [
+  "create table family_members",
+  "cell_phone text",
+  "text_reminders_enabled boolean",
+  "create table chores",
+  "create table chore_records",
+  "create table ledger_entries",
+  "create table photos",
+  "create table notification_preferences",
+  "create table notification_log",
+  "alter table family_members enable row level security",
+  "create policy \"admins manage chores\"",
+  "create policy \"members update own notification preferences\""
+];
+
+for (const marker of requiredSchemaMarkers) {
+  if (!supabaseSchema.includes(marker)) {
+    throw new Error(`Supabase schema is missing: ${marker}`);
+  }
+}
+
+if (!authFunction.includes("memberFromAuthHeader") || !authFunction.includes("Google session is not linked")) {
+  throw new Error("Google auth function is missing member verification behavior.");
+}
+
+if (!photoFunction.includes("createSignedUploadUrl") || !photoFunction.includes("family-photos")) {
+  throw new Error("Photo upload function is missing Supabase Storage signed upload behavior.");
+}
+
+if (!smsFunction.includes("TWILIO_MESSAGING_SERVICE_SID") || !smsFunction.includes("Only parent admins can send SMS reminders")) {
+  throw new Error("SMS function is missing Twilio/admin guard behavior.");
 }
 
 for (const cachedPath of ["/app", "/beta-guide", "/offline.html", "/manifest.webmanifest"]) {

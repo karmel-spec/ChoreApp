@@ -70,6 +70,14 @@
       white-space: nowrap;
     }
 
+    .header-actions {
+      justify-self: end;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
     main {
       padding: 26px clamp(18px, 4vw, 48px) 46px;
     }
@@ -81,6 +89,14 @@
       grid-template-columns: 240px minmax(0, 1fr) 340px;
       gap: 18px;
       align-items: start;
+    }
+
+    .app-shell.sidebar-collapsed {
+      grid-template-columns: minmax(0, 1fr) 340px;
+    }
+
+    .app-shell.sidebar-collapsed .sidebar {
+      display: none;
     }
 
     .panel {
@@ -1572,6 +1588,9 @@
       .app-shell {
         grid-template-columns: 220px minmax(0, 1fr);
       }
+      .app-shell.sidebar-collapsed {
+        grid-template-columns: minmax(0, 1fr);
+      }
       .side-stack {
         grid-column: 1 / -1;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1586,7 +1605,12 @@
       .admin-chip {
         justify-self: start;
       }
+      .header-actions {
+        justify-self: start;
+        justify-content: flex-start;
+      }
       .app-shell,
+      .app-shell.sidebar-collapsed,
       .side-stack {
         grid-template-columns: 1fr;
       }
@@ -1644,11 +1668,14 @@
       <h1>Teamwork Chores</h1>
       <p class="intro" id="dailyThought">Teamwork grows when everyone contributes a little care to the home.</p>
     </div>
-    <div class="admin-chip" id="currentUserChip">Not signed in</div>
+    <div class="header-actions">
+      <button class="ghost-btn" type="button" id="toggleSidebarBtn">Hide Family Sidebar</button>
+      <div class="admin-chip" id="currentUserChip">Not signed in</div>
+    </div>
   </header>
 
   <main>
-    <div class="app-shell">
+    <div class="app-shell" id="appShell">
       <aside class="panel sidebar">
         <div class="panel-head">
           <h2>Family</h2>
@@ -1923,6 +1950,26 @@
             </div>
             <div class="notice-card" id="accountActivitySummary">Account activity loading...</div>
             <div class="ledger" id="accountActivityLedger"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Text Reminder Settings</h3>
+            <span id="contactSettingsName">Child</span>
+          </div>
+          <div class="side-body">
+            <div class="notice-card">Older kids can opt in to reminder texts once their cell number is saved. Parent admins can update any child; children can update only their own profile.</div>
+            <div class="admin-form" id="childContactForm">
+              <label for="childCellPhoneInput">Child Cell Phone</label>
+              <input id="childCellPhoneInput" placeholder="801-555-0100" inputmode="tel">
+              <label for="childTextReminderConsent">
+                <input id="childTextReminderConsent" type="checkbox" style="width:auto;min-height:auto;margin-right:6px;">
+                Receive text reminders for chores, noon review, extensions, and redo requests
+              </label>
+              <button class="primary-btn" type="button" id="saveChildContactBtn">Save Text Settings</button>
+              <div class="admin-status" id="childContactStatus"></div>
+            </div>
           </div>
         </section>
 
@@ -2359,12 +2406,12 @@
     }
 
     const children = [
-      { id: "thayne", name: "Thayne", age: 20, initials: "TH", maxDifficulty: 10, targetHard: true, streak: 111, monthlyStreak: 11, openFines: 0, paidFines: 15, fineRate: 5, accountBalance: 45, profileImage: "" },
-      { id: "brig", name: "Brig Jr.", age: 18, initials: "BJ", maxDifficulty: 10, targetHard: true, streak: 38, monthlyStreak: 8, openFines: 5, paidFines: 10, fineRate: 5, accountBalance: 20, profileImage: "" },
-      { id: "josh", name: "Josh", age: 16, initials: "J", maxDifficulty: 10, targetHard: true, streak: 64, monthlyStreak: 14, openFines: 0, paidFines: 5, fineRate: 5, accountBalance: 35, profileImage: "" },
-      { id: "jojo", name: "JoJo", age: 15, initials: "JJ", maxDifficulty: 10, targetHard: true, streak: 5, monthlyStreak: 5, openFines: 10, paidFines: 0, fineRate: 5, accountBalance: 0, profileImage: "" },
-      { id: "louis", name: "Louis", age: 12, initials: "L", maxDifficulty: 6, targetHard: false, streak: 6, monthlyStreak: 6, openFines: 0, paidFines: 5, fineRate: 3, accountBalance: 5, profileImage: "" },
-      { id: "brielle", name: "Brielle", age: 8, initials: "B", maxDifficulty: 4, targetHard: false, streak: 9, monthlyStreak: 9, openFines: 0, paidFines: 0, fineRate: 2, accountBalance: 10, profileImage: "" }
+      { id: "thayne", name: "Thayne", age: 20, initials: "TH", maxDifficulty: 10, targetHard: true, streak: 111, monthlyStreak: 11, openFines: 0, paidFines: 15, fineRate: 5, accountBalance: 45, profileImage: "", cellPhone: "", textReminders: false },
+      { id: "brig", name: "Brig Jr.", age: 18, initials: "BJ", maxDifficulty: 10, targetHard: true, streak: 38, monthlyStreak: 8, openFines: 5, paidFines: 10, fineRate: 5, accountBalance: 20, profileImage: "", cellPhone: "", textReminders: false },
+      { id: "josh", name: "Josh", age: 16, initials: "J", maxDifficulty: 10, targetHard: true, streak: 64, monthlyStreak: 14, openFines: 0, paidFines: 5, fineRate: 5, accountBalance: 35, profileImage: "", cellPhone: "", textReminders: false },
+      { id: "jojo", name: "JoJo", age: 15, initials: "JJ", maxDifficulty: 10, targetHard: true, streak: 5, monthlyStreak: 5, openFines: 10, paidFines: 0, fineRate: 5, accountBalance: 0, profileImage: "", cellPhone: "", textReminders: false },
+      { id: "louis", name: "Louis", age: 12, initials: "L", maxDifficulty: 6, targetHard: false, streak: 6, monthlyStreak: 6, openFines: 0, paidFines: 5, fineRate: 3, accountBalance: 5, profileImage: "", cellPhone: "", textReminders: false },
+      { id: "brielle", name: "Brielle", age: 8, initials: "B", maxDifficulty: 4, targetHard: false, streak: 9, monthlyStreak: 9, openFines: 0, paidFines: 0, fineRate: 2, accountBalance: 10, profileImage: "", cellPhone: "", textReminders: false }
     ];
 
     const routineChores = [
@@ -2495,6 +2542,7 @@
     const familyPhotoStoreKey = "choreAppFamilyPhoto";
     const sessionStoreKey = "teamworkChoresSession";
     const gmailStoreKey = "teamworkChoresGmailLinks";
+    const sidebarCollapsedKey = "teamworkChoresSidebarCollapsed";
     const choreStateStoreKey = "teamworkChoresChoreState";
     const betaDataStoreKey = "teamworkChoresBetaData";
     const betaDataMetaStoreKey = "teamworkChoresBetaDataMeta";
@@ -2665,7 +2713,9 @@
         accountBalance: child.accountBalance,
         streak: child.streak,
         monthlyStreak: child.monthlyStreak,
-        monthlyStreakPeriod: child.monthlyStreakPeriod || currentBonusPeriod()
+        monthlyStreakPeriod: child.monthlyStreakPeriod || currentBonusPeriod(),
+        cellPhone: child.cellPhone || "",
+        textReminders: Boolean(child.textReminders)
       }]));
       localStorage.setItem(betaDataStoreKey, JSON.stringify({
         childSettings,
@@ -3216,6 +3266,8 @@
           child.streak = safeStoredNumber(saved.streak, child.streak);
           child.monthlyStreak = safeStoredNumber(saved.monthlyStreak, child.monthlyStreak);
           child.monthlyStreakPeriod = saved.monthlyStreakPeriod || currentBonusPeriod();
+          child.cellPhone = formatPhoneNumber(saved.cellPhone) || "";
+          child.textReminders = Boolean(saved.textReminders);
           if (child.monthlyStreakPeriod !== currentBonusPeriod()) {
             child.monthlyStreak = 0;
             child.monthlyStreakPeriod = currentBonusPeriod();
@@ -3791,6 +3843,19 @@
       localStorage.setItem(sessionStoreKey, account.id);
     }
 
+    function applySidebarCollapsed(collapsed) {
+      const appShell = document.getElementById("appShell");
+      const toggleButton = document.getElementById("toggleSidebarBtn");
+      appShell.classList.toggle("sidebar-collapsed", collapsed);
+      toggleButton.textContent = collapsed ? "Show Family Sidebar" : "Hide Family Sidebar";
+      toggleButton.setAttribute("aria-pressed", collapsed ? "true" : "false");
+      localStorage.setItem(sidebarCollapsedKey, collapsed ? "true" : "false");
+    }
+
+    function toggleFamilySidebar() {
+      applySidebarCollapsed(!document.getElementById("appShell").classList.contains("sidebar-collapsed"));
+    }
+
     function loginSelectedAccount() {
       const account = getAccountById(selectedLoginId);
       if (!account) {
@@ -3859,6 +3924,10 @@
     }
 
     function canManageChildTasks(child) {
+      return isAdmin() || (currentUser?.role === "child" && currentUser.childId === child.id);
+    }
+
+    function canManageChildProfile(child) {
       return isAdmin() || (currentUser?.role === "child" && currentUser.childId === child.id);
     }
 
@@ -5001,6 +5070,41 @@
           <div class="${item.kind === "credit" ? "credit-pill" : "debit-pill"}">${item.kind === "credit" ? "+" : "-"}$${item.amount} · ${escapeHtml(item.label)}</div>
         </div>
       `).join("") : `<div class="notice-card">No account activity for ${escapeHtml(child.name)} yet. Bonuses and fines will appear here together once beta testing starts.</div>`;
+    }
+
+    function renderChildContactSettings(child) {
+      const canEdit = canManageChildProfile(child);
+      document.getElementById("contactSettingsName").textContent = child.name;
+      document.getElementById("childCellPhoneInput").value = child.cellPhone || "";
+      document.getElementById("childTextReminderConsent").checked = Boolean(child.textReminders);
+      document.getElementById("childCellPhoneInput").disabled = !canEdit;
+      document.getElementById("childTextReminderConsent").disabled = !canEdit;
+      document.getElementById("saveChildContactBtn").disabled = !canEdit;
+      document.getElementById("childContactStatus").textContent = canEdit
+        ? `${child.name}'s text reminders are ${child.textReminders && child.cellPhone ? `on for ${child.cellPhone}` : "off until a phone number and opt-in are saved"}.`
+        : "Only this child or Brigham/Karmel can update text reminder settings.";
+    }
+
+    function saveChildContactSettings() {
+      const child = children.find(item => item.id === selectedChildId);
+      if (!canManageChildProfile(child)) {
+        document.getElementById("childContactStatus").textContent = "Only this child or Brigham/Karmel can update text reminder settings.";
+        return;
+      }
+      const phone = document.getElementById("childCellPhoneInput").value.trim();
+      const wantsReminders = document.getElementById("childTextReminderConsent").checked;
+      const formattedPhone = formatPhoneNumber(phone);
+      if (wantsReminders && !formattedPhone) {
+        document.getElementById("childContactStatus").textContent = "Add a 10-digit cell phone number before turning on text reminders.";
+        return;
+      }
+      child.cellPhone = formattedPhone || "";
+      child.textReminders = wantsReminders && Boolean(formattedPhone);
+      persistBetaData();
+      renderChildContactSettings(child);
+      document.getElementById("childContactStatus").textContent = child.textReminders
+        ? `${child.name}'s text reminders are on for ${child.cellPhone}.`
+        : `${child.name}'s text reminders are off.`;
     }
 
     function ensureCurrentMonthlyStreakPeriod(child) {
@@ -6280,6 +6384,7 @@
       renderLedger(child);
       renderBonusPanel(child);
       renderAccountActivity(child);
+      renderChildContactSettings(child);
       renderProfilePanel(child);
       renderBetaDataSummary();
       renderChoreTable();
@@ -6309,6 +6414,8 @@
       renderLoginGrid();
       document.getElementById("loginOverlay").classList.add("show");
     });
+
+    document.getElementById("toggleSidebarBtn").addEventListener("click", toggleFamilySidebar);
 
     document.getElementById("saveFamilySettingsBtn").addEventListener("click", saveFamilySettings);
 
@@ -6376,6 +6483,8 @@
 
     document.getElementById("resetBetaDataBtn").addEventListener("click", resetBetaData);
 
+    document.getElementById("saveChildContactBtn").addEventListener("click", saveChildContactSettings);
+
     document.getElementById("saveFineRateBtn").addEventListener("click", saveFineRate);
 
     document.getElementById("chargeFineBtn").addEventListener("click", chargeMissedDeadlineFine);
@@ -6419,6 +6528,7 @@
 
     document.getElementById("finalizeAllBtn").addEventListener("click", finalizeAllChildrenReview);
 
+    applySidebarCollapsed(localStorage.getItem(sidebarCollapsedKey) === "true");
     hydrateBetaData();
     hydrateStoredChildPhotos();
     renderLoginGrid();
