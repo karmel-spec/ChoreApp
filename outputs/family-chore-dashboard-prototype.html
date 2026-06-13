@@ -3836,6 +3836,39 @@
       return upload.storagePath;
     }
 
+    async function clearProductionFamilyHeroPhoto() {
+      await loadProductionBackend();
+      if (!productionBackend.ready) return null;
+      if (!productionBackend.session?.access_token) {
+        throw new Error("Sign in with Google before clearing the family photo in production mode.");
+      }
+      return fetchJson("/.netlify/functions/photo-record", {
+        method: "POST",
+        headers: productionAuthHeader(),
+        body: JSON.stringify({
+          action: "clear",
+          kind: "family_hero"
+        })
+      });
+    }
+
+    async function clearProductionProfilePhoto(child) {
+      await loadProductionBackend();
+      if (!productionBackend.ready) return null;
+      if (!productionBackend.session?.access_token) {
+        throw new Error("Sign in with Google before clearing profile photos in production mode.");
+      }
+      return fetchJson("/.netlify/functions/photo-record", {
+        method: "POST",
+        headers: productionAuthHeader(),
+        body: JSON.stringify({
+          action: "clear",
+          kind: "profile",
+          profileKey: child.id
+        })
+      });
+    }
+
     async function saveProductionMoneyLedger(action, payload) {
       await loadProductionBackend();
       if (!productionBackend.ready) return null;
@@ -6309,28 +6342,44 @@
       document.getElementById("familyHeroPhotoStatus").textContent = "Paste an image URL or choose a local family image file.";
     }
 
-    function clearFamilyHeroPhoto() {
+    async function clearFamilyHeroPhoto() {
       if (!isAdmin()) {
         document.getElementById("familyHeroPhotoStatus").textContent = "Only Brigham or Karmel can edit the family hero photo.";
+        return;
+      }
+      try {
+        await clearProductionFamilyHeroPhoto();
+      } catch (error) {
+        document.getElementById("familyHeroPhotoStatus").textContent = `Cloud family photo clear failed: ${error.message}`;
         return;
       }
       localStorage.removeItem(familyPhotoStoreKey);
       document.getElementById("familyHeroPhotoFile").value = "";
       render();
-      document.getElementById("familyHeroPhotoStatus").textContent = "The home screen is back to the default family photo.";
+      document.getElementById("familyHeroPhotoStatus").textContent = productionBackend.ready && productionBackend.session
+        ? "The home screen is back to the default family photo and the backend record was cleared."
+        : "The home screen is back to the default family photo.";
     }
 
-    function clearProfileImage() {
+    async function clearProfileImage() {
       const child = children.find(item => item.id === selectedChildId);
       if (!canManageChildProfile(child)) {
         document.getElementById("profileStatus").textContent = `Only ${child.name} or Brigham/Karmel can edit this profile photo.`;
+        return;
+      }
+      try {
+        await clearProductionProfilePhoto(child);
+      } catch (error) {
+        document.getElementById("profileStatus").textContent = `Cloud profile photo clear failed: ${error.message}`;
         return;
       }
       child.profileImage = "";
       saveStoredChildPhoto(child.id, "");
       document.getElementById("profilePhotoFile").value = "";
       render();
-      document.getElementById("profileStatus").textContent = `${child.name} is back to initials.`;
+      document.getElementById("profileStatus").textContent = productionBackend.ready && productionBackend.session
+        ? `${child.name} is back to initials and the backend record was cleared.`
+        : `${child.name} is back to initials.`;
     }
 
     function renderBetaDataSummary() {

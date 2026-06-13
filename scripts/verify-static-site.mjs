@@ -411,6 +411,10 @@ const requiredMarkers = [
   "uploadToSignedUrl",
   "saveProductionProfilePhoto",
   "saveProductionFamilyHeroPhoto",
+  "clearProductionFamilyHeroPhoto",
+  "clearProductionProfilePhoto",
+  "Cloud family photo clear failed",
+  "Cloud profile photo clear failed",
   "Backend Admin: Family Hero Photo",
   "saveFamilyHeroPhoto",
   "clearFamilyHeroPhoto",
@@ -948,6 +952,7 @@ const requiredBackendMarkers = [
   "production chore-completion gate",
   "family_settings",
   "parent admin controls",
+  "records or clears uploaded family hero",
   "scheduled-teen-reminders",
   "once-daily morning chore reminder",
   "push_subscriptions",
@@ -1104,7 +1109,7 @@ if (!photoFunction.includes("createSignedUploadUrl") || !photoFunction.includes(
   throw new Error("Photo upload function is missing Supabase Storage signed upload behavior.");
 }
 
-if (!photoRecordFunction.includes("family_hero") || !photoRecordFunction.includes("profileKey") || !photoRecordFunction.includes("profile_photo_path") || !photoRecordFunction.includes("proof_photo_path")) {
+if (!photoRecordFunction.includes("family_hero") || !photoRecordFunction.includes("profileKey") || !photoRecordFunction.includes("profile_photo_path") || !photoRecordFunction.includes("proof_photo_path") || !photoRecordFunction.includes("action === \"clear\"") || !photoRecordFunction.includes("hero_photo_path: null") || !photoRecordFunction.includes("profile_photo_path: null")) {
   throw new Error("Photo record function is missing family/profile/proof storage record behavior.");
 }
 

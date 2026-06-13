@@ -57,7 +57,7 @@ Never expose `SUPABASE_SERVICE_ROLE_KEY` or Twilio secrets in browser JavaScript
 - `member-contact`: lets admins update any child phone/text opt-in and lets children update only their own setting.
 - `money-ledger`: requires a verified parent admin token plus the `CONFIRM MONEY` guardrail before charging fines, awarding bonuses, or marking fines paid.
 - `photo-upload-url`: creates a private Supabase Storage signed upload URL for family photos.
-- `photo-record`: records uploaded family hero, profile, proof, and feed photos in Supabase with role checks.
+- `photo-record`: records or clears uploaded family hero, profile, proof, and feed photos in Supabase with role checks.
 - `send-sms`: lets parent admins send trusted Twilio SMS reminders and logs each send.
 - `teen-reminder`: lets parent admins send opted-in child chore reminder or redo texts and logs each send.
 - `push-subscription`: lets signed-in members save or disable their own browser push subscription, while parent admins can manage family member subscriptions.
