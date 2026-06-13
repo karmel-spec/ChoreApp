@@ -3383,13 +3383,17 @@
       return `${localDateKey()}|${child.id}|${type}|${chore.name}`;
     }
 
+    function choreStateKey(date, childId, choreType, choreName) {
+      return `${date}|${childId}|${choreType}|${choreName}`;
+    }
+
     function getChoreRecord(child, chore, type) {
       return getStoredChoreState()[choreKey(child, chore, type)] || {};
     }
 
     function updateChoreRecord(child, chore, type, updates) {
       const state = getStoredChoreState();
-      const key = choreKey(child, chore, type);
+      const key = choreStateKey(localDateKey(), child.id, type, chore.name);
       state[key] = {
         ...(state[key] || {}),
         childId: child.id,
@@ -3522,6 +3526,35 @@
         if (normalizedRecord) normalized[normalizedRecord.key] = normalizedRecord.record;
         return normalized;
       }, {});
+    }
+
+    function hydrateProductionChoreRecords(payload) {
+      const state = getStoredChoreState();
+      (payload.choreRecords || []).forEach(record => {
+        const childId = normalizeChildId(record.childProfileKey, "");
+        const date = normalizeDateKey(record.serviceDate, "");
+        const choreType = ["priority", "rotating"].includes(record.choreType) ? record.choreType : "";
+        const choreName = String(record.choreName || "").trim().replace(/\s+/g, " ");
+        if (!childId || !date || !choreType || !choreName) return;
+        state[choreStateKey(date, childId, choreType, choreName)] = {
+          childId,
+          choreName,
+          choreType,
+          date,
+          completedAt: normalizeOptionalTimestamp(record.completedAt),
+          reviewStatus: ["waiting", "approved", "redo"].includes(record.reviewStatus) ? record.reviewStatus : "",
+          proofImage: record.proofPhotoUrl || "",
+          proofPhotoPath: record.proofPhotoPath || "",
+          proofSubmittedAt: normalizeOptionalTimestamp(record.proofSubmittedAt),
+          redoneAt: record.reviewStatus === "redo" ? normalizeOptionalTimestamp(record.reviewedAt) : "",
+          reviewedBy: record.reviewedBy ? "Backend admin" : "",
+          reviewedAt: normalizeOptionalTimestamp(record.reviewedAt),
+          redoNote: String(record.redoNote || "").trim(),
+          backendChoreRecordId: record.id,
+          updatedAt: normalizeOptionalTimestamp(record.reviewedAt || record.proofSubmittedAt || record.completedAt) || new Date().toISOString()
+        };
+      });
+      saveStoredChoreState(state);
     }
 
     function createBetaBackup() {
@@ -4014,6 +4047,16 @@
       });
     }
 
+    async function loadProductionChoreRecords() {
+      await loadProductionBackend();
+      if (!productionBackend.ready || !productionBackend.session?.access_token) return null;
+      const startDate = localDateKey(-7);
+      const endDate = localDateKey(7);
+      return fetchJson(`/.netlify/functions/chore-record?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`, {
+        headers: productionAuthHeader()
+      });
+    }
+
     async function saveProductionProofPhoto(child, chore, choreType, file) {
       await loadProductionBackend();
       if (!productionBackend.ready || !productionBackend.session?.access_token || !productionBackend.client || !file) return null;
@@ -4074,11 +4117,12 @@
 
     async function hydrateProductionBackendData() {
       if (!productionBackend.ready || !productionBackend.session?.access_token) return;
-      const [snapshotResult, settingsResult, choreResult, ledgerResult] = await Promise.allSettled([
+      const [snapshotResult, settingsResult, choreResult, ledgerResult, choreRecordResult] = await Promise.allSettled([
         loadProductionFamilySnapshot(),
         loadProductionFamilySettings(),
         loadProductionChoreLibrary(),
-        loadProductionMoneyLedger()
+        loadProductionMoneyLedger(),
+        loadProductionChoreRecords()
       ]);
       if (snapshotResult.status === "fulfilled" && Array.isArray(snapshotResult.value?.members)) {
         hydrateProductionFamilySnapshot(snapshotResult.value);
@@ -4092,6 +4136,9 @@
       }
       if (ledgerResult.status === "fulfilled" && Array.isArray(ledgerResult.value?.ledgerEntries)) {
         hydrateProductionMoneyLedger(ledgerResult.value);
+      }
+      if (choreRecordResult.status === "fulfilled" && Array.isArray(choreRecordResult.value?.choreRecords)) {
+        hydrateProductionChoreRecords(choreRecordResult.value);
       }
       persistBetaData();
     }

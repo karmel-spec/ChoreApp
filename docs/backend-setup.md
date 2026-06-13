@@ -52,7 +52,7 @@ Never expose `SUPABASE_SERVICE_ROLE_KEY` or Twilio secrets in browser JavaScript
 - `runtime-config`: returns public Supabase and Google client configuration for the browser.
 - `auth-google`: verifies a Supabase Auth bearer token and returns the linked family member.
 - `family-snapshot`: lets signed-in family members reload family member contact settings, work targets, fine rates, and signed family/profile photo URLs from Supabase.
-- `chore-record`: lets a child/admin mark that child's chore complete or reopened, and lets only parent admins approve or send chores back for redo.
+- `chore-record`: lets signed-in family members reload chore completion/review records, lets a child/admin mark that child's chore complete or reopened, and lets only parent admins approve or send chores back for redo.
 - `family-settings`: lets parent admins save default deadline, noon review reminder time, extension approver/contact, and review recipient/contact.
 - `chore-library`: lets signed-in family members read the master chore rotation, and lets parent admins add, update, toggle, and delete items with difficulty, timing, frequency, fit, notice, and training notes.
 - `member-contact`: lets admins update any child phone/text opt-in and lets children update only their own setting.
@@ -82,7 +82,7 @@ The `supabase/schema.sql` file includes initial row-level security policies for 
 
 The `money-ledger` function is the production money gate and the reload source for child account panels. Browser confirmation remains a user-facing speed bump, but the backend function is the authority: it rejects children/helpers for money changes, requires the exact `CONFIRM MONEY` confirmation text, blocks duplicate same-day fine titles and duplicate bonus-period awards, records who charged, awarded, or marked a fine paid, and lets signed-in family members read the resulting ledger history.
 
-The `chore-record` function is the production chore-completion gate. Children can complete or reopen only their own chores, parent admins can manage any child, and only parent admins can approve inspected chores or send them back for redo. Proof photos attach to these server chore records through `photo-record`.
+The `chore-record` function is the production chore-completion gate and reload source for checkbox/review state. Children can complete or reopen only their own chores, parent admins can manage any child, and only parent admins can approve inspected chores or send them back for redo. Proof photos attach to these server chore records through `photo-record`.
 
 The `family-settings` and `chore-library` functions move parent admin controls out of browser-only trust. Children and helpers can read the resulting `family_settings` rules and chore assignments after Google sign-in, but only Brigham or Karmel can change deadlines, text contacts, chore rotation rows, training notes, difficulty, timing, or active/inactive status.
 
