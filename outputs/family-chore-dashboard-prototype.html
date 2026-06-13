@@ -3047,7 +3047,7 @@
 
     function normalizeAvailabilityHold(record, index = 0) {
       const recordData = record && typeof record === "object" ? record : {};
-      const childId = normalizeChildId(recordData.childId, selectedChildId);
+      const childId = normalizeChildId(recordData.childId || recordData.childProfileKey, selectedChildId);
       const startDate = normalizeDateKey(recordData.startDate || recordData.date || localDateKey());
       const days = Math.min(60, Math.round(safeStoredNumber(recordData.days, 1, 1)));
       return {
@@ -3058,7 +3058,9 @@
         days,
         reason: String(recordData.reason || "Unavailable").trim() || "Unavailable",
         createdBy: String(recordData.createdBy || "Admin").trim() || "Admin",
-        createdAt: normalizeTimestamp(recordData.createdAt)
+        createdAt: normalizeTimestamp(recordData.createdAt),
+        removedBy: String(recordData.removedBy || "").trim(),
+        removedAt: normalizeOptionalTimestamp(recordData.removedAt)
       };
     }
 
@@ -4117,13 +4119,14 @@
 
     async function hydrateProductionBackendData() {
       if (!productionBackend.ready || !productionBackend.session?.access_token) return;
-      const [snapshotResult, settingsResult, choreResult, ledgerResult, choreRecordResult, extensionResult] = await Promise.allSettled([
+      const [snapshotResult, settingsResult, choreResult, ledgerResult, choreRecordResult, extensionResult, holdResult] = await Promise.allSettled([
         loadProductionFamilySnapshot(),
         loadProductionFamilySettings(),
         loadProductionChoreLibrary(),
         loadProductionMoneyLedger(),
         loadProductionChoreRecords(),
-        loadProductionExtensionRequests()
+        loadProductionExtensionRequests(),
+        loadProductionAvailabilityHolds()
       ]);
       if (snapshotResult.status === "fulfilled" && Array.isArray(snapshotResult.value?.members)) {
         hydrateProductionFamilySnapshot(snapshotResult.value);
@@ -4143,6 +4146,9 @@
       }
       if (extensionResult.status === "fulfilled" && Array.isArray(extensionResult.value?.extensionRequests)) {
         hydrateProductionExtensionRequests(extensionResult.value);
+      }
+      if (holdResult.status === "fulfilled" && Array.isArray(holdResult.value?.availabilityHolds)) {
+        childAvailabilityHolds = holdResult.value.availabilityHolds.map(normalizeAvailabilityHold).slice(0, 120);
       }
       persistBetaData();
     }
@@ -4214,6 +4220,45 @@
         method: "POST",
         headers: productionAuthHeader(),
         body: JSON.stringify({ requestId, status, approvedDeadline })
+      });
+    }
+
+    async function loadProductionAvailabilityHolds() {
+      await loadProductionBackend();
+      if (!productionBackend.ready || !productionBackend.session?.access_token) return null;
+      return fetchJson("/.netlify/functions/availability-hold", {
+        headers: productionAuthHeader()
+      });
+    }
+
+    async function saveProductionAvailabilityHold(childId, days, reason) {
+      await loadProductionBackend();
+      if (!productionBackend.ready) return null;
+      if (!productionBackend.session?.access_token) {
+        throw new Error("Sign in with Google before saving availability holds in production mode.");
+      }
+      return fetchJson("/.netlify/functions/availability-hold", {
+        method: "POST",
+        headers: productionAuthHeader(),
+        body: JSON.stringify({
+          childProfileKey: childId,
+          startDate: localDateKey(),
+          days,
+          reason
+        })
+      });
+    }
+
+    async function removeProductionAvailabilityHold(holdId) {
+      await loadProductionBackend();
+      if (!productionBackend.ready) return null;
+      if (!productionBackend.session?.access_token) {
+        throw new Error("Sign in with Google before removing availability holds in production mode.");
+      }
+      return fetchJson("/.netlify/functions/availability-hold", {
+        method: "DELETE",
+        headers: productionAuthHeader(),
+        body: JSON.stringify({ holdId })
       });
     }
 
@@ -6898,7 +6943,7 @@
       });
     }
 
-    function removeAvailabilityHold(holdId) {
+    async function removeAvailabilityHold(holdId) {
       if (!isAdmin()) {
         document.getElementById("holdStatus").textContent = "Only Brigham or Karmel can remove availability holds.";
         return;
@@ -6906,13 +6951,21 @@
       const hold = childAvailabilityHolds.find(item => item.id === holdId);
       if (!hold) return;
       const child = children.find(item => item.id === hold.childId) || children[0];
+      if (!String(holdId).startsWith("hold-")) {
+        try {
+          await removeProductionAvailabilityHold(holdId);
+        } catch (error) {
+          document.getElementById("holdStatus").textContent = `Cloud availability hold removal failed: ${error.message}`;
+          return;
+        }
+      }
       childAvailabilityHolds = childAvailabilityHolds.filter(item => item.id !== holdId);
       persistBetaData();
       render();
       document.getElementById("holdStatus").textContent = `${child.name}'s ${hold.reason || "availability"} hold was removed by ${currentUser?.name || "Admin"}. Future chores and fines are active again unless another hold applies.`;
     }
 
-    function saveAvailabilityHold() {
+    async function saveAvailabilityHold() {
       if (!isAdmin()) {
         document.getElementById("holdStatus").textContent = "Only Brigham or Karmel can mute chores for vacation, sickness, or travel.";
         return;
@@ -6923,15 +6976,24 @@
         document.getElementById("holdStatus").textContent = "Use a number of days from 1 to 60.";
         return;
       }
-      childAvailabilityHolds.unshift({
+      const reason = document.getElementById("holdReason").value;
+      let nextHold = {
         id: `hold-${Date.now()}`,
         childId,
         startDate: localDateKey(),
         days,
-        reason: document.getElementById("holdReason").value,
+        reason,
         createdBy: currentUser?.name || "Admin",
         createdAt: new Date().toISOString()
-      });
+      };
+      try {
+        const payload = await saveProductionAvailabilityHold(childId, days, reason);
+        if (payload?.availabilityHold) nextHold = normalizeAvailabilityHold(payload.availabilityHold);
+      } catch (error) {
+        document.getElementById("holdStatus").textContent = `Cloud availability hold save failed: ${error.message}`;
+        return;
+      }
+      childAvailabilityHolds.unshift(nextHold);
       childAvailabilityHolds = childAvailabilityHolds.slice(0, 120);
       persistBetaData();
       render();

@@ -39,6 +39,7 @@ const requiredFiles = [
   "docs/backend-setup.md",
   "netlify/functions/_supabase.js",
   "netlify/functions/auth-google.js",
+  "netlify/functions/availability-hold.js",
   "netlify/functions/backend-health.js",
   "netlify/functions/chore-record.js",
   "netlify/functions/chore-library.js",
@@ -90,6 +91,7 @@ const supabaseSchema = await readFile("supabase/schema.sql", "utf8");
 const supabaseSeed = await readFile("supabase/seed-teamwork-chores.sql", "utf8");
 const supabaseHelperFunction = await readFile("netlify/functions/_supabase.js", "utf8");
 const authFunction = await readFile("netlify/functions/auth-google.js", "utf8");
+const availabilityHoldFunction = await readFile("netlify/functions/availability-hold.js", "utf8");
 const backendHealthFunction = await readFile("netlify/functions/backend-health.js", "utf8");
 const choreRecordFunction = await readFile("netlify/functions/chore-record.js", "utf8");
 const choreLibraryFunction = await readFile("netlify/functions/chore-library.js", "utf8");
@@ -400,6 +402,9 @@ const requiredMarkers = [
   "sendProductionExtensionRequest",
   "decideProductionExtensionRequest",
   "hydrateProductionExtensionRequests",
+  "loadProductionAvailabilityHolds",
+  "saveProductionAvailabilityHold",
+  "removeProductionAvailabilityHold",
   "sendProductionTeenReminder",
   "saveProductionPushSubscription",
   "enableChildPushNotifications",
@@ -969,6 +974,8 @@ const requiredBackendMarkers = [
   "signed family/profile photo URLs",
   "reload chore completion/review records",
   "reload extension requests",
+  "availability-hold",
+  "read vacation/sick holds",
   "production chore-completion gate",
   "family_settings",
   "parent admin controls",
@@ -1067,6 +1074,20 @@ for (const marker of [
 ]) {
   if (!familySettingsFunction.includes(marker)) {
     throw new Error(`Family settings function is missing: ${marker}`);
+  }
+}
+
+for (const marker of [
+  "Only Brigham or Karmel can manage availability holds",
+  "event.httpMethod === \"GET\"",
+  "event.httpMethod === \"DELETE\"",
+  "availability_holds",
+  "childProfileKey",
+  "removed_at",
+  "Use a number of days from 1 to 60"
+]) {
+  if (!availabilityHoldFunction.includes(marker)) {
+    throw new Error(`Availability hold function is missing: ${marker}`);
   }
 }
 
