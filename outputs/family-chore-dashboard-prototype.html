@@ -3927,6 +3927,24 @@
       });
     }
 
+    async function sendProductionTeenReminder(kind, child, message, choreName = "") {
+      await loadProductionBackend();
+      if (!productionBackend.ready) return null;
+      if (!productionBackend.session?.access_token) {
+        throw new Error("Sign in with Google before sending child reminder texts in production mode.");
+      }
+      return fetchJson("/.netlify/functions/teen-reminder", {
+        method: "POST",
+        headers: productionAuthHeader(),
+        body: JSON.stringify({
+          kind,
+          childProfileKey: child.id,
+          choreName,
+          message
+        })
+      });
+    }
+
     function roleLabel(account) {
       if (!account) return "Not signed in";
       if (account.role === "admin") return `${account.name} admin`;
@@ -5148,12 +5166,28 @@
           if (!chore) return;
           const action = button.dataset.reviewAction;
           let backendChoreRecordId = getChoreRecord(child, chore, choreType).backendChoreRecordId || "";
+          let redoSmsStatus = "";
           try {
             const payload = await saveProductionChoreRecord(action === "approve" ? "approve" : "redo", child, chore, choreType);
             backendChoreRecordId = payload?.choreRecord?.id || backendChoreRecordId;
           } catch (error) {
             document.getElementById("reviewStatus").textContent = `Cloud chore review failed: ${error.message}`;
             return;
+          }
+          if (action === "redo") {
+            try {
+              const reminder = await sendProductionTeenReminder(
+                "redo",
+                child,
+                `Teamwork Chores redo request: ${chore.name} needs another pass. Please fix it and mark Redo Done when finished.`,
+                chore.name
+              );
+              redoSmsStatus = reminder ? ` Text sent to ${child.name}.` : "";
+            } catch (error) {
+              redoSmsStatus = String(error.message || "").includes("has not opted in")
+                ? ` ${child.name} has not opted in to redo texts.`
+                : ` Redo saved, but text failed: ${error.message}`;
+            }
           }
           updateChoreRecord(child, chore, choreType, {
             backendChoreRecordId,
@@ -5165,7 +5199,7 @@
           });
           document.getElementById("reviewStatus").textContent = action === "approve"
             ? `${child.name}'s ${chore.name} was approved by ${currentUser.name}.`
-            : `${child.name}'s ${chore.name} was sent back for redo.`;
+            : `${child.name}'s ${chore.name} was sent back for redo.${redoSmsStatus}`;
           render();
         });
       });

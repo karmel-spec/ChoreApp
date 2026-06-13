@@ -56,9 +56,11 @@ Never expose `SUPABASE_SERVICE_ROLE_KEY` or Twilio secrets in browser JavaScript
 - `photo-upload-url`: creates a private Supabase Storage signed upload URL for family photos.
 - `photo-record`: records uploaded family hero, profile, proof, and feed photos in Supabase with role checks.
 - `send-sms`: lets parent admins send trusted Twilio SMS reminders and logs each send.
+- `teen-reminder`: lets parent admins send opted-in child chore reminder or redo texts and logs each send.
 - `extension-request`: lets a child or admin create an extension petition and text Brigham.
 - `extension-decision`: lets only Brigham approve or deny an extension and optionally text the child.
 - `scheduled-noon-review`: sends Mom Karmel the noon review reminder through Twilio and prevents duplicate same-day sends.
+- `scheduled-teen-reminders`: sends a once-daily morning chore reminder to opted-in children with saved cell numbers and prevents duplicate same-day sends.
 
 ## Server-Side Permissions
 
@@ -103,7 +105,7 @@ Phase-one SMS should use Twilio through Netlify Functions:
 - Redo request texts to opted-in teens
 - Optional teen reminder texts for unfinished chores
 
-The current scheduled function is `scheduled-noon-review` with the cron expression `0 18 * * *`, which is noon Mountain Daylight Time. If the family wants exact noon through daylight-saving changes, configure a timezone-aware scheduler or adjust the cron seasonally.
+The current scheduled functions are `scheduled-noon-review` with the cron expression `0 18 * * *`, which is noon Mountain Daylight Time, and `scheduled-teen-reminders` with `0 15 * * *`, which is 9:00 AM Mountain Daylight Time. If the family wants exact local times through daylight-saving changes, configure a timezone-aware scheduler or adjust the cron seasonally.
 
 Push notifications can be added later with Web Push, Firebase Cloud Messaging, or OneSignal once the SMS workflow is proven.
 

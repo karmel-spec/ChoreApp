@@ -52,7 +52,9 @@ const requiredFiles = [
   "netlify/functions/photo-upload-url.js",
   "netlify/functions/runtime-config.js",
   "netlify/functions/scheduled-noon-review.js",
+  "netlify/functions/scheduled-teen-reminders.js",
   "netlify/functions/send-sms.js",
+  "netlify/functions/teen-reminder.js",
   "outputs/index.html",
   "outputs/family-chore-dashboard-prototype.html",
   "outputs/chore-app-designs.html",
@@ -98,7 +100,9 @@ const photoRecordFunction = await readFile("netlify/functions/photo-record.js", 
 const photoFunction = await readFile("netlify/functions/photo-upload-url.js", "utf8");
 const runtimeConfigFunction = await readFile("netlify/functions/runtime-config.js", "utf8");
 const scheduledNoonFunction = await readFile("netlify/functions/scheduled-noon-review.js", "utf8");
+const scheduledTeenFunction = await readFile("netlify/functions/scheduled-teen-reminders.js", "utf8");
 const smsFunction = await readFile("netlify/functions/send-sms.js", "utf8");
+const teenReminderFunction = await readFile("netlify/functions/teen-reminder.js", "utf8");
 const manifest = JSON.parse(await readFile("outputs/manifest.webmanifest", "utf8"));
 const serviceWorker = await readFile("outputs/service-worker.js", "utf8");
 const expectedCacheName = "teamwork-chores-beta-2026-06-12";
@@ -377,13 +381,18 @@ const requiredMarkers = [
   "Cloud chore review failed",
   "saveProductionFamilySettings",
   "saveProductionChoreLibrary",
+  "sendProductionTeenReminder",
   "family-settings",
   "chore-library",
+  "teen-reminder",
   "Cloud family rules save failed",
   "Cloud chore add failed",
   "Cloud chore edit failed",
   "Cloud chore toggle failed",
   "Cloud chore delete failed",
+  "Text sent to ${child.name}",
+  "has not opted in to redo texts",
+  "Redo saved, but text failed",
   "saveProductionMoneyLedger",
   "money-ledger",
   "CONFIRM MONEY",
@@ -683,6 +692,8 @@ const requiredGuideMarkers = [
   "completion/review guardrail",
   "family-settings",
   "chore-library",
+  "scheduled opted-in teen reminder texts",
+  "redo texts",
   "parent-admin",
   "money-ledger",
   "child cell phone field, toggle text reminder permission"
@@ -913,12 +924,16 @@ const requiredBackendMarkers = [
   "chore-record",
   "chore-library",
   "family-settings",
+  "teen-reminder",
+  "scheduled-teen-reminders",
   "link-google-member",
   "money-ledger",
   "CONFIRM MONEY",
   "production chore-completion gate",
   "family_settings",
   "parent admin controls",
+  "scheduled-teen-reminders",
+  "once-daily morning chore reminder",
   "Family Seed Data",
   "seed-teamwork-chores.sql",
   "readyForWorkflowBeta",
@@ -1051,7 +1066,7 @@ for (const marker of [
   }
 }
 
-for (const marker of ["expectedMembers", "family-photos", "notification_log", "family_settings", "Family settings and chore library tables are reachable", "chore_records", "Chore record table is reachable", "ledger_entries", "Money ledger table is reachable", "readyForWorkflowBeta", "TWILIO_MESSAGING_SERVICE_SID", "authLinked", "gmailLinked"]) {
+for (const marker of ["expectedMembers", "family-photos", "notification_log", "notification_preferences", "Teen reminder preference rows are reachable", "family_settings", "Family settings and chore library tables are reachable", "chore_records", "Chore record table is reachable", "ledger_entries", "Money ledger table is reachable", "readyForWorkflowBeta", "TWILIO_MESSAGING_SERVICE_SID", "authLinked", "gmailLinked"]) {
   if (!backendHealthFunction.includes(marker)) {
     throw new Error(`Backend health function is missing readiness marker: ${marker}`);
   }
@@ -1075,6 +1090,33 @@ if (!photoRecordFunction.includes("family_hero") || !photoRecordFunction.include
 
 if (!supabaseHelperFunction.includes("TWILIO_MESSAGING_SERVICE_SID") || !supabaseHelperFunction.includes("sendSms") || !smsFunction.includes("Only parent admins can send SMS reminders")) {
   throw new Error("SMS function is missing Twilio/admin guard behavior.");
+}
+
+for (const marker of [
+  "Only Brigham or Karmel can send child chore reminder texts",
+  "notify_redo",
+  "notify_teen_reminders",
+  "has not opted in",
+  "teen_reminder",
+  "redo",
+  "logNotification"
+]) {
+  if (!teenReminderFunction.includes(marker)) {
+    throw new Error(`Teen reminder function is missing: ${marker}`);
+  }
+}
+
+for (const marker of [
+  'schedule: "0 15 * * *"',
+  "alreadySentToday",
+  "notify_teen_reminders",
+  "already_sent",
+  "Teamwork Chores reminder for",
+  "teen_reminder"
+]) {
+  if (!scheduledTeenFunction.includes(marker)) {
+    throw new Error(`Scheduled teen reminder function is missing: ${marker}`);
+  }
 }
 
 if (!extensionRequestFunction.includes("BRIGHAM_EXTENSION_PHONE") || !extensionRequestFunction.includes("Children can request extensions only for their own chores")) {
