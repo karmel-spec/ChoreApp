@@ -396,6 +396,10 @@ const requiredMarkers = [
   "hydrateProductionBackendData",
   "loadProductionMoneyLedger",
   "hydrateProductionMoneyLedger",
+  "loadProductionExtensionRequests",
+  "sendProductionExtensionRequest",
+  "decideProductionExtensionRequest",
+  "hydrateProductionExtensionRequests",
   "sendProductionTeenReminder",
   "saveProductionPushSubscription",
   "enableChildPushNotifications",
@@ -964,6 +968,7 @@ const requiredBackendMarkers = [
   "read child ledger/account history",
   "signed family/profile photo URLs",
   "reload chore completion/review records",
+  "reload extension requests",
   "production chore-completion gate",
   "family_settings",
   "parent admin controls",
@@ -1213,11 +1218,11 @@ for (const marker of [
   }
 }
 
-if (!extensionRequestFunction.includes("BRIGHAM_EXTENSION_PHONE") || !extensionRequestFunction.includes("Children can request extensions only for their own chores")) {
+if (!extensionRequestFunction.includes("BRIGHAM_EXTENSION_PHONE") || !extensionRequestFunction.includes("Children can request extensions only for their own chores") || !extensionRequestFunction.includes("event.httpMethod === \"GET\"") || !extensionRequestFunction.includes("childProfileKey")) {
   throw new Error("Extension request function is missing Brigham SMS or child ownership behavior.");
 }
 
-if (!extensionDecisionFunction.includes("Only Brigham can approve or deny") || !extensionDecisionFunction.includes("text_reminders_enabled")) {
+if (!extensionDecisionFunction.includes("Only Brigham can approve or deny") || !extensionDecisionFunction.includes("text_reminders_enabled") || !extensionDecisionFunction.includes("approvedDeadline") || !extensionDecisionFunction.includes("requested_deadline")) {
   throw new Error("Extension decision function is missing Brigham-only approval or opted-in child SMS behavior.");
 }
 

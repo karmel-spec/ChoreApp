@@ -4117,12 +4117,13 @@
 
     async function hydrateProductionBackendData() {
       if (!productionBackend.ready || !productionBackend.session?.access_token) return;
-      const [snapshotResult, settingsResult, choreResult, ledgerResult, choreRecordResult] = await Promise.allSettled([
+      const [snapshotResult, settingsResult, choreResult, ledgerResult, choreRecordResult, extensionResult] = await Promise.allSettled([
         loadProductionFamilySnapshot(),
         loadProductionFamilySettings(),
         loadProductionChoreLibrary(),
         loadProductionMoneyLedger(),
-        loadProductionChoreRecords()
+        loadProductionChoreRecords(),
+        loadProductionExtensionRequests()
       ]);
       if (snapshotResult.status === "fulfilled" && Array.isArray(snapshotResult.value?.members)) {
         hydrateProductionFamilySnapshot(snapshotResult.value);
@@ -4139,6 +4140,9 @@
       }
       if (choreRecordResult.status === "fulfilled" && Array.isArray(choreRecordResult.value?.choreRecords)) {
         hydrateProductionChoreRecords(choreRecordResult.value);
+      }
+      if (extensionResult.status === "fulfilled" && Array.isArray(extensionResult.value?.extensionRequests)) {
+        hydrateProductionExtensionRequests(extensionResult.value);
       }
       persistBetaData();
     }
@@ -4171,6 +4175,45 @@
           choreName,
           message
         })
+      });
+    }
+
+    async function loadProductionExtensionRequests() {
+      await loadProductionBackend();
+      if (!productionBackend.ready || !productionBackend.session?.access_token) return null;
+      return fetchJson(`/.netlify/functions/extension-request?startDate=${encodeURIComponent(localDateKey(-7))}`, {
+        headers: productionAuthHeader()
+      });
+    }
+
+    async function sendProductionExtensionRequest(child, requestedDeadline, reason) {
+      await loadProductionBackend();
+      if (!productionBackend.ready) return null;
+      if (!productionBackend.session?.access_token) {
+        throw new Error("Sign in with Google before sending extension requests in production mode.");
+      }
+      return fetchJson("/.netlify/functions/extension-request", {
+        method: "POST",
+        headers: productionAuthHeader(),
+        body: JSON.stringify({
+          childProfileKey: child.id,
+          serviceDate: localDateKey(),
+          requestedDeadline,
+          reason
+        })
+      });
+    }
+
+    async function decideProductionExtensionRequest(requestId, status, approvedDeadline = "") {
+      await loadProductionBackend();
+      if (!productionBackend.ready) return null;
+      if (!productionBackend.session?.access_token) {
+        throw new Error("Sign in with Google before deciding extension requests in production mode.");
+      }
+      return fetchJson("/.netlify/functions/extension-decision", {
+        method: "POST",
+        headers: productionAuthHeader(),
+        body: JSON.stringify({ requestId, status, approvedDeadline })
       });
     }
 
@@ -4314,6 +4357,44 @@
       persistBetaData();
       renderExtensionAuditLog();
       renderBetaDataSummary();
+    }
+
+    function hydrateProductionExtensionRequests(payload, replace = true) {
+      const requests = Array.isArray(payload.extensionRequests) ? payload.extensionRequests : [];
+      requests.forEach(request => {
+        const child = children.find(item => item.id === request.childProfileKey);
+        if (!child) return;
+        const action = ["approved", "denied"].includes(request.status) ? request.status : "requested";
+        if (request.serviceDate === localDateKey() && action === "approved") {
+          setApprovedDeadline(child, request.requestedDeadline);
+        }
+        if (request.serviceDate === localDateKey() && action === "denied") {
+          clearApprovedDeadline(child);
+        }
+      });
+      const mapped = requests.map(request => {
+        const child = children.find(item => item.id === request.childProfileKey);
+        const action = ["approved", "denied"].includes(request.status) ? request.status : "requested";
+        return normalizeExtensionAuditRecord({
+          id: request.id,
+          date: request.serviceDate,
+          childId: child?.id || request.childProfileKey,
+          childName: child?.name || request.childName,
+          action,
+          deadline: request.requestedDeadline,
+          requestedBy: request.requestedBy ? "Backend user" : child?.name,
+          approver: action === "requested" ? familySettings.extensionApprover : extensionApproverShortName(),
+          contact: familySettings.extensionContact,
+          recordedAt: request.decidedAt || request.createdAt,
+          message: request.reason
+        });
+      });
+      extensionAuditLog = replace
+        ? mapped.slice(0, 80)
+        : [
+            ...mapped,
+            ...extensionAuditLog.filter(item => !mapped.some(nextItem => nextItem.id === item.id))
+          ].slice(0, 80);
     }
 
     function renderExtensionAuditLog() {
@@ -7427,7 +7508,7 @@
       render();
     });
 
-    document.getElementById("textExtensionBtn").addEventListener("click", () => {
+    document.getElementById("textExtensionBtn").addEventListener("click", async () => {
       const child = children.find(item => item.id === selectedChildId);
       if (!canManageChildTasks(child)) {
         document.getElementById("extensionStatus").textContent = `Only ${child.name}, Brigham, or Karmel can send ${child.name}'s extension petition.`;
@@ -7437,6 +7518,19 @@
       const message = extensionPetitionMessage(child);
       const smsNumber = extensionContactSmsNumber();
       const requestedTime = normalizeClockTime(document.getElementById("newTime").value) || familySettings.defaultDeadline;
+      try {
+        const payload = await sendProductionExtensionRequest(child, requestedTime, document.getElementById("reason").value.trim() || "I need more time to finish my chores.");
+        if (payload?.request) {
+          hydrateProductionExtensionRequests({ extensionRequests: [payload.request] }, false);
+          persistBetaData();
+          renderExtensionAuditLog();
+          document.getElementById("extensionStatus").textContent = `Extension request text was queued for ${familySettings.extensionApprover}. Status: ${payload.smsStatus}.`;
+          return;
+        }
+      } catch (error) {
+        document.getElementById("extensionStatus").textContent = `Cloud extension request failed: ${error.message}`;
+        return;
+      }
       logExtensionAudit(child, "requested", requestedTime, message);
       document.getElementById("extensionStatus").textContent = `Extension request ready for ${familySettings.extensionApprover} at ${familySettings.extensionContact}: ${message}`;
       if (smsNumber) {
@@ -7444,13 +7538,28 @@
       }
     });
 
-    document.getElementById("approveBtn").addEventListener("click", () => {
+    document.getElementById("approveBtn").addEventListener("click", async () => {
       if (!isExtensionApprover()) {
         document.getElementById("extensionStatus").textContent = `Extension not changed. Only ${familySettings.extensionApprover} can approve this request.`;
         return;
       }
       const child = children.find(item => item.id === selectedChildId);
+      const latestRequest = extensionAuditLog.find(item => item.childId === child.id && item.date === localDateKey() && item.action === "requested");
       if (document.getElementById("approval").value === "Deny") {
+        if (latestRequest?.id && productionBackend.ready && productionBackend.session?.access_token) {
+          try {
+            const payload = await decideProductionExtensionRequest(latestRequest.id, "denied");
+            if (payload?.request) {
+              hydrateProductionExtensionRequests({ extensionRequests: [payload.request] }, false);
+              render();
+              document.getElementById("extensionStatus").textContent = `Extension denied for ${child.name}. Fine deadline stays ${familySettings.defaultDeadline}.`;
+              return;
+            }
+          } catch (error) {
+            document.getElementById("extensionStatus").textContent = `Cloud extension denial failed: ${error.message}`;
+            return;
+          }
+        }
         clearApprovedDeadline(child);
         logExtensionAudit(child, "denied", familySettings.defaultDeadline, `Extension denied. Fine deadline stays ${familySettings.defaultDeadline}.`);
         render();
@@ -7464,6 +7573,20 @@
         return;
       }
       const newDeadline = setApprovedDeadline(child, normalizedDeadline || familySettings.defaultDeadline);
+      if (latestRequest?.id && productionBackend.ready && productionBackend.session?.access_token) {
+        try {
+          const payload = await decideProductionExtensionRequest(latestRequest.id, "approved", newDeadline);
+          if (payload?.request) {
+            hydrateProductionExtensionRequests({ extensionRequests: [payload.request] }, false);
+            render();
+            document.getElementById("extensionStatus").textContent = `${familySettings.extensionApprover}-approved extension saved for ${child.name}: deadline moved to ${newDeadline}.`;
+            return;
+          }
+        } catch (error) {
+          document.getElementById("extensionStatus").textContent = `Cloud extension approval failed: ${error.message}`;
+          return;
+        }
+      }
       logExtensionAudit(child, "approved", newDeadline, `Deadline moved to ${newDeadline}.`);
       render();
       document.getElementById("extensionStatus").textContent = `${familySettings.extensionApprover}-approved extension saved for ${child.name}: deadline moved to ${newDeadline}.`;

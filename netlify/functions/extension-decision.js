@@ -8,6 +8,27 @@ const {
   serviceClient
 } = require("./_supabase");
 
+function publicRequest(request, child = {}) {
+  return {
+    id: request.id,
+    childId: request.child_id,
+    childProfileKey: child.profile_key || "",
+    childName: child.display_name || "",
+    serviceDate: request.service_date,
+    requestedDeadline: request.requested_deadline,
+    reason: request.reason,
+    status: request.status,
+    requestedBy: request.requested_by,
+    decidedBy: request.decided_by,
+    decidedAt: request.decided_at,
+    createdAt: request.created_at
+  };
+}
+
+function validDeadline(value) {
+  return /^(\d{1,2})(:\d{2})?\s*(AM|PM)?$/i.test(String(value || "").trim());
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") return json(405, { error: "Method not allowed" });
   const actor = await memberFromAuthHeader(event);
@@ -20,7 +41,11 @@ exports.handler = async (event) => {
   if (!body) return json(400, { error: "Invalid JSON body." });
   const requestId = body.requestId;
   const status = body.status === "approved" ? "approved" : body.status === "denied" ? "denied" : "";
+  const approvedDeadline = String(body.approvedDeadline || "").trim();
   if (!requestId || !status) return json(400, { error: "Send a requestId and approved or denied status." });
+  if (status === "approved" && approvedDeadline && !validDeadline(approvedDeadline)) {
+    return json(400, { error: "Use a valid extension time like 1:30 PM or 13:30." });
+  }
 
   const supabase = serviceClient();
   const { data: request, error: requestError } = await supabase
@@ -34,7 +59,7 @@ exports.handler = async (event) => {
 
   const { data: child } = await supabase
     .from("family_members")
-    .select("id,display_name,cell_phone,text_reminders_enabled")
+    .select("id,profile_key,display_name,cell_phone,text_reminders_enabled")
     .eq("id", request.child_id)
     .single();
 
@@ -42,11 +67,12 @@ exports.handler = async (event) => {
     .from("extension_requests")
     .update({
       status,
+      requested_deadline: status === "approved" && approvedDeadline ? approvedDeadline : request.requested_deadline,
       decided_by: actor.id,
       decided_at: new Date().toISOString()
     })
     .eq("id", request.id)
-    .select("id,service_date,requested_deadline,status,decided_at")
+    .select("id,child_id,service_date,requested_deadline,reason,status,requested_by,decided_by,decided_at,created_at")
     .single();
   if (error) return json(500, { error: error.message });
 
@@ -70,5 +96,5 @@ exports.handler = async (event) => {
     });
   }
 
-  return json(200, { request: updated, childSmsStatus });
+  return json(200, { request: publicRequest(updated, child), childSmsStatus });
 };

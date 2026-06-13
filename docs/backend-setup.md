@@ -63,8 +63,8 @@ Never expose `SUPABASE_SERVICE_ROLE_KEY` or Twilio secrets in browser JavaScript
 - `teen-reminder`: lets parent admins send opted-in child chore reminder or redo texts and logs each send.
 - `push-subscription`: lets signed-in members save or disable their own browser push subscription, while parent admins can manage family member subscriptions.
 - `send-push`: lets parent admins send Web Push reminders to opted-in members with active browser subscriptions.
-- `extension-request`: lets a child or admin create an extension petition and text Brigham.
-- `extension-decision`: lets only Brigham approve or deny an extension and optionally text the child.
+- `extension-request`: lets signed-in family members reload extension requests, and lets a child or admin create an extension petition and text Brigham.
+- `extension-decision`: lets only Brigham approve or deny an extension, save the final approved deadline, and optionally text the child.
 - `scheduled-noon-review`: sends Mom Karmel the noon review reminder through Twilio and prevents duplicate same-day sends.
 - `scheduled-teen-reminders`: sends a once-daily morning chore reminder to opted-in children with saved cell numbers and prevents duplicate same-day sends.
 
