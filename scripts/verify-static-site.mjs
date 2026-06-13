@@ -44,6 +44,7 @@ const requiredFiles = [
   "netlify/functions/extension-request.js",
   "netlify/functions/link-google-member.js",
   "netlify/functions/member-contact.js",
+  "netlify/functions/money-ledger.js",
   "netlify/functions/photo-record.js",
   "netlify/functions/photo-upload-url.js",
   "netlify/functions/runtime-config.js",
@@ -86,6 +87,7 @@ const extensionDecisionFunction = await readFile("netlify/functions/extension-de
 const extensionRequestFunction = await readFile("netlify/functions/extension-request.js", "utf8");
 const linkGoogleFunction = await readFile("netlify/functions/link-google-member.js", "utf8");
 const memberContactFunction = await readFile("netlify/functions/member-contact.js", "utf8");
+const moneyLedgerFunction = await readFile("netlify/functions/money-ledger.js", "utf8");
 const photoRecordFunction = await readFile("netlify/functions/photo-record.js", "utf8");
 const photoFunction = await readFile("netlify/functions/photo-upload-url.js", "utf8");
 const runtimeConfigFunction = await readFile("netlify/functions/runtime-config.js", "utf8");
@@ -361,6 +363,12 @@ const requiredMarkers = [
   "signInWithOAuth",
   "link-google-member",
   "auth-google",
+  "saveProductionMoneyLedger",
+  "money-ledger",
+  "CONFIRM MONEY",
+  "Cloud fine save failed",
+  "Cloud bonus save failed",
+  "Cloud paid-fine save failed",
   "uploadToSignedUrl",
   "saveProductionProfilePhoto",
   "saveProductionFamilyHeroPhoto",
@@ -650,6 +658,8 @@ const requiredGuideMarkers = [
   "Karmel and Brigham admin profiles",
   "link-google-member",
   "links that Gmail to the matching family member record",
+  "parent-admin",
+  "money-ledger",
   "child cell phone field, toggle text reminder permission"
 ];
 
@@ -876,6 +886,8 @@ const requiredBackendMarkers = [
   "Netlify Function Contracts",
   "backend-health",
   "link-google-member",
+  "money-ledger",
+  "CONFIRM MONEY",
   "Family Seed Data",
   "seed-teamwork-chores.sql",
   "readyForWorkflowBeta",
@@ -941,7 +953,24 @@ for (const marker of ["auth_user_id", ".ilike(\"gmail\", email)", "is not invite
   }
 }
 
-for (const marker of ["expectedMembers", "family-photos", "notification_log", "readyForWorkflowBeta", "TWILIO_MESSAGING_SERVICE_SID", "authLinked", "gmailLinked"]) {
+for (const marker of [
+  "Only Brigham or Karmel can change money ledger records",
+  "CONFIRM MONEY",
+  "charge_fine",
+  "award_bonus",
+  "mark_fine_paid",
+  "This fine already exists for that child and service date",
+  "This bonus already exists for that child and bonus period",
+  "account_balance",
+  "paid_by",
+  "paid_at"
+]) {
+  if (!moneyLedgerFunction.includes(marker)) {
+    throw new Error(`Money ledger function is missing: ${marker}`);
+  }
+}
+
+for (const marker of ["expectedMembers", "family-photos", "notification_log", "ledger_entries", "Money ledger table is reachable", "readyForWorkflowBeta", "TWILIO_MESSAGING_SERVICE_SID", "authLinked", "gmailLinked"]) {
   if (!backendHealthFunction.includes(marker)) {
     throw new Error(`Backend health function is missing readiness marker: ${marker}`);
   }

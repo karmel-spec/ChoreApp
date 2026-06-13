@@ -3835,6 +3835,23 @@
       return upload.storagePath;
     }
 
+    async function saveProductionMoneyLedger(action, payload) {
+      await loadProductionBackend();
+      if (!productionBackend.ready) return null;
+      if (!productionBackend.session?.access_token) {
+        throw new Error("Sign in with Google before changing money records in production mode.");
+      }
+      return fetchJson("/.netlify/functions/money-ledger", {
+        method: "POST",
+        headers: productionAuthHeader(),
+        body: JSON.stringify({
+          action,
+          confirmationText: "CONFIRM MONEY",
+          ...payload
+        })
+      });
+    }
+
     function roleLabel(account) {
       if (!account) return "Not signed in";
       if (account.role === "admin") return `${account.name} admin`;
@@ -5566,7 +5583,7 @@
       return `${child.name} needs ${nextMilestone.remaining} more ${dayLabel} for the next bonus: ${nextMilestone.label} ($${nextMilestone.amount}).`;
     }
 
-    function awardEligibleBonus() {
+    async function awardEligibleBonus() {
       if (!isAdmin()) {
         document.getElementById("bonusStatus").textContent = "Only Brigham or Karmel can award bonus money.";
         return;
@@ -5585,6 +5602,21 @@
         return;
       }
       if (!confirmMoneyAction(`Credit $${bonus.amount} to ${child.name}'s chore account for ${title}?`, "bonusStatus")) return;
+      let backendEntryId = "";
+      try {
+        const payload = await saveProductionMoneyLedger("award_bonus", {
+          childProfileKey: child.id,
+          title,
+          amount: bonus.amount,
+          period: bonus.type === "super" ? "all-time" : bonusPeriod,
+          days: bonus.days,
+          bonusType: bonus.type
+        });
+        backendEntryId = payload?.ledgerEntry?.id || "";
+      } catch (error) {
+        document.getElementById("bonusStatus").textContent = `Cloud bonus save failed: ${error.message}`;
+        return;
+      }
       child.accountBalance += bonus.amount;
       bonusLedger[child.id].unshift({
         title,
@@ -5594,6 +5626,7 @@
         period: bonus.type === "super" ? "all-time" : bonusPeriod,
         amount: `$${bonus.amount}`,
         paid: true,
+        backendLedgerEntryId: backendEntryId,
         awardedBy: currentUser?.name || "Admin",
         awardedAt: new Date().toISOString()
       });
@@ -5604,7 +5637,7 @@
       document.getElementById("bonusStatus").textContent = `${child.name}'s chore account was credited $${bonus.amount} for ${title}.`;
     }
 
-    function awardMonthlyPointsBonuses() {
+    async function awardMonthlyPointsBonuses() {
       if (!isAdmin()) {
         document.getElementById("bonusStatus").textContent = "Only Brigham or Karmel can award monthly points bonus money.";
         return;
@@ -5617,6 +5650,25 @@
       }
       const totalBonusAmount = winners.reduce((sum, winner) => sum + winner.amount, 0);
       if (!confirmMoneyAction(`Award monthly points bonuses totaling $${totalBonusAmount} to ${winners.map(winner => winner.child.name).join(", ")}?`, "bonusStatus")) return;
+      const backendEntries = {};
+      try {
+        for (const { child, rank, points, amount } of winners) {
+          if (hasMonthlyPointsBonusAward(child, rank, period)) continue;
+          const payload = await saveProductionMoneyLedger("award_bonus", {
+            childProfileKey: child.id,
+            title: `${rankLabel(rank)} place monthly points bonus`,
+            amount,
+            period,
+            bonusType: "monthly-points",
+            points,
+            rank
+          });
+          backendEntries[`${child.id}|${rank}`] = payload?.ledgerEntry?.id || "";
+        }
+      } catch (error) {
+        document.getElementById("bonusStatus").textContent = `Cloud monthly points bonus save failed: ${error.message}`;
+        return;
+      }
       const awarded = [];
       const skipped = [];
       winners.forEach(({ child, rank, points, amount }) => {
@@ -5634,6 +5686,7 @@
           period,
           amount: `$${amount}`,
           paid: true,
+          backendLedgerEntryId: backendEntries[`${child.id}|${rank}`] || "",
           awardedBy: currentUser?.name || "Admin",
           awardedAt: new Date().toISOString()
         });
@@ -5667,7 +5720,7 @@
       document.getElementById("fineRateStatus").textContent = `${child.name}'s daily fine rate is now $${child.fineRate}.`;
     }
 
-    function chargeMissedDeadlineFine() {
+    async function chargeMissedDeadlineFine() {
       if (!isAdmin()) {
         document.getElementById("fineRateStatus").textContent = "Only Brigham or Karmel can charge fines.";
         return;
@@ -5681,7 +5734,22 @@
         return;
       }
       if (!confirmMoneyAction(`Charge ${child.name} a $${child.fineRate} missed-deadline fine for ${deadline}?`, "fineRateStatus")) return;
-      addFineToLedger(child, title, child.fineRate, deadline);
+      let backendEntryId = "";
+      try {
+        const payload = await saveProductionMoneyLedger("charge_fine", {
+          childProfileKey: child.id,
+          title,
+          amount: child.fineRate,
+          serviceDate: localDateKey(),
+          deadline,
+          reason: "manual missed-deadline fine"
+        });
+        backendEntryId = payload?.ledgerEntry?.id || "";
+      } catch (error) {
+        document.getElementById("fineRateStatus").textContent = `Cloud fine save failed: ${error.message}`;
+        return;
+      }
+      addFineToLedger(child, title, child.fineRate, deadline, backendEntryId);
       render();
       document.getElementById("fineRateStatus").textContent = `${child.name} was charged $${child.fineRate} for a missed ${deadline} deadline.`;
     }
@@ -5697,7 +5765,7 @@
       });
     }
 
-    function addFineToLedger(child, title, amount, deadline = approvedDeadlineFor(child)) {
+    function addFineToLedger(child, title, amount, deadline = approvedDeadlineFor(child), backendLedgerEntryId = "") {
       child.openFines = Number((child.openFines + amount).toFixed(2));
       ledger[child.id].unshift({
         title,
@@ -5705,6 +5773,7 @@
         date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" }),
         deadline,
         amount: `$${amount}`,
+        backendLedgerEntryId,
         chargedBy: currentUser?.name || "Admin",
         chargedAt: new Date().toISOString(),
         paid: false
@@ -5766,7 +5835,7 @@
       return true;
     }
 
-    function finalizeChildReview(child) {
+    async function finalizeChildReview(child) {
       const key = assessmentKey(child);
       if (fineAssessments[key]?.finalizedAt) {
         return {
@@ -5813,7 +5882,7 @@
       const existingDeadlineFine = missed.length ? hasSameDayDeadlineFine(child, deadline) : false;
       const amount = missed.length && !existingDeadlineFine ? child.fineRate : 0;
       const streakCredited = creditDailyStreakIfEarned(child);
-      fineAssessments[key] = {
+      const assessmentRecord = {
         childId: child.id,
         date: localDateKey(),
         deadline,
@@ -5825,8 +5894,21 @@
         finalizedAt: new Date().toISOString()
       };
       if (amount > 0) {
-        addFineToLedger(child, `${deadline} review: ${missed.length} unfinished rotating chore${missed.length === 1 ? "" : "s"}`, amount, deadline);
+        const title = `${deadline} review: ${missed.length} unfinished rotating chore${missed.length === 1 ? "" : "s"}`;
+        let backendEntryId = "";
+        const payload = await saveProductionMoneyLedger("charge_fine", {
+          childProfileKey: child.id,
+          title,
+          amount,
+          serviceDate: localDateKey(),
+          deadline,
+          reason: missedDetail || "parent noon review"
+        });
+        backendEntryId = payload?.ledgerEntry?.id || "";
+        fineAssessments[key] = assessmentRecord;
+        addFineToLedger(child, title, amount, deadline, backendEntryId);
       } else {
+        fineAssessments[key] = assessmentRecord;
         persistBetaData();
       }
       return {
@@ -5846,25 +5928,39 @@
       };
     }
 
-    function finalizeSelectedChildReview() {
+    async function finalizeSelectedChildReview() {
       if (!isAdmin()) {
         document.getElementById("reviewStatus").textContent = "Only Brigham or Karmel can finalize noon review.";
         return;
       }
       const child = children.find(item => item.id === selectedChildId);
-      const result = finalizeChildReview(child);
+      let result;
+      try {
+        result = await finalizeChildReview(child);
+      } catch (error) {
+        document.getElementById("reviewStatus").textContent = `Cloud review fine save failed: ${error.message}`;
+        return;
+      }
       render();
       document.getElementById("reviewStatus").textContent = result.skipped
         ? result.message
         : `${result.message} ${result.missed.length ? `Fine reason: ${result.missedDetail}.` : "No fine charged."} ${result.streakCredited ? `${child.name}'s monthly and overall streaks increased by 1.` : "Streak credit requires every priority and rotating chore to be approved."}`;
     }
 
-    function finalizeAllChildrenReview() {
+    async function finalizeAllChildrenReview() {
       if (!isAdmin()) {
         document.getElementById("reviewStatus").textContent = "Only Brigham or Karmel can finalize noon review.";
         return;
       }
-      const results = children.map(child => finalizeChildReview(child));
+      const results = [];
+      try {
+        for (const child of children) {
+          results.push(await finalizeChildReview(child));
+        }
+      } catch (error) {
+        document.getElementById("reviewStatus").textContent = `Cloud review fine save failed: ${error.message}`;
+        return;
+      }
       const chargedTotal = results.reduce((sum, result) => sum + result.charged, 0);
       const chargedChildren = results.filter(result => result.charged > 0).map(result => `${result.child.name} $${result.charged}`);
       const chargedDetails = results.filter(result => result.charged > 0).map(result => `${result.child.name}: ${result.missedDetail}`);
@@ -5877,7 +5973,7 @@
         : `Noon review finalized. No new fines charged. ${excusedChildren.length ? `Excused: ${excusedChildren.join(", ")}.` : ""} ${streakChildren.length ? `Streaks credited: ${streakChildren.join(", ")}.` : ""} ${skippedCount ? `${skippedCount} already finalized.` : ""}`;
     }
 
-    function markFinePaid(child, fineIndex) {
+    async function markFinePaid(child, fineIndex) {
       if (!isAdmin()) {
         document.getElementById("fineRateStatus").textContent = "Only Brigham or Karmel can mark fines paid.";
         return;
@@ -5885,6 +5981,21 @@
       const item = ledger[child.id][fineIndex];
       if (!item || item.paid) return;
       if (!confirmMoneyAction(`Mark ${child.name}'s ${item.amount} fine "${item.title}" paid?`, "fineRateStatus")) return;
+      try {
+        await loadProductionBackend();
+        if (productionBackend.ready && productionBackend.session?.access_token) {
+          if (!item.backendLedgerEntryId) {
+            document.getElementById("fineRateStatus").textContent = "This local-only fine does not have a backend ledger ID. Recreate or reconcile it in the backend before marking it paid.";
+            return;
+          }
+          await saveProductionMoneyLedger("mark_fine_paid", {
+            ledgerEntryId: item.backendLedgerEntryId
+          });
+        }
+      } catch (error) {
+        document.getElementById("fineRateStatus").textContent = `Cloud paid-fine save failed: ${error.message}`;
+        return;
+      }
       item.paid = true;
       item.paidBy = currentUser?.name || "Admin";
       item.paidAt = new Date().toISOString();

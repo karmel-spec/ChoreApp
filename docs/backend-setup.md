@@ -49,6 +49,7 @@ Never expose `SUPABASE_SERVICE_ROLE_KEY` or Twilio secrets in browser JavaScript
 - `runtime-config`: returns public Supabase and Google client configuration for the browser.
 - `auth-google`: verifies a Supabase Auth bearer token and returns the linked family member.
 - `member-contact`: lets admins update any child phone/text opt-in and lets children update only their own setting.
+- `money-ledger`: requires a verified parent admin token plus the `CONFIRM MONEY` guardrail before charging fines, awarding bonuses, or marking fines paid.
 - `photo-upload-url`: creates a private Supabase Storage signed upload URL for family photos.
 - `photo-record`: records uploaded family hero, profile, proof, and feed photos in Supabase with role checks.
 - `send-sms`: lets parent admins send trusted Twilio SMS reminders and logs each send.
@@ -67,6 +68,8 @@ The browser prototype currently hides admin controls in the UI. Production must 
 - All money-changing actions must be audited.
 
 The `supabase/schema.sql` file includes initial row-level security policies for those boundaries.
+
+The `money-ledger` function is the production money gate. Browser confirmation remains a user-facing speed bump, but the backend function is the authority: it rejects children/helpers, requires the exact `CONFIRM MONEY` confirmation text, blocks duplicate same-day fine titles and duplicate bonus-period awards, and records who charged, awarded, or marked a fine paid.
 
 ## Family Seed Data
 
