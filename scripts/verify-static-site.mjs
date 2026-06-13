@@ -40,6 +40,7 @@ const requiredFiles = [
   "netlify/functions/_supabase.js",
   "netlify/functions/auth-google.js",
   "netlify/functions/backend-health.js",
+  "netlify/functions/chore-record.js",
   "netlify/functions/extension-decision.js",
   "netlify/functions/extension-request.js",
   "netlify/functions/link-google-member.js",
@@ -83,6 +84,7 @@ const supabaseSeed = await readFile("supabase/seed-teamwork-chores.sql", "utf8")
 const supabaseHelperFunction = await readFile("netlify/functions/_supabase.js", "utf8");
 const authFunction = await readFile("netlify/functions/auth-google.js", "utf8");
 const backendHealthFunction = await readFile("netlify/functions/backend-health.js", "utf8");
+const choreRecordFunction = await readFile("netlify/functions/chore-record.js", "utf8");
 const extensionDecisionFunction = await readFile("netlify/functions/extension-decision.js", "utf8");
 const extensionRequestFunction = await readFile("netlify/functions/extension-request.js", "utf8");
 const linkGoogleFunction = await readFile("netlify/functions/link-google-member.js", "utf8");
@@ -363,6 +365,12 @@ const requiredMarkers = [
   "signInWithOAuth",
   "link-google-member",
   "auth-google",
+  "saveProductionChoreRecord",
+  "saveProductionProofPhoto",
+  "chore-record",
+  "Cloud chore completion failed",
+  "Cloud proof photo save failed",
+  "Cloud chore review failed",
   "saveProductionMoneyLedger",
   "money-ledger",
   "CONFIRM MONEY",
@@ -658,6 +666,8 @@ const requiredGuideMarkers = [
   "Karmel and Brigham admin profiles",
   "link-google-member",
   "links that Gmail to the matching family member record",
+  "chore-record",
+  "completion/review guardrail",
   "parent-admin",
   "money-ledger",
   "child cell phone field, toggle text reminder permission"
@@ -885,9 +895,11 @@ const requiredBackendMarkers = [
   "Twilio",
   "Netlify Function Contracts",
   "backend-health",
+  "chore-record",
   "link-google-member",
   "money-ledger",
   "CONFIRM MONEY",
+  "production chore-completion gate",
   "Family Seed Data",
   "seed-teamwork-chores.sql",
   "readyForWorkflowBeta",
@@ -947,6 +959,23 @@ if (!authFunction.includes("memberFromAuthHeader") || !authFunction.includes("Go
   throw new Error("Google auth function is missing member verification behavior.");
 }
 
+for (const marker of [
+  "Children can update only their own chore records",
+  "Only Brigham or Karmel can approve chores or send them back for redo",
+  "complete",
+  "reopen",
+  "approve",
+  "redo",
+  "chore_records",
+  "review_status",
+  "proof_photo_path",
+  "A chore must be marked complete before approval"
+]) {
+  if (!choreRecordFunction.includes(marker)) {
+    throw new Error(`Chore record function is missing: ${marker}`);
+  }
+}
+
 for (const marker of ["auth_user_id", ".ilike(\"gmail\", email)", "is not invited to Teamwork Chores yet", "already linked to a different Google account"]) {
   if (!linkGoogleFunction.includes(marker)) {
     throw new Error(`Google member link function is missing: ${marker}`);
@@ -970,7 +999,7 @@ for (const marker of [
   }
 }
 
-for (const marker of ["expectedMembers", "family-photos", "notification_log", "ledger_entries", "Money ledger table is reachable", "readyForWorkflowBeta", "TWILIO_MESSAGING_SERVICE_SID", "authLinked", "gmailLinked"]) {
+for (const marker of ["expectedMembers", "family-photos", "notification_log", "chore_records", "Chore record table is reachable", "ledger_entries", "Money ledger table is reachable", "readyForWorkflowBeta", "TWILIO_MESSAGING_SERVICE_SID", "authLinked", "gmailLinked"]) {
   if (!backendHealthFunction.includes(marker)) {
     throw new Error(`Backend health function is missing readiness marker: ${marker}`);
   }

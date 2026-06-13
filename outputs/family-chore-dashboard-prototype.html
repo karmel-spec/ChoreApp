@@ -3852,6 +3852,55 @@
       });
     }
 
+    async function saveProductionChoreRecord(action, child, chore, choreType, extra = {}) {
+      await loadProductionBackend();
+      if (!productionBackend.ready) return null;
+      if (!productionBackend.session?.access_token) {
+        throw new Error("Sign in with Google before saving chore records in production mode.");
+      }
+      return fetchJson("/.netlify/functions/chore-record", {
+        method: "POST",
+        headers: productionAuthHeader(),
+        body: JSON.stringify({
+          action,
+          childProfileKey: child.id,
+          choreName: chore.name,
+          choreType,
+          serviceDate: localDateKey(),
+          ...extra
+        })
+      });
+    }
+
+    async function saveProductionProofPhoto(child, chore, choreType, file) {
+      await loadProductionBackend();
+      if (!productionBackend.ready || !productionBackend.session?.access_token || !productionBackend.client || !file) return null;
+      const ensured = await saveProductionChoreRecord("complete", child, chore, choreType);
+      const choreRecordId = ensured?.choreRecord?.id;
+      if (!choreRecordId) throw new Error("Cloud chore record was not created for proof photo.");
+      const extension = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const upload = await fetchJson("/.netlify/functions/photo-upload-url", {
+        method: "POST",
+        headers: productionAuthHeader(),
+        body: JSON.stringify({ kind: "proof", extension })
+      });
+      const { error } = await productionBackend.client.storage
+        .from("family-photos")
+        .uploadToSignedUrl(upload.storagePath, upload.token, file);
+      if (error) throw new Error(error.message);
+      await fetchJson("/.netlify/functions/photo-record", {
+        method: "POST",
+        headers: productionAuthHeader(),
+        body: JSON.stringify({
+          kind: "proof",
+          choreRecordId,
+          storagePath: upload.storagePath,
+          caption: `${child.name} proof photo for ${chore.name}`
+        })
+      });
+      return { choreRecordId, storagePath: upload.storagePath };
+    }
+
     function roleLabel(account) {
       if (!account) return "Not signed in";
       if (account.role === "admin") return `${account.name} admin`;
@@ -4330,7 +4379,7 @@
 
     function attachCompletionHandlers(child) {
       document.querySelectorAll(".check-btn[data-chore-name]").forEach(button => {
-        button.addEventListener("click", () => {
+        button.addEventListener("click", async () => {
           if (!canManageChildTasks(child)) {
             document.getElementById("reviewStatus").textContent = "Only that child or Brigham/Karmel can mark child chores complete.";
             return;
@@ -4345,6 +4394,12 @@
           if (!chore) return;
           const existingRecord = getChoreRecord(child, chore, choreType);
           if (existingRecord.completedAt) {
+            try {
+              await saveProductionChoreRecord("reopen", child, chore, choreType);
+            } catch (error) {
+              document.getElementById("reviewStatus").textContent = `Cloud chore reopen failed: ${error.message}`;
+              return;
+            }
             updateChoreRecord(child, chore, choreType, {
               completedAt: "",
               reviewStatus: "",
@@ -4358,7 +4413,16 @@
             document.getElementById("reviewStatus").textContent = `${child.name}'s ${chore.name} was reopened before final review.`;
             return;
           }
+          let backendChoreRecordId = "";
+          try {
+            const payload = await saveProductionChoreRecord("complete", child, chore, choreType);
+            backendChoreRecordId = payload?.choreRecord?.id || "";
+          } catch (error) {
+            document.getElementById("reviewStatus").textContent = `Cloud chore completion failed: ${error.message}`;
+            return;
+          }
           updateChoreRecord(child, chore, choreType, {
+            backendChoreRecordId,
             completedAt: new Date().toISOString(),
             reviewStatus: "waiting",
             redoneAt: existingRecord.reviewStatus === "redo" ? new Date().toISOString() : "",
@@ -4390,7 +4454,7 @@
       });
 
       document.querySelectorAll(".proof-input[data-chore-name]").forEach(input => {
-        input.addEventListener("change", () => {
+        input.addEventListener("change", async () => {
           if (!canManageChildTasks(child)) {
             document.getElementById("reviewStatus").textContent = "Only that child or Brigham/Karmel can add proof photos for child chores.";
             input.value = "";
@@ -4412,10 +4476,20 @@
           const choreType = input.dataset.choreType;
           const chore = findTodayChore(child, choreName, choreType);
           if (!chore) return;
+          let backendProof = null;
+          try {
+            backendProof = await saveProductionProofPhoto(child, chore, choreType, file);
+          } catch (error) {
+            document.getElementById("reviewStatus").textContent = `Cloud proof photo save failed: ${error.message}`;
+            input.value = "";
+            return;
+          }
           const reader = new FileReader();
           reader.onload = event => {
             const existingRecord = getChoreRecord(child, chore, choreType);
             updateChoreRecord(child, chore, choreType, {
+              backendChoreRecordId: backendProof?.choreRecordId || existingRecord.backendChoreRecordId || "",
+              backendProofPath: backendProof?.storagePath || existingRecord.backendProofPath || "",
               completedAt: existingRecord.completedAt || new Date().toISOString(),
               reviewStatus: existingRecord.reviewStatus === "approved" ? "approved" : "waiting",
               proofImage: event.target.result,
@@ -5026,7 +5100,7 @@
       }).join("");
 
       document.querySelectorAll("[data-review-action]").forEach(button => {
-        button.addEventListener("click", () => {
+        button.addEventListener("click", async () => {
           if (!isAdmin()) {
             document.getElementById("reviewStatus").textContent = "Only Brigham or Karmel can approve inspected chores.";
             return;
@@ -5040,7 +5114,16 @@
           const chore = findTodayChore(child, choreName, choreType);
           if (!chore) return;
           const action = button.dataset.reviewAction;
+          let backendChoreRecordId = getChoreRecord(child, chore, choreType).backendChoreRecordId || "";
+          try {
+            const payload = await saveProductionChoreRecord(action === "approve" ? "approve" : "redo", child, chore, choreType);
+            backendChoreRecordId = payload?.choreRecord?.id || backendChoreRecordId;
+          } catch (error) {
+            document.getElementById("reviewStatus").textContent = `Cloud chore review failed: ${error.message}`;
+            return;
+          }
           updateChoreRecord(child, chore, choreType, {
+            backendChoreRecordId,
             reviewStatus: action === "approve" ? "approved" : "redo",
             completedAt: action === "approve" ? getChoreRecord(child, chore, choreType).completedAt : "",
             redoneAt: action === "approve" ? getChoreRecord(child, chore, choreType).redoneAt || "" : "",

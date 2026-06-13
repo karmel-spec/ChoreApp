@@ -48,6 +48,7 @@ Never expose `SUPABASE_SERVICE_ROLE_KEY` or Twilio secrets in browser JavaScript
 - `link-google-member`: verifies the signed-in Google email and links the Supabase Auth user to the matching `family_members.gmail` record.
 - `runtime-config`: returns public Supabase and Google client configuration for the browser.
 - `auth-google`: verifies a Supabase Auth bearer token and returns the linked family member.
+- `chore-record`: lets a child/admin mark that child's chore complete or reopened, and lets only parent admins approve or send chores back for redo.
 - `member-contact`: lets admins update any child phone/text opt-in and lets children update only their own setting.
 - `money-ledger`: requires a verified parent admin token plus the `CONFIRM MONEY` guardrail before charging fines, awarding bonuses, or marking fines paid.
 - `photo-upload-url`: creates a private Supabase Storage signed upload URL for family photos.
@@ -70,6 +71,8 @@ The browser prototype currently hides admin controls in the UI. Production must 
 The `supabase/schema.sql` file includes initial row-level security policies for those boundaries.
 
 The `money-ledger` function is the production money gate. Browser confirmation remains a user-facing speed bump, but the backend function is the authority: it rejects children/helpers, requires the exact `CONFIRM MONEY` confirmation text, blocks duplicate same-day fine titles and duplicate bonus-period awards, and records who charged, awarded, or marked a fine paid.
+
+The `chore-record` function is the production chore-completion gate. Children can complete or reopen only their own chores, parent admins can manage any child, and only parent admins can approve inspected chores or send them back for redo. Proof photos attach to these server chore records through `photo-record`.
 
 ## Family Seed Data
 

@@ -58,6 +58,7 @@ exports.handler = async (event) => {
     members: [],
     storage: { ok: false, message: "Supabase Storage has not been checked." },
     notifications: { ok: false, message: "Notification table has not been checked." },
+    choreRecords: { ok: false, message: "Chore record table has not been checked." },
     money: { ok: false, message: "Money ledger table has not been checked." },
     sms: {
       ok: boolsReady(env, ["twilioAccountSid", "twilioAuthToken", "twilioMessagingServiceSid", "karmelNoonReviewPhone", "brighamExtensionPhone"]),
@@ -107,6 +108,15 @@ exports.handler = async (event) => {
         message: notificationError ? notificationError.message : "Notification log table is reachable."
       };
 
+      const { error: choreRecordError } = await supabase
+        .from("chore_records")
+        .select("id")
+        .limit(1);
+      checks.choreRecords = {
+        ok: !choreRecordError,
+        message: choreRecordError ? choreRecordError.message : "Chore record table is reachable."
+      };
+
       const { error: moneyError } = await supabase
         .from("ledger_entries")
         .select("id")
@@ -127,7 +137,7 @@ exports.handler = async (event) => {
   const authLinked = checks.members.length > 0 && checks.members.every(member => member.authLinked);
   const gmailLinked = checks.members.length > 0 && checks.members.every(member => member.gmailLinked);
   const envOk = boolsReady(env, Object.keys(env));
-  const ready = Boolean(envOk && checks.database.ok && checks.storage.ok && checks.notifications.ok && checks.money.ok && checks.sms.ok && checks.google.ok && membersPresent && authLinked && gmailLinked);
+  const ready = Boolean(envOk && checks.database.ok && checks.storage.ok && checks.notifications.ok && checks.choreRecords.ok && checks.money.ok && checks.sms.ok && checks.google.ok && membersPresent && authLinked && gmailLinked);
 
   return json(200, {
     ready,
@@ -137,6 +147,7 @@ exports.handler = async (event) => {
     nextSteps: ready ? [] : [
       !envOk ? "Add all Supabase, Google, Twilio, and family phone environment variables in Netlify." : "",
       !checks.database.ok ? "Apply supabase/schema.sql and confirm Supabase service-role access." : "",
+      !checks.choreRecords.ok ? "Confirm chore_records exists so completion, proof, approval, and redo records can be saved server-side." : "",
       !checks.money.ok ? "Confirm ledger_entries exists so fines, bonuses, and paid-fine records can be saved server-side." : "",
       !membersPresent ? "Seed all expected family member records with the correct roles." : "",
       !gmailLinked ? "Add Gmail addresses to every family member record." : "",
