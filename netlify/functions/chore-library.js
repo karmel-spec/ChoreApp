@@ -78,10 +78,22 @@ function publicChore(chore) {
 }
 
 exports.handler = async (event) => {
-  if (event.httpMethod !== "POST") return json(405, { error: "Method not allowed" });
-
   const actor = await memberFromAuthHeader(event);
   if (!actor) return json(401, { error: "Sign in required." });
+  const supabase = serviceClient();
+
+  if (event.httpMethod === "GET") {
+    const { data, error } = await supabase
+      .from("chores")
+      .select("*")
+      .eq("family_id", actor.family_id)
+      .order("active", { ascending: false })
+      .order("name", { ascending: true });
+    if (error) return json(500, { error: error.message });
+    return json(200, { chores: (data || []).map(publicChore) });
+  }
+
+  if (event.httpMethod !== "POST") return json(405, { error: "Method not allowed" });
   if (!requireAdmin(actor)) return json(403, { error: "Only Brigham or Karmel can change the master chore rotation." });
 
   const body = parseBody(event);
@@ -89,8 +101,6 @@ exports.handler = async (event) => {
 
   const action = cleanText(body.action);
   if (!actions.has(action)) return json(400, { error: "Use action add, update, toggle, or delete." });
-
-  const supabase = serviceClient();
 
   if (action === "delete") {
     const found = await findChore(supabase, actor, body);

@@ -53,7 +53,7 @@ Never expose `SUPABASE_SERVICE_ROLE_KEY` or Twilio secrets in browser JavaScript
 - `auth-google`: verifies a Supabase Auth bearer token and returns the linked family member.
 - `chore-record`: lets a child/admin mark that child's chore complete or reopened, and lets only parent admins approve or send chores back for redo.
 - `family-settings`: lets parent admins save default deadline, noon review reminder time, extension approver/contact, and review recipient/contact.
-- `chore-library`: lets parent admins add, update, toggle, and delete master chore rotation items with difficulty, timing, frequency, fit, notice, and training notes.
+- `chore-library`: lets signed-in family members read the master chore rotation, and lets parent admins add, update, toggle, and delete items with difficulty, timing, frequency, fit, notice, and training notes.
 - `member-contact`: lets admins update any child phone/text opt-in and lets children update only their own setting.
 - `money-ledger`: requires a verified parent admin token plus the `CONFIRM MONEY` guardrail before charging fines, awarding bonuses, or marking fines paid.
 - `photo-upload-url`: creates a private Supabase Storage signed upload URL for family photos.
@@ -83,7 +83,7 @@ The `money-ledger` function is the production money gate. Browser confirmation r
 
 The `chore-record` function is the production chore-completion gate. Children can complete or reopen only their own chores, parent admins can manage any child, and only parent admins can approve inspected chores or send them back for redo. Proof photos attach to these server chore records through `photo-record`.
 
-The `family-settings` and `chore-library` functions move parent admin controls out of browser-only trust. Children and helpers can read the resulting `family_settings` rules and chore assignments, but only Brigham or Karmel can change deadlines, text contacts, chore rotation rows, training notes, difficulty, timing, or active/inactive status.
+The `family-settings` and `chore-library` functions move parent admin controls out of browser-only trust. Children and helpers can read the resulting `family_settings` rules and chore assignments after Google sign-in, but only Brigham or Karmel can change deadlines, text contacts, chore rotation rows, training notes, difficulty, timing, or active/inactive status.
 
 ## Family Seed Data
 

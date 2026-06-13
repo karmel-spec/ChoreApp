@@ -384,7 +384,10 @@ const requiredMarkers = [
   "Cloud proof photo save failed",
   "Cloud chore review failed",
   "saveProductionFamilySettings",
+  "loadProductionFamilySettings",
   "saveProductionChoreLibrary",
+  "loadProductionChoreLibrary",
+  "hydrateProductionBackendData",
   "sendProductionTeenReminder",
   "saveProductionPushSubscription",
   "enableChildPushNotifications",
@@ -952,6 +955,7 @@ const requiredBackendMarkers = [
   "production chore-completion gate",
   "family_settings",
   "parent admin controls",
+  "read the master chore rotation",
   "records or clears uploaded family hero",
   "scheduled-teen-reminders",
   "once-daily morning chore reminder",
@@ -1037,6 +1041,8 @@ for (const marker of [
 
 for (const marker of [
   "Only Brigham or Karmel can change the master chore rotation",
+  "event.httpMethod === \"GET\"",
+  ".order(\"active\"",
   "add",
   "update",
   "toggle",

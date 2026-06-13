@@ -2920,6 +2920,7 @@
       const notice = allowedChoreNotices.includes(chore?.notice) ? chore.notice : (chore?.notice ? "Starts after 24 hours" : "");
       return {
         ...chore,
+        backendChoreId: chore?.backendChoreId || chore?.id || "",
         name: name || `Imported chore ${index + 1}`,
         minutes: Math.min(180, Math.max(1, minutes)),
         difficulty: Math.min(10, Math.max(1, difficulty)),
@@ -3758,6 +3759,7 @@
       const account = accountForBackendMember(payload.member);
       if (!account) throw new Error("This Google account is verified, but it is not linked to a visible Teamwork Chores profile yet.");
       applyAccount(account);
+      await hydrateProductionBackendData();
       renderLoginGrid();
       render();
       backendStatusMessage(`${payload.member.displayName} is signed in with real Google auth. Server-side permissions are active for backend saves.`);
@@ -3946,6 +3948,38 @@
         headers: productionAuthHeader(),
         body: JSON.stringify(settings)
       });
+    }
+
+    async function loadProductionFamilySettings() {
+      await loadProductionBackend();
+      if (!productionBackend.ready || !productionBackend.session?.access_token) return null;
+      return fetchJson("/.netlify/functions/family-settings", {
+        headers: productionAuthHeader()
+      });
+    }
+
+    async function loadProductionChoreLibrary() {
+      await loadProductionBackend();
+      if (!productionBackend.ready || !productionBackend.session?.access_token) return null;
+      return fetchJson("/.netlify/functions/chore-library", {
+        headers: productionAuthHeader()
+      });
+    }
+
+    async function hydrateProductionBackendData() {
+      if (!productionBackend.ready || !productionBackend.session?.access_token) return;
+      const [settingsResult, choreResult] = await Promise.allSettled([
+        loadProductionFamilySettings(),
+        loadProductionChoreLibrary()
+      ]);
+      if (settingsResult.status === "fulfilled" && settingsResult.value?.settings) {
+        familySettings = normalizeFamilySettingsRecord(settingsResult.value.settings);
+        normalizeFamilyReviewContact();
+      }
+      if (choreResult.status === "fulfilled" && Array.isArray(choreResult.value?.chores)) {
+        choreLibrary.splice(0, choreLibrary.length, ...choreResult.value.chores.map(normalizeChoreRecord));
+      }
+      persistBetaData();
     }
 
     async function saveProductionChoreLibrary(action, chore) {
