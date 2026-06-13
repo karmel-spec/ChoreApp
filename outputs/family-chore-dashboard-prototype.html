@@ -2194,6 +2194,19 @@
 
         <section class="panel">
           <div class="panel-head">
+            <h3>Production Backend Readiness</h3>
+            <span>Live check</span>
+          </div>
+          <div class="side-body">
+            <div class="notice-card" id="backendReadinessSummary">Run a readiness check after Supabase, Google, Twilio, and Netlify environment variables are configured.</div>
+            <button class="primary-btn" type="button" id="checkBackendReadinessBtn">Check Backend Readiness</button>
+            <div class="review-list" id="backendReadinessList"></div>
+            <div class="admin-status" id="backendReadinessStatus"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
             <h3>Beta Data Tools</h3>
             <span>Backup</span>
           </div>
@@ -5399,6 +5412,57 @@
         : "The home screen is using the default family photo.";
     }
 
+    function readinessRow(label, ok, detail = "") {
+      return `
+        <div class="review-row">
+          <div>
+            <strong>${escapeHtml(label)}</strong>
+            <span>${escapeHtml(detail)}</span>
+          </div>
+          <span class="status ${ok ? "done" : "warn"}">${ok ? "Ready" : "Needs setup"}</span>
+        </div>
+      `;
+    }
+
+    function renderBackendReadiness(payload) {
+      const checks = payload.checks || {};
+      const env = checks.env || {};
+      const envReady = Object.values(env).every(Boolean);
+      const memberRows = (checks.members || []).map(member => readinessRow(
+        `Member: ${member.profileKey}`,
+        member.present && member.roleOk && member.gmailLinked && member.authLinked,
+        `${member.present ? "record found" : "missing record"} · role ${member.roleOk ? "ok" : "needs fix"} · Gmail ${member.gmailLinked ? "linked" : "missing"} · Google auth ${member.authLinked ? "linked" : "not linked"}`
+      )).join("");
+
+      document.getElementById("backendReadinessSummary").textContent = payload.readyForWorkflowBeta
+        ? "Production backend is ready for workflow beta: Google auth, Supabase data, photo storage, and SMS configuration are all connected."
+        : "Production backend is not ready yet. Use the checklist below to finish the remaining setup.";
+      document.getElementById("backendReadinessList").innerHTML = [
+        readinessRow("Environment variables", envReady, `${Object.values(env).filter(Boolean).length} of ${Object.keys(env).length} configured`),
+        readinessRow("Supabase database", Boolean(checks.database?.ok), checks.database?.message || ""),
+        readinessRow("Supabase Storage", Boolean(checks.storage?.ok), checks.storage?.message || ""),
+        readinessRow("Notification log", Boolean(checks.notifications?.ok), checks.notifications?.message || ""),
+        readinessRow("Google OAuth", Boolean(checks.google?.ok), checks.google?.message || ""),
+        readinessRow("Twilio SMS", Boolean(checks.sms?.ok), checks.sms?.message || ""),
+        memberRows
+      ].join("");
+      document.getElementById("backendReadinessStatus").textContent = payload.readyForWorkflowBeta
+        ? `Ready check passed at ${shortDateTime(payload.generatedAt)}.`
+        : `Ready check needs setup: ${(payload.nextSteps || []).join(" ")}`;
+    }
+
+    async function checkBackendReadiness() {
+      document.getElementById("backendReadinessStatus").textContent = "Checking production backend readiness...";
+      try {
+        const payload = await fetchJson("/.netlify/functions/backend-health", { headers: {} });
+        renderBackendReadiness(payload);
+      } catch (error) {
+        document.getElementById("backendReadinessSummary").textContent = "Production backend readiness cannot be checked from this environment yet.";
+        document.getElementById("backendReadinessList").innerHTML = "";
+        document.getElementById("backendReadinessStatus").textContent = error.message;
+      }
+    }
+
     function saveBonusRules() {
       if (!isAdmin()) {
         document.getElementById("bonusStatus").textContent = "Only Brigham or Karmel can edit bonus rates.";
@@ -6792,6 +6856,8 @@
     document.getElementById("resetBetaDataBtn").addEventListener("click", resetBetaData);
 
     document.getElementById("freshStartAccountsBtn").addEventListener("click", () => freshStartChildAccounts());
+
+    document.getElementById("checkBackendReadinessBtn").addEventListener("click", checkBackendReadiness);
 
     document.getElementById("saveChildContactBtn").addEventListener("click", saveChildContactSettings);
 

@@ -39,6 +39,7 @@ const requiredFiles = [
   "docs/backend-setup.md",
   "netlify/functions/_supabase.js",
   "netlify/functions/auth-google.js",
+  "netlify/functions/backend-health.js",
   "netlify/functions/extension-decision.js",
   "netlify/functions/extension-request.js",
   "netlify/functions/member-contact.js",
@@ -77,6 +78,7 @@ const backendSetup = await readFile("docs/backend-setup.md", "utf8");
 const supabaseSchema = await readFile("supabase/schema.sql", "utf8");
 const supabaseHelperFunction = await readFile("netlify/functions/_supabase.js", "utf8");
 const authFunction = await readFile("netlify/functions/auth-google.js", "utf8");
+const backendHealthFunction = await readFile("netlify/functions/backend-health.js", "utf8");
 const extensionDecisionFunction = await readFile("netlify/functions/extension-decision.js", "utf8");
 const extensionRequestFunction = await readFile("netlify/functions/extension-request.js", "utf8");
 const memberContactFunction = await readFile("netlify/functions/member-contact.js", "utf8");
@@ -456,6 +458,11 @@ const requiredMarkers = [
   "Family Rule Settings",
   "familySettings",
   "familySettingsAudit",
+  "Production Backend Readiness",
+  "checkBackendReadiness",
+  "backend-health",
+  "backendReadinessSummary",
+  "readyForWorkflowBeta",
   "Family rules last saved by",
   "Family rules saved by",
   "Save Family Rules",
@@ -732,6 +739,10 @@ const requiredAppIds = [
   "addFeedbackBtn",
   "feedbackStatus",
   "feedbackList",
+  "backendReadinessSummary",
+  "backendReadinessList",
+  "backendReadinessStatus",
+  "checkBackendReadinessBtn",
   "helperBoard",
   "helperWorkspaceStatus",
   "helperTimeCardForm",
@@ -854,6 +865,8 @@ const requiredBackendMarkers = [
   "Netlify Functions",
   "Twilio",
   "Netlify Function Contracts",
+  "backend-health",
+  "readyForWorkflowBeta",
   "scheduled-noon-review",
   "Server-Side Permissions",
   "Web Beta Ready Gate"
@@ -888,6 +901,12 @@ for (const marker of requiredSchemaMarkers) {
 
 if (!authFunction.includes("memberFromAuthHeader") || !authFunction.includes("Google session is not linked")) {
   throw new Error("Google auth function is missing member verification behavior.");
+}
+
+for (const marker of ["expectedMembers", "family-photos", "notification_log", "readyForWorkflowBeta", "TWILIO_MESSAGING_SERVICE_SID", "authLinked", "gmailLinked"]) {
+  if (!backendHealthFunction.includes(marker)) {
+    throw new Error(`Backend health function is missing readiness marker: ${marker}`);
+  }
 }
 
 if (!runtimeConfigFunction.includes("SUPABASE_ANON_KEY") || !runtimeConfigFunction.includes("backendReady")) {

@@ -42,6 +42,7 @@ Never expose `SUPABASE_SERVICE_ROLE_KEY` or Twilio secrets in browser JavaScript
 
 ## Netlify Function Contracts
 
+- `backend-health`: checks production readiness for environment variables, Supabase tables, expected family member mapping, Google auth links, Supabase Storage, notification logging, and Twilio configuration.
 - `runtime-config`: returns public Supabase and Google client configuration for the browser.
 - `auth-google`: verifies a Supabase Auth bearer token and returns the linked family member.
 - `member-contact`: lets admins update any child phone/text opt-in and lets children update only their own setting.
@@ -97,4 +98,5 @@ The web beta is ready to prove the workflow when:
 - Admin actions are rejected server-side for child/helper users.
 - Photos upload to Supabase Storage.
 - SMS reminders can be sent through Twilio from Netlify Functions.
+- `backend-health` reports `readyForWorkflowBeta: true` on the deployed site.
 - The beta guide passes on the deployed site, not only localhost.
