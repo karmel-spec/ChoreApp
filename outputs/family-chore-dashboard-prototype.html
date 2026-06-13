@@ -4909,6 +4909,14 @@
       return Number(String(value).replace(/[^0-9.]/g, "")) || 0;
     }
 
+    function confirmMoneyAction(message, statusId) {
+      if (window.confirm(message)) return true;
+      if (statusId) {
+        document.getElementById(statusId).textContent = "Money action cancelled. No account changes were made.";
+      }
+      return false;
+    }
+
     function parseCurrencyInput(inputId) {
       const rawValue = document.getElementById(inputId).value.trim();
       const normalized = rawValue.replace(/^\$/, "");
@@ -5164,6 +5172,7 @@
         document.getElementById("bonusStatus").textContent = `${child.name} already received the ${title} for this bonus period.`;
         return;
       }
+      if (!confirmMoneyAction(`Credit $${bonus.amount} to ${child.name}'s chore account for ${title}?`, "bonusStatus")) return;
       child.accountBalance += bonus.amount;
       bonusLedger[child.id].unshift({
         title,
@@ -5194,6 +5203,8 @@
         document.getElementById("bonusStatus").textContent = "No monthly positivity points have been earned yet, so there are no points bonuses to award.";
         return;
       }
+      const totalBonusAmount = winners.reduce((sum, winner) => sum + winner.amount, 0);
+      if (!confirmMoneyAction(`Award monthly points bonuses totaling $${totalBonusAmount} to ${winners.map(winner => winner.child.name).join(", ")}?`, "bonusStatus")) return;
       const awarded = [];
       const skipped = [];
       winners.forEach(({ child, rank, points, amount }) => {
@@ -5257,6 +5268,7 @@
         document.getElementById("fineRateStatus").textContent = `${child.name} already has a manual missed-deadline fine for ${deadline} today.`;
         return;
       }
+      if (!confirmMoneyAction(`Charge ${child.name} a $${child.fineRate} missed-deadline fine for ${deadline}?`, "fineRateStatus")) return;
       addFineToLedger(child, title, child.fineRate, deadline);
       render();
       document.getElementById("fineRateStatus").textContent = `${child.name} was charged $${child.fineRate} for a missed ${deadline} deadline.`;
@@ -5460,6 +5472,7 @@
       }
       const item = ledger[child.id][fineIndex];
       if (!item || item.paid) return;
+      if (!confirmMoneyAction(`Mark ${child.name}'s ${item.amount} fine "${item.title}" paid?`, "fineRateStatus")) return;
       item.paid = true;
       item.paidBy = currentUser?.name || "Admin";
       item.paidAt = new Date().toISOString();
@@ -5990,6 +6003,7 @@
       }
       const record = helperPayRecords[recordIndex];
       if (!record || record.paid) return;
+      if (!confirmMoneyAction(`Mark Vanessa's ${record.week} paycheck of $${(record.hours * record.rate).toFixed(2)} paid?`, "timeCardStatus")) return;
       record.paid = true;
       record.paidBy = currentUser?.name || "Admin";
       record.paidAt = new Date().toISOString();
