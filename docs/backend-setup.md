@@ -56,6 +56,7 @@ Never expose `SUPABASE_SERVICE_ROLE_KEY` or Twilio secrets in browser JavaScript
 - `family-settings`: lets parent admins save default deadline, noon review reminder time, extension approver/contact, and review recipient/contact.
 - `chore-library`: lets signed-in family members read the master chore rotation, and lets parent admins add, update, toggle, and delete items with difficulty, timing, frequency, fit, notice, and training notes.
 - `availability-hold`: lets signed-in family members read vacation/sick holds, and lets parent admins add or remove holds so fines do not accrue while a child is excused.
+- `member-rules`: lets signed-in family members read child fine/work rules, and lets parent admins update fine rates, daily work targets, difficulty limits, and hard-chore targeting.
 - `member-contact`: lets admins update any child phone/text opt-in and lets children update only their own setting.
 - `money-ledger`: lets signed-in family members read child ledger/account history, and requires a verified parent admin token plus the `CONFIRM MONEY` guardrail before charging fines, awarding bonuses, or marking fines paid.
 - `photo-upload-url`: creates a private Supabase Storage signed upload URL for family photos.
@@ -90,6 +91,8 @@ The `family-settings` and `chore-library` functions move parent admin controls o
 The `family-snapshot` function is the production reload path for profile photos, family hero photos, child phone/text opt-in settings, work targets, fine rates, and account basics. It returns short-lived signed Supabase Storage URLs for the private `family-photos` bucket, so family photos can reload in the app without making the bucket public.
 
 The `availability-hold` function is the production source for vacation, sick-day, travel, and unavailable-day holds. Parent admins can add or remove holds server-side; children and helpers can read active holds so the app can mute chores and block fine accrual consistently across devices.
+
+The `member-rules` function keeps parent-controlled child settings out of browser-only trust. Parent admins can save fine rates, daily work minutes, difficulty limits, and hard-chore targeting server-side; children can read those rules but cannot change them.
 
 ## Family Seed Data
 

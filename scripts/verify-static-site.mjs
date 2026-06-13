@@ -49,6 +49,7 @@ const requiredFiles = [
   "netlify/functions/family-settings.js",
   "netlify/functions/link-google-member.js",
   "netlify/functions/member-contact.js",
+  "netlify/functions/member-rules.js",
   "netlify/functions/money-ledger.js",
   "netlify/functions/photo-record.js",
   "netlify/functions/photo-upload-url.js",
@@ -101,6 +102,7 @@ const familySnapshotFunction = await readFile("netlify/functions/family-snapshot
 const familySettingsFunction = await readFile("netlify/functions/family-settings.js", "utf8");
 const linkGoogleFunction = await readFile("netlify/functions/link-google-member.js", "utf8");
 const memberContactFunction = await readFile("netlify/functions/member-contact.js", "utf8");
+const memberRulesFunction = await readFile("netlify/functions/member-rules.js", "utf8");
 const moneyLedgerFunction = await readFile("netlify/functions/money-ledger.js", "utf8");
 const photoRecordFunction = await readFile("netlify/functions/photo-record.js", "utf8");
 const photoFunction = await readFile("netlify/functions/photo-upload-url.js", "utf8");
@@ -405,6 +407,7 @@ const requiredMarkers = [
   "loadProductionAvailabilityHolds",
   "saveProductionAvailabilityHold",
   "removeProductionAvailabilityHold",
+  "saveProductionMemberRules",
   "sendProductionTeenReminder",
   "saveProductionPushSubscription",
   "enableChildPushNotifications",
@@ -976,6 +979,8 @@ const requiredBackendMarkers = [
   "reload extension requests",
   "availability-hold",
   "read vacation/sick holds",
+  "member-rules",
+  "fine/work rules",
   "production chore-completion gate",
   "family_settings",
   "parent admin controls",
@@ -1088,6 +1093,21 @@ for (const marker of [
 ]) {
   if (!availabilityHoldFunction.includes(marker)) {
     throw new Error(`Availability hold function is missing: ${marker}`);
+  }
+}
+
+for (const marker of [
+  "Only Brigham or Karmel can edit child fine rates and work targets",
+  "event.httpMethod === \"GET\"",
+  "event.httpMethod !== \"PATCH\"",
+  "fine_rate",
+  "daily_work_target_minutes",
+  "max_difficulty",
+  "target_hard",
+  "Use daily work target minutes from 5 to 60"
+]) {
+  if (!memberRulesFunction.includes(marker)) {
+    throw new Error(`Member rules function is missing: ${marker}`);
   }
 }
 

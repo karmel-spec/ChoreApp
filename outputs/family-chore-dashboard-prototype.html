@@ -4262,6 +4262,22 @@
       });
     }
 
+    async function saveProductionMemberRules(childId, updates) {
+      await loadProductionBackend();
+      if (!productionBackend.ready) return null;
+      if (!productionBackend.session?.access_token) {
+        throw new Error("Sign in with Google before saving child rules in production mode.");
+      }
+      return fetchJson("/.netlify/functions/member-rules", {
+        method: "PATCH",
+        headers: productionAuthHeader(),
+        body: JSON.stringify({
+          childProfileKey: childId,
+          ...updates
+        })
+      });
+    }
+
     function urlBase64ToUint8Array(value) {
       const padding = "=".repeat((4 - value.length % 4) % 4);
       const base64 = (value + padding).replace(/-/g, "+").replace(/_/g, "/");
@@ -6263,7 +6279,7 @@
         : `Monthly points bonuses were already awarded this month for ${skipped.join(", ")}.`;
     }
 
-    function saveFineRate() {
+    async function saveFineRate() {
       if (!isAdmin()) {
         document.getElementById("fineRateStatus").textContent = "Only Brigham or Karmel can edit fine rates.";
         return;
@@ -6274,7 +6290,17 @@
         document.getElementById("fineRateStatus").textContent = "Use a valid fine amount like 2, 5, or 7.50.";
         return;
       }
-      child.fineRate = newRate;
+      try {
+        const payload = await saveProductionMemberRules(child.id, { fineRate: newRate });
+        if (payload?.member) {
+          child.fineRate = Number(payload.member.fineRate);
+        } else {
+          child.fineRate = newRate;
+        }
+      } catch (error) {
+        document.getElementById("fineRateStatus").textContent = `Cloud fine rate save failed: ${error.message}`;
+        return;
+      }
       persistBetaData();
       render();
       document.getElementById("fineRateStatus").textContent = `${child.name}'s daily fine rate is now $${child.fineRate}.`;
@@ -7011,16 +7037,26 @@
         </div>
       `).join("");
       document.querySelectorAll("[data-save-work-target]").forEach(button => {
-        button.addEventListener("click", () => {
+        button.addEventListener("click", async () => {
           if (!isAdmin()) return;
           const childId = button.dataset.saveWorkTarget;
           const value = parseWholeNumberValue(document.querySelector(`[data-work-target="${childId}"]`)?.value, 5, 60);
           if (value === null) return;
-          childWorkTargets[childId] = value;
+          try {
+            const payload = await saveProductionMemberRules(childId, { dailyWorkTargetMinutes: value });
+            if (payload?.member) {
+              childWorkTargets[childId] = Number(payload.member.dailyWorkTargetMinutes);
+            } else {
+              childWorkTargets[childId] = value;
+            }
+          } catch (error) {
+            document.getElementById("fairnessTargetStatus").textContent = `Cloud work target save failed: ${error.message}`;
+            return;
+          }
           persistBetaData();
           render();
           const child = children.find(item => item.id === childId);
-          document.getElementById("fairnessTargetStatus").textContent = `${child?.name || "Child"} daily rotating work target set to ${value} minutes.`;
+          document.getElementById("fairnessTargetStatus").textContent = `${child?.name || "Child"} daily rotating work target set to ${childWorkTargets[childId]} minutes.`;
         });
       });
     }
