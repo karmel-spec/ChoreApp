@@ -122,6 +122,26 @@ create table availability_holds (
   created_at timestamptz not null default now()
 );
 
+create table chore_feedback (
+  id uuid primary key default gen_random_uuid(),
+  family_id uuid not null references families(id) on delete cascade,
+  child_id uuid not null references family_members(id) on delete cascade,
+  chore_id uuid references chores(id) on delete set null,
+  chore_name text not null,
+  chore_type text not null check (chore_type in ('priority', 'rotating')),
+  service_date date not null,
+  assigned_minutes integer not null check (assigned_minutes between 1 and 180),
+  assigned_difficulty integer not null check (assigned_difficulty between 1 and 10),
+  actual_minutes integer not null check (actual_minutes between 1 and 180),
+  actual_difficulty integer not null check (actual_difficulty between 1 and 10),
+  note text not null default '',
+  status text not null default 'pending' check (status in ('pending', 'accepted', 'denied')),
+  submitted_by uuid references family_members(id),
+  reviewed_by uuid references family_members(id),
+  reviewed_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
 create table extension_requests (
   id uuid primary key default gen_random_uuid(),
   family_id uuid not null references families(id) on delete cascade,
@@ -197,6 +217,7 @@ alter table family_settings enable row level security;
 alter table chore_records enable row level security;
 alter table ledger_entries enable row level security;
 alter table availability_holds enable row level security;
+alter table chore_feedback enable row level security;
 alter table extension_requests enable row level security;
 alter table photos enable row level security;
 alter table notification_preferences enable row level security;
@@ -249,6 +270,10 @@ create policy "admins manage ledger" on ledger_entries for all using (is_admin()
 
 create policy "members read holds" on availability_holds for select using (auth.uid() is not null);
 create policy "admins manage holds" on availability_holds for all using (is_admin()) with check (is_admin());
+
+create policy "members read chore feedback" on chore_feedback for select using (auth.uid() is not null);
+create policy "children submit own chore feedback" on chore_feedback for insert with check (child_id = current_member_id());
+create policy "admins manage chore feedback" on chore_feedback for all using (is_admin()) with check (is_admin());
 
 create policy "members read extensions" on extension_requests for select using (auth.uid() is not null);
 create policy "children request own extensions" on extension_requests for insert with check (child_id = current_member_id());

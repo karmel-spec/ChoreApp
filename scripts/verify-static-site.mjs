@@ -41,6 +41,7 @@ const requiredFiles = [
   "netlify/functions/auth-google.js",
   "netlify/functions/availability-hold.js",
   "netlify/functions/backend-health.js",
+  "netlify/functions/chore-feedback.js",
   "netlify/functions/chore-record.js",
   "netlify/functions/chore-library.js",
   "netlify/functions/extension-decision.js",
@@ -94,6 +95,7 @@ const supabaseHelperFunction = await readFile("netlify/functions/_supabase.js", 
 const authFunction = await readFile("netlify/functions/auth-google.js", "utf8");
 const availabilityHoldFunction = await readFile("netlify/functions/availability-hold.js", "utf8");
 const backendHealthFunction = await readFile("netlify/functions/backend-health.js", "utf8");
+const choreFeedbackFunction = await readFile("netlify/functions/chore-feedback.js", "utf8");
 const choreRecordFunction = await readFile("netlify/functions/chore-record.js", "utf8");
 const choreLibraryFunction = await readFile("netlify/functions/chore-library.js", "utf8");
 const extensionDecisionFunction = await readFile("netlify/functions/extension-decision.js", "utf8");
@@ -407,6 +409,9 @@ const requiredMarkers = [
   "loadProductionAvailabilityHolds",
   "saveProductionAvailabilityHold",
   "removeProductionAvailabilityHold",
+  "loadProductionChoreFeedback",
+  "submitProductionChoreFeedback",
+  "reviewProductionChoreFeedback",
   "saveProductionMemberRules",
   "sendProductionTeenReminder",
   "saveProductionPushSubscription",
@@ -979,6 +984,8 @@ const requiredBackendMarkers = [
   "reload extension requests",
   "availability-hold",
   "read vacation/sick holds",
+  "chore-feedback",
+  "timing/difficulty feedback",
   "member-rules",
   "fine/work rules",
   "production chore-completion gate",
@@ -1012,6 +1019,7 @@ const requiredSchemaMarkers = [
   "create table chores",
   "create table family_settings",
   "create table chore_records",
+  "create table chore_feedback",
   "create table ledger_entries",
   "create table photos",
   "create table notification_preferences",
@@ -1020,6 +1028,8 @@ const requiredSchemaMarkers = [
   "alter table family_members enable row level security",
   "create policy \"admins manage chores\"",
   "create policy \"admins manage family settings\"",
+  "create policy \"children submit own chore feedback\"",
+  "create policy \"admins manage chore feedback\"",
   "create policy \"members update own notification preferences\"",
   "create policy \"members manage own push subscriptions\""
 ];
@@ -1149,6 +1159,23 @@ for (const marker of [
 ]) {
   if (!choreRecordFunction.includes(marker)) {
     throw new Error(`Chore record function is missing: ${marker}`);
+  }
+}
+
+for (const marker of [
+  "Children can submit chore feedback only for their own chores",
+  "Only Brigham or Karmel can accept or deny chore feedback",
+  "event.httpMethod === \"GET\"",
+  "event.httpMethod === \"POST\"",
+  "event.httpMethod !== \"PATCH\"",
+  "chore_feedback",
+  "actual_minutes",
+  "actual_difficulty",
+  "status === \"accepted\"",
+  "updated_at"
+]) {
+  if (!choreFeedbackFunction.includes(marker)) {
+    throw new Error(`Chore feedback function is missing: ${marker}`);
   }
 }
 

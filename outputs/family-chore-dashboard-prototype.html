@@ -2947,7 +2947,7 @@
 
     function normalizeChoreFeedbackRecord(record, index = 0) {
       const recordData = record && typeof record === "object" ? record : {};
-      const childId = normalizeChildId(recordData.childId, selectedChildId);
+      const childId = normalizeChildId(recordData.childId || recordData.childProfileKey, selectedChildId);
       const child = children.find(item => item.id === childId) || children[0];
       return {
         ...recordData,
@@ -4119,14 +4119,15 @@
 
     async function hydrateProductionBackendData() {
       if (!productionBackend.ready || !productionBackend.session?.access_token) return;
-      const [snapshotResult, settingsResult, choreResult, ledgerResult, choreRecordResult, extensionResult, holdResult] = await Promise.allSettled([
+      const [snapshotResult, settingsResult, choreResult, ledgerResult, choreRecordResult, extensionResult, holdResult, feedbackResult] = await Promise.allSettled([
         loadProductionFamilySnapshot(),
         loadProductionFamilySettings(),
         loadProductionChoreLibrary(),
         loadProductionMoneyLedger(),
         loadProductionChoreRecords(),
         loadProductionExtensionRequests(),
-        loadProductionAvailabilityHolds()
+        loadProductionAvailabilityHolds(),
+        loadProductionChoreFeedback()
       ]);
       if (snapshotResult.status === "fulfilled" && Array.isArray(snapshotResult.value?.members)) {
         hydrateProductionFamilySnapshot(snapshotResult.value);
@@ -4149,6 +4150,9 @@
       }
       if (holdResult.status === "fulfilled" && Array.isArray(holdResult.value?.availabilityHolds)) {
         childAvailabilityHolds = holdResult.value.availabilityHolds.map(normalizeAvailabilityHold).slice(0, 120);
+      }
+      if (feedbackResult.status === "fulfilled" && Array.isArray(feedbackResult.value?.choreFeedback)) {
+        choreFeedbackQueue = feedbackResult.value.choreFeedback.map(normalizeChoreFeedbackRecord).slice(0, 120);
       }
       persistBetaData();
     }
@@ -4259,6 +4263,49 @@
         method: "DELETE",
         headers: productionAuthHeader(),
         body: JSON.stringify({ holdId })
+      });
+    }
+
+    async function loadProductionChoreFeedback() {
+      await loadProductionBackend();
+      if (!productionBackend.ready || !productionBackend.session?.access_token) return null;
+      return fetchJson("/.netlify/functions/chore-feedback", {
+        headers: productionAuthHeader()
+      });
+    }
+
+    async function submitProductionChoreFeedback(child, chore, choreType, actualMinutes, actualDifficulty) {
+      await loadProductionBackend();
+      if (!productionBackend.ready) return null;
+      if (!productionBackend.session?.access_token) {
+        throw new Error("Sign in with Google before submitting chore feedback in production mode.");
+      }
+      return fetchJson("/.netlify/functions/chore-feedback", {
+        method: "POST",
+        headers: productionAuthHeader(),
+        body: JSON.stringify({
+          childProfileKey: child.id,
+          choreName: chore.name,
+          choreType,
+          serviceDate: localDateKey(),
+          assignedMinutes: chore.minutes,
+          assignedDifficulty: choreDifficulty(chore),
+          actualMinutes,
+          actualDifficulty
+        })
+      });
+    }
+
+    async function reviewProductionChoreFeedback(feedbackId, status) {
+      await loadProductionBackend();
+      if (!productionBackend.ready) return null;
+      if (!productionBackend.session?.access_token) {
+        throw new Error("Sign in with Google before reviewing chore feedback in production mode.");
+      }
+      return fetchJson("/.netlify/functions/chore-feedback", {
+        method: "PATCH",
+        headers: productionAuthHeader(),
+        body: JSON.stringify({ feedbackId, status })
       });
     }
 
@@ -4969,7 +5016,7 @@
       });
 
       document.querySelectorAll("[data-feedback-task]").forEach(button => {
-        button.addEventListener("click", () => {
+        button.addEventListener("click", async () => {
           if (!canManageChildTasks(child)) {
             document.getElementById("reviewStatus").textContent = "Only that child or Brigham/Karmel can suggest chore timing or difficulty edits.";
             return;
@@ -4985,7 +5032,7 @@
             document.getElementById("reviewStatus").textContent = "Add actual minutes or actual difficulty before suggesting a chore edit.";
             return;
           }
-          choreFeedbackQueue.unshift({
+          let feedbackRecord = {
             id: `chore-feedback-${Date.now()}`,
             childId: child.id,
             childName: child.name,
@@ -4997,7 +5044,21 @@
             actualDifficulty: actualDifficulty || choreDifficulty(chore),
             status: "pending",
             submittedAt: new Date().toISOString()
-          });
+          };
+          try {
+            const payload = await submitProductionChoreFeedback(
+              child,
+              chore,
+              choreType,
+              actualMinutes || chore.minutes,
+              actualDifficulty || choreDifficulty(chore)
+            );
+            if (payload?.feedback) feedbackRecord = normalizeChoreFeedbackRecord(payload.feedback);
+          } catch (error) {
+            document.getElementById("reviewStatus").textContent = `Cloud chore feedback save failed: ${error.message}`;
+            return;
+          }
+          choreFeedbackQueue.unshift(feedbackRecord);
           choreFeedbackQueue = choreFeedbackQueue.slice(0, 120);
           persistBetaData();
           renderChoreFeedbackApprovals();
@@ -7080,13 +7141,24 @@
       });
     }
 
-    function reviewChoreFeedback(feedbackId, action) {
+    async function reviewChoreFeedback(feedbackId, action) {
       if (!isAdmin()) {
         document.getElementById("feedbackApprovalStatus").textContent = "Only Brigham or Karmel can accept or deny chore edit suggestions.";
         return;
       }
       const item = choreFeedbackQueue.find(entry => entry.id === feedbackId);
       if (!item || item.status !== "pending") return;
+      if (!String(feedbackId).startsWith("chore-feedback-")) {
+        try {
+          const payload = await reviewProductionChoreFeedback(feedbackId, action === "accept" ? "accepted" : "denied");
+          if (payload?.feedback) {
+            Object.assign(item, normalizeChoreFeedbackRecord(payload.feedback));
+          }
+        } catch (error) {
+          document.getElementById("feedbackApprovalStatus").textContent = `Cloud chore feedback review failed: ${error.message}`;
+          return;
+        }
+      }
       item.status = action === "accept" ? "accepted" : "denied";
       item.reviewedBy = currentUser?.name || "Admin";
       item.reviewedAt = new Date().toISOString();
