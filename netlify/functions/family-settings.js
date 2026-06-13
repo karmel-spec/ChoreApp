@@ -37,6 +37,60 @@ function tenDigitPhone(value) {
   return digits.length === 10 ? digits : "";
 }
 
+const defaultBonusRules = {
+  monthly: [
+    { days: 5, amount: 5 },
+    { days: 7, amount: 10 },
+    { days: 30, amount: 50 }
+  ],
+  super: [
+    { days: 100, amount: 100 }
+  ],
+  points: [
+    { rank: 1, amount: 25 },
+    { rank: 2, amount: 15 },
+    { rank: 3, amount: 10 }
+  ]
+};
+
+function safeMoney(value, fallback = 0) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return fallback;
+  return Math.max(0, Math.round(number * 100) / 100);
+}
+
+function safePositiveInt(value, fallback = 1) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return fallback;
+  return Math.max(1, Math.round(number));
+}
+
+function normalizeBonusRules(rules) {
+  const source = rules && typeof rules === "object" ? rules : {};
+  const normalizeStreakList = (list, fallbackList) => {
+    if (!Array.isArray(list)) return fallbackList;
+    const normalized = list
+      .map((rule, index) => ({
+        days: safePositiveInt(rule?.days, fallbackList[index]?.days || 1),
+        amount: safeMoney(rule?.amount, fallbackList[index]?.amount || 0)
+      }))
+      .filter(rule => rule.days > 0);
+    return normalized.length ? normalized.slice(0, 12) : fallbackList;
+  };
+  const normalizePointsList = (list, fallbackList) => fallbackList.map((fallbackRule, index) => {
+    const matchedRule = Array.isArray(list) ? list.find(rule => Number(rule?.rank) === fallbackRule.rank) : null;
+    return {
+      rank: fallbackRule.rank,
+      amount: safeMoney(matchedRule?.amount ?? list?.[index]?.amount, fallbackRule.amount)
+    };
+  });
+  return {
+    monthly: normalizeStreakList(source.monthly, defaultBonusRules.monthly),
+    super: normalizeStreakList(source.super, defaultBonusRules.super),
+    points: normalizePointsList(source.points, defaultBonusRules.points)
+  };
+}
+
 function publicSettings(record) {
   return {
     defaultDeadline: record.default_deadline,
@@ -45,6 +99,7 @@ function publicSettings(record) {
     extensionContact: record.extension_contact,
     reviewRecipient: record.review_recipient,
     reviewContact: record.review_contact,
+    bonusRules: normalizeBonusRules(record.bonus_rules),
     updatedAt: record.updated_at
   };
 }
@@ -92,6 +147,7 @@ exports.handler = async (event) => {
       extension_contact: extensionContact,
       review_recipient: cleanText(body.reviewRecipient, "Mom Karmel"),
       review_contact: reviewContact,
+      bonus_rules: normalizeBonusRules(body.bonusRules),
       updated_by: actor.id,
       updated_at: new Date().toISOString()
     }, { onConflict: "family_id" })

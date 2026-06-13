@@ -82,6 +82,9 @@ insert into storage.buckets (id, name, public)
 values ('family-photos', 'family-photos', false)
 on conflict (id) do update set public = false;
 
+alter table family_settings
+  add column if not exists bonus_rules jsonb not null default '{"monthly":[{"days":5,"amount":5},{"days":7,"amount":10},{"days":30,"amount":50}],"super":[{"days":100,"amount":100}],"points":[{"rank":1,"amount":25},{"rank":2,"amount":15},{"rank":3,"amount":10}]}'::jsonb;
+
 with family as (
   select id from families where name = 'Teamwork Chores' order by created_at limit 1
 )
@@ -92,7 +95,8 @@ insert into family_settings (
   extension_approver,
   extension_contact,
   review_recipient,
-  review_contact
+  review_contact,
+  bonus_rules
 )
 select
   id,
@@ -101,7 +105,8 @@ select
   'Brigham-dad',
   '801-830-0011',
   'Mom Karmel',
-  '801-427-9293'
+  '801-427-9293',
+  '{"monthly":[{"days":5,"amount":5},{"days":7,"amount":10},{"days":30,"amount":50}],"super":[{"days":100,"amount":100}],"points":[{"rank":1,"amount":25},{"rank":2,"amount":15},{"rank":3,"amount":10}]}'::jsonb
 from family
 on conflict (family_id) do update set
   default_deadline = excluded.default_deadline,
@@ -110,6 +115,7 @@ on conflict (family_id) do update set
   extension_contact = excluded.extension_contact,
   review_recipient = excluded.review_recipient,
   review_contact = excluded.review_contact,
+  bonus_rules = excluded.bonus_rules,
   updated_at = now();
 
 drop policy if exists "family photo uploads require auth" on storage.objects;

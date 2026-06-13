@@ -1018,6 +1018,7 @@ const requiredSchemaMarkers = [
   "text_reminders_enabled boolean",
   "create table chores",
   "create table family_settings",
+  "bonus_rules jsonb",
   "create table chore_records",
   "create table chore_feedback",
   "create table ledger_entries",
@@ -1085,6 +1086,8 @@ for (const marker of [
   "review_reminder_time",
   "extension_contact",
   "review_contact",
+  "bonus_rules",
+  "normalizeBonusRules",
   "Use 10-digit text numbers for Dad extensions and Mom Karmel review reminders"
 ]) {
   if (!familySettingsFunction.includes(marker)) {

@@ -4134,6 +4134,7 @@
       }
       if (settingsResult.status === "fulfilled" && settingsResult.value?.settings) {
         familySettings = normalizeFamilySettingsRecord(settingsResult.value.settings);
+        if (settingsResult.value.settings.bonusRules) bonusRules = normalizeBonusRules(settingsResult.value.settings.bonusRules);
         normalizeFamilyReviewContact();
       }
       if (choreResult.status === "fulfilled" && Array.isArray(choreResult.value?.chores)) {
@@ -4576,6 +4577,7 @@
         extensionContact,
         reviewRecipient: document.getElementById("reviewRecipientInput").value.trim() || defaultReviewRecipient,
         reviewContact,
+        bonusRules,
         updatedBy: currentUser?.name || "Admin",
         updatedAt: new Date().toISOString()
       };
@@ -6122,7 +6124,7 @@
       }
     }
 
-    function saveBonusRules() {
+    async function saveBonusRules() {
       if (!isAdmin()) {
         document.getElementById("bonusStatus").textContent = "Only Brigham or Karmel can edit bonus rates.";
         return;
@@ -6138,7 +6140,7 @@
         document.getElementById("bonusStatus").textContent = "Use valid bonus amounts like 5, 10.50, or 100.";
         return;
       }
-      bonusRules = {
+      const nextRules = {
         monthly: [
           { days: 5, amount: bonus5 },
           { days: 7, amount: bonus7 },
@@ -6153,10 +6155,22 @@
           { rank: 3, amount: pointsThird }
         ]
       };
+      try {
+        const payload = await saveProductionFamilySettings({
+          ...familySettings,
+          bonusRules: nextRules
+        });
+        bonusRules = normalizeBonusRules(payload?.settings?.bonusRules || nextRules);
+      } catch (error) {
+        document.getElementById("bonusStatus").textContent = `Cloud bonus rule save failed: ${error.message}`;
+        return;
+      }
       const child = children.find(item => item.id === selectedChildId);
       persistBetaData();
       renderBonusPanel(child);
-      document.getElementById("bonusStatus").textContent = "Bonus award amounts updated for all children.";
+      document.getElementById("bonusStatus").textContent = productionBackend.ready && productionBackend.session?.access_token
+        ? "Bonus award amounts saved to the backend for all children."
+        : "Bonus award amounts updated for all children in this beta browser.";
     }
 
     function hasMonthlyPointsBonusAward(child, rank, period = currentBonusPeriod()) {

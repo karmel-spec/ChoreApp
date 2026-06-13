@@ -89,7 +89,7 @@ The `chore-record` function is the production chore-completion gate and reload s
 
 The `chore-feedback` function is the production queue for child timing/difficulty suggestions. Children can submit feedback only for their own chores; parent admins can accept or deny the suggestion, and accepted rotating-chore feedback updates the master chore timing/difficulty server-side.
 
-The `family-settings` and `chore-library` functions move parent admin controls out of browser-only trust. Children and helpers can read the resulting `family_settings` rules and chore assignments after Google sign-in, but only Brigham or Karmel can change deadlines, text contacts, chore rotation rows, training notes, difficulty, timing, or active/inactive status.
+The `family-settings` and `chore-library` functions move parent admin controls out of browser-only trust. Children and helpers can read the resulting `family_settings` rules and chore assignments after Google sign-in, but only Brigham or Karmel can change deadlines, text contacts, streak and points bonus rules, chore rotation rows, training notes, difficulty, timing, or active/inactive status.
 
 The `family-snapshot` function is the production reload path for profile photos, family hero photos, child phone/text opt-in settings, work targets, fine rates, and account basics. It returns short-lived signed Supabase Storage URLs for the private `family-photos` bucket, so family photos can reload in the app without making the bucket public.
 

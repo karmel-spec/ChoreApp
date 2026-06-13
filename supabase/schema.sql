@@ -67,6 +67,7 @@ create table family_settings (
   extension_contact text not null default '801-830-0011',
   review_recipient text not null default 'Mom Karmel',
   review_contact text not null default '801-427-9293',
+  bonus_rules jsonb not null default '{"monthly":[{"days":5,"amount":5},{"days":7,"amount":10},{"days":30,"amount":50}],"super":[{"days":100,"amount":100}],"points":[{"rank":1,"amount":25},{"rank":2,"amount":15},{"rank":3,"amount":10}]}'::jsonb,
   updated_by uuid references family_members(id),
   updated_at timestamptz not null default now()
 );
