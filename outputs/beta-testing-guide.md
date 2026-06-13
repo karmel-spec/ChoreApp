@@ -148,7 +148,7 @@ Once per week:
 
 ## Backend Setup Track
 
-Use `docs/backend-setup.md` and `supabase/schema.sql` when moving from browser beta storage to the real backend. The repository now includes Netlify Function scaffolding for Google session verification, Supabase Storage photo upload URLs, and Twilio SMS sends, but those functions require real Supabase and Twilio environment variables before they can be used on the hosted site.
+Use `docs/backend-setup.md` and `supabase/schema.sql` when moving from browser beta storage to the real backend. The repository now includes Netlify Function scaffolding for Google session verification, authenticated child contact settings, Supabase Storage photo upload/record updates, extension request and approval texts, scheduled noon review texts, and Twilio SMS sends, but those functions require real Supabase and Twilio environment variables before they can be used on the hosted site.
 
 ## What To Track
 

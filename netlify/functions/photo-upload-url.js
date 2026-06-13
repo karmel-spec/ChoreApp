@@ -7,7 +7,7 @@ exports.handler = async (event) => {
   if (!member) return json(401, { error: "Sign in required." });
 
   const body = JSON.parse(event.body || "{}");
-  const kind = body.kind || "proof";
+  const kind = ["family_hero", "profile", "proof", "feed"].includes(body.kind) ? body.kind : "proof";
   const extension = String(body.extension || "jpg").replace(/[^a-z0-9]/gi, "").toLowerCase() || "jpg";
   const storagePath = `family/${member.family_id}/${kind}/${randomUUID()}.${extension}`;
   const supabase = serviceClient();

@@ -34,7 +34,7 @@ Core web app features:
 - Monthly bonus streaks that restart on the first of each month while overall streaks continue
 - Long-term super bonuses for larger overall streak milestones
 - In-app beta readiness checklist that separates ready-to-test website features from production backend and app-store requirements
-- Production backend scaffold for Supabase database, Google auth verification, photo storage, SMS functions, and server-side role policies
+- Production backend scaffold for Supabase database, Google auth verification, authenticated child contact settings, photo storage/record updates, extension text workflow, scheduled noon SMS, and server-side role policies
 
 Recommended web stack:
 - Responsive PWA-style web app

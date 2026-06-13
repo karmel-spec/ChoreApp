@@ -39,7 +39,13 @@ const requiredFiles = [
   "docs/backend-setup.md",
   "netlify/functions/_supabase.js",
   "netlify/functions/auth-google.js",
+  "netlify/functions/extension-decision.js",
+  "netlify/functions/extension-request.js",
+  "netlify/functions/member-contact.js",
+  "netlify/functions/photo-record.js",
   "netlify/functions/photo-upload-url.js",
+  "netlify/functions/runtime-config.js",
+  "netlify/functions/scheduled-noon-review.js",
   "netlify/functions/send-sms.js",
   "outputs/index.html",
   "outputs/family-chore-dashboard-prototype.html",
@@ -69,8 +75,15 @@ const packageJson = JSON.parse(await readFile("package.json", "utf8"));
 const envExample = await readFile(".env.example", "utf8");
 const backendSetup = await readFile("docs/backend-setup.md", "utf8");
 const supabaseSchema = await readFile("supabase/schema.sql", "utf8");
+const supabaseHelperFunction = await readFile("netlify/functions/_supabase.js", "utf8");
 const authFunction = await readFile("netlify/functions/auth-google.js", "utf8");
+const extensionDecisionFunction = await readFile("netlify/functions/extension-decision.js", "utf8");
+const extensionRequestFunction = await readFile("netlify/functions/extension-request.js", "utf8");
+const memberContactFunction = await readFile("netlify/functions/member-contact.js", "utf8");
+const photoRecordFunction = await readFile("netlify/functions/photo-record.js", "utf8");
 const photoFunction = await readFile("netlify/functions/photo-upload-url.js", "utf8");
+const runtimeConfigFunction = await readFile("netlify/functions/runtime-config.js", "utf8");
+const scheduledNoonFunction = await readFile("netlify/functions/scheduled-noon-review.js", "utf8");
 const smsFunction = await readFile("netlify/functions/send-sms.js", "utf8");
 const manifest = JSON.parse(await readFile("outputs/manifest.webmanifest", "utf8"));
 const serviceWorker = await readFile("outputs/service-worker.js", "utf8");
@@ -783,7 +796,9 @@ const requiredEnvMarkers = [
   "GOOGLE_CLIENT_ID",
   "TWILIO_ACCOUNT_SID",
   "TWILIO_AUTH_TOKEN",
-  "TWILIO_MESSAGING_SERVICE_SID"
+  "TWILIO_MESSAGING_SERVICE_SID",
+  "KARMEL_NOON_REVIEW_PHONE",
+  "BRIGHAM_EXTENSION_PHONE"
 ];
 
 for (const marker of requiredEnvMarkers) {
@@ -798,6 +813,8 @@ const requiredBackendMarkers = [
   "Supabase Storage",
   "Netlify Functions",
   "Twilio",
+  "Netlify Function Contracts",
+  "scheduled-noon-review",
   "Server-Side Permissions",
   "Web Beta Ready Gate"
 ];
@@ -833,12 +850,36 @@ if (!authFunction.includes("memberFromAuthHeader") || !authFunction.includes("Go
   throw new Error("Google auth function is missing member verification behavior.");
 }
 
+if (!runtimeConfigFunction.includes("SUPABASE_ANON_KEY") || !runtimeConfigFunction.includes("backendReady")) {
+  throw new Error("Runtime config function is missing public backend readiness configuration.");
+}
+
+if (!memberContactFunction.includes("canManageMember") || !memberContactFunction.includes("Add a 10-digit cell phone number before turning on text reminders")) {
+  throw new Error("Member contact function is missing child/admin phone reminder permission behavior.");
+}
+
 if (!photoFunction.includes("createSignedUploadUrl") || !photoFunction.includes("family-photos")) {
   throw new Error("Photo upload function is missing Supabase Storage signed upload behavior.");
 }
 
-if (!smsFunction.includes("TWILIO_MESSAGING_SERVICE_SID") || !smsFunction.includes("Only parent admins can send SMS reminders")) {
+if (!photoRecordFunction.includes("family_hero") || !photoRecordFunction.includes("profile_photo_path") || !photoRecordFunction.includes("proof_photo_path")) {
+  throw new Error("Photo record function is missing family/profile/proof storage record behavior.");
+}
+
+if (!supabaseHelperFunction.includes("TWILIO_MESSAGING_SERVICE_SID") || !supabaseHelperFunction.includes("sendSms") || !smsFunction.includes("Only parent admins can send SMS reminders")) {
   throw new Error("SMS function is missing Twilio/admin guard behavior.");
+}
+
+if (!extensionRequestFunction.includes("BRIGHAM_EXTENSION_PHONE") || !extensionRequestFunction.includes("Children can request extensions only for their own chores")) {
+  throw new Error("Extension request function is missing Brigham SMS or child ownership behavior.");
+}
+
+if (!extensionDecisionFunction.includes("Only Brigham can approve or deny") || !extensionDecisionFunction.includes("text_reminders_enabled")) {
+  throw new Error("Extension decision function is missing Brigham-only approval or opted-in child SMS behavior.");
+}
+
+if (!scheduledNoonFunction.includes('schedule: "0 18 * * *"') || !scheduledNoonFunction.includes("KARMEL_NOON_REVIEW_PHONE") || !scheduledNoonFunction.includes("already_sent")) {
+  throw new Error("Scheduled noon review function is missing cron, Karmel phone, or duplicate-send guard behavior.");
 }
 
 for (const cachedPath of ["/app", "/beta-guide", "/offline.html", "/manifest.webmanifest"]) {
