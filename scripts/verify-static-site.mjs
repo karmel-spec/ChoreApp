@@ -1289,16 +1289,16 @@ for (const marker of [
   }
 }
 
-if (!extensionRequestFunction.includes("BRIGHAM_EXTENSION_PHONE") || !extensionRequestFunction.includes("Children can request extensions only for their own chores") || !extensionRequestFunction.includes("event.httpMethod === \"GET\"") || !extensionRequestFunction.includes("childProfileKey")) {
-  throw new Error("Extension request function is missing Brigham SMS or child ownership behavior.");
+if (!extensionRequestFunction.includes("extension_contact") || !extensionRequestFunction.includes("BRIGHAM_EXTENSION_PHONE") || !extensionRequestFunction.includes("Children can request extensions only for their own chores") || !extensionRequestFunction.includes("event.httpMethod === \"GET\"") || !extensionRequestFunction.includes("childProfileKey")) {
+  throw new Error("Extension request function is missing family settings SMS fallback or child ownership behavior.");
 }
 
 if (!extensionDecisionFunction.includes("Only Brigham can approve or deny") || !extensionDecisionFunction.includes("text_reminders_enabled") || !extensionDecisionFunction.includes("approvedDeadline") || !extensionDecisionFunction.includes("requested_deadline")) {
   throw new Error("Extension decision function is missing Brigham-only approval or opted-in child SMS behavior.");
 }
 
-if (!scheduledNoonFunction.includes('schedule: "0 18 * * *"') || !scheduledNoonFunction.includes("KARMEL_NOON_REVIEW_PHONE") || !scheduledNoonFunction.includes("already_sent")) {
-  throw new Error("Scheduled noon review function is missing cron, Karmel phone, or duplicate-send guard behavior.");
+if (!scheduledNoonFunction.includes('schedule: "0 18 * * *"') || !scheduledNoonFunction.includes("review_contact") || !scheduledNoonFunction.includes("KARMEL_NOON_REVIEW_PHONE") || !scheduledNoonFunction.includes("already_sent")) {
+  throw new Error("Scheduled noon review function is missing cron, family settings phone fallback, or duplicate-send guard behavior.");
 }
 
 for (const cachedPath of ["/app", "/beta-guide", "/offline.html", "/manifest.webmanifest"]) {

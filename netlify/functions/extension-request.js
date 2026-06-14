@@ -95,7 +95,13 @@ exports.handler = async (event) => {
     .single();
   if (error) return json(500, { error: error.message });
 
-  const brighamPhone = process.env.BRIGHAM_EXTENSION_PHONE;
+  const { data: settings } = await supabase
+    .from("family_settings")
+    .select("extension_approver,extension_contact")
+    .eq("family_id", actor.family_id)
+    .single();
+  const brighamPhone = settings?.extension_contact || process.env.BRIGHAM_EXTENSION_PHONE;
+  const approverName = settings?.extension_approver || "Brigham-dad";
   const message = `${child.display_name} requests a chore deadline extension to ${requestedDeadline}. Reason: ${reason}`;
   let sent = null;
   if (brighamPhone) {
@@ -105,7 +111,7 @@ exports.handler = async (event) => {
       familyId: actor.family_id,
       kind: "extension",
       destination: e164(brighamPhone),
-      body: message,
+      body: `${approverName}: ${message}`,
       providerMessageId: sent.sid,
       status: sent.status || "sent",
       createdBy: actor.id

@@ -27,8 +27,8 @@ Copy `.env.example` into Netlify environment variables:
 - `WEB_PUSH_VAPID_PRIVATE_KEY`
 - `WEB_PUSH_SUBJECT`
 - `TEAMWORK_CHORES_SITE_URL`
-- `KARMEL_NOON_REVIEW_PHONE`
-- `BRIGHAM_EXTENSION_PHONE`
+
+The parent phone numbers are saved in Backend Admin family rules and stored in `family_settings.review_contact` and `family_settings.extension_contact`. `KARMEL_NOON_REVIEW_PHONE` and `BRIGHAM_EXTENSION_PHONE` may be kept as optional fallback environment variables, but the app no longer requires a redeploy to edit those contacts.
 
 Never expose `SUPABASE_SERVICE_ROLE_KEY` or Twilio secrets in browser JavaScript.
 

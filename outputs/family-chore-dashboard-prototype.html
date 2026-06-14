@@ -6088,7 +6088,8 @@
     function renderBackendReadiness(payload) {
       const checks = payload.checks || {};
       const env = checks.env || {};
-      const envReady = Object.values(env).every(Boolean);
+      const requiredEnvKeys = ["supabaseUrl", "supabaseAnonKey", "supabaseServiceRoleKey", "googleClientId", "twilioAccountSid", "twilioAuthToken", "twilioMessagingServiceSid", "webPushVapidPublicKey", "webPushVapidPrivateKey"];
+      const envReady = requiredEnvKeys.every(key => Boolean(env[key]));
       const memberRows = (checks.members || []).map(member => readinessRow(
         `Member: ${member.profileKey}`,
         member.present && member.roleOk && member.gmailLinked && member.authLinked,
@@ -6099,10 +6100,11 @@
         ? "Production backend is ready for workflow beta: Google auth, Supabase data, photo storage, and SMS configuration are all connected."
         : "Production backend is not ready yet. Use the checklist below to finish the remaining setup.";
       document.getElementById("backendReadinessList").innerHTML = [
-        readinessRow("Environment variables", envReady, `${Object.values(env).filter(Boolean).length} of ${Object.keys(env).length} configured`),
+        readinessRow("Required environment variables", envReady, `${requiredEnvKeys.filter(key => Boolean(env[key])).length} of ${requiredEnvKeys.length} configured`),
         readinessRow("Supabase database", Boolean(checks.database?.ok), checks.database?.message || ""),
         readinessRow("Supabase Storage", Boolean(checks.storage?.ok), checks.storage?.message || ""),
         readinessRow("Notification log", Boolean(checks.notifications?.ok), checks.notifications?.message || ""),
+        readinessRow("Family text contacts", Boolean(checks.familyTextContacts?.ok), checks.familyTextContacts?.message || ""),
         readinessRow("Google OAuth", Boolean(checks.google?.ok), checks.google?.message || ""),
         readinessRow("Twilio SMS", Boolean(checks.sms?.ok), checks.sms?.message || ""),
         memberRows
