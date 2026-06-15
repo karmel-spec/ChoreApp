@@ -3047,6 +3047,11 @@
       };
     }
 
+    function hydrateProductionFamilyFeed(payload) {
+      if (!Array.isArray(payload?.familyPhotoFeed)) return;
+      familyPhotoFeed = payload.familyPhotoFeed.map(normalizeFamilyPhotoPost).slice(0, 80);
+    }
+
     function normalizeMonthlyPoints(points) {
       return Object.entries(points || {}).reduce((periods, [period, records]) => {
         if (!/^\d{4}-\d{2}$/.test(period) || !records || typeof records !== "object") return periods;
@@ -4167,7 +4172,7 @@
 
     async function hydrateProductionBackendData() {
       if (!productionBackend.ready || !productionBackend.session?.access_token) return;
-      const [snapshotResult, settingsResult, choreResult, ledgerResult, choreRecordResult, extensionResult, holdResult, feedbackResult, notificationResult, helperTimeResult, helperWorkspaceResult] = await Promise.allSettled([
+      const [snapshotResult, settingsResult, choreResult, ledgerResult, choreRecordResult, extensionResult, holdResult, feedbackResult, notificationResult, helperTimeResult, helperWorkspaceResult, familyFeedResult] = await Promise.allSettled([
         loadProductionFamilySnapshot(),
         loadProductionFamilySettings(),
         loadProductionChoreLibrary(),
@@ -4178,7 +4183,8 @@
         loadProductionChoreFeedback(),
         loadProductionNotificationLog(),
         loadProductionHelperTime(),
-        loadProductionHelperWorkspace()
+        loadProductionHelperWorkspace(),
+        loadProductionFamilyFeed()
       ]);
       if (snapshotResult.status === "fulfilled" && Array.isArray(snapshotResult.value?.members)) {
         hydrateProductionFamilySnapshot(snapshotResult.value);
@@ -4214,6 +4220,9 @@
       }
       if (helperWorkspaceResult.status === "fulfilled" && helperWorkspaceResult.value) {
         hydrateProductionHelperWorkspace(helperWorkspaceResult.value);
+      }
+      if (familyFeedResult.status === "fulfilled" && familyFeedResult.value) {
+        hydrateProductionFamilyFeed(familyFeedResult.value);
       }
       persistBetaData();
     }
@@ -4425,6 +4434,51 @@
         method: "PATCH",
         headers: productionAuthHeader(),
         body: JSON.stringify({ action: "mark_ingredient_purchased", ingredientId: item.id })
+      });
+    }
+
+    async function loadProductionFamilyFeed() {
+      await loadProductionBackend();
+      if (!productionBackend.ready || !productionBackend.session?.access_token) return null;
+      return fetchJson("/.netlify/functions/family-feed", {
+        headers: productionAuthHeader()
+      });
+    }
+
+    async function saveProductionFamilyFeedPost(child, chore, proof) {
+      await loadProductionBackend();
+      if (!productionBackend.ready || !proof?.storagePath) return null;
+      if (!productionBackend.session?.access_token) {
+        throw new Error("Sign in with Google before saving family feed posts in production mode.");
+      }
+      return fetchJson("/.netlify/functions/family-feed", {
+        method: "POST",
+        headers: productionAuthHeader(),
+        body: JSON.stringify({
+          action: "create_post",
+          childProfileKey: child.id,
+          choreName: chore.name,
+          imagePath: proof.storagePath,
+          choreRecordId: proof.choreRecordId
+        })
+      });
+    }
+
+    async function saveProductionFamilyFeedReaction(post, reactionType) {
+      await loadProductionBackend();
+      if (!productionBackend.ready || !post?.id) return null;
+      if (!productionBackend.session?.access_token) {
+        throw new Error("Sign in with Google before reacting to family feed posts in production mode.");
+      }
+      return fetchJson("/.netlify/functions/family-feed", {
+        method: "POST",
+        headers: productionAuthHeader(),
+        body: JSON.stringify({
+          action: "react",
+          postId: post.id,
+          reactionType,
+          commentText: "Great work!"
+        })
       });
     }
 
@@ -5138,8 +5192,14 @@
           const chore = findTodayChore(child, choreName, choreType);
           if (!chore) return;
           let backendProof = null;
+          let backendFeedPost = null;
           try {
             backendProof = await saveProductionProofPhoto(child, chore, choreType, file);
+            const feedPayload = await saveProductionFamilyFeedPost(child, chore, backendProof);
+            if (feedPayload?.familyPhotoFeed) {
+              hydrateProductionFamilyFeed(feedPayload);
+              backendFeedPost = feedPayload.familyPhotoFeed.find(post => post.id === feedPayload.postId) || null;
+            }
           } catch (error) {
             document.getElementById("reviewStatus").textContent = `Cloud proof photo save failed: ${error.message}`;
             input.value = "";
@@ -5157,7 +5217,7 @@
               proofName: file.name,
               proofSubmittedAt: new Date().toISOString()
             });
-            addFamilyPhotoPost(child, chore, event.target.result);
+            addFamilyPhotoPost(child, chore, event.target.result, backendFeedPost || {});
             persistBetaData();
             render();
             document.getElementById("reviewStatus").textContent = `${child.name}'s photo proof for ${chore.name} was saved and marked ready for ${familySettings.reviewRecipient}'s physical inspection.`;
@@ -5467,17 +5527,27 @@
       });
     }
 
-    function addFamilyPhotoPost(child, chore, image) {
+    function addFamilyPhotoPost(child, chore, image, backendPost = {}) {
       addMonthlyPoints(child.id, 10);
+      if (backendPost.id) {
+        const existingPost = familyPhotoFeed.find(post => post.id === backendPost.id);
+        if (existingPost) {
+          existingPost.image = existingPost.image || backendPost.image || image;
+          existingPost.likes = backendPost.likes || existingPost.likes || [];
+          existingPost.comments = backendPost.comments || existingPost.comments || [];
+          return;
+        }
+      }
       familyPhotoFeed.unshift({
-        id: `photo-post-${Date.now()}`,
+        id: backendPost.id || `photo-post-${Date.now()}`,
         childId: child.id,
         childName: child.name,
         choreName: chore.name,
-        image,
-        likes: [],
-        comments: [],
-        createdAt: new Date().toISOString()
+        image: backendPost.image || image,
+        imagePath: backendPost.imagePath || "",
+        likes: backendPost.likes || [],
+        comments: backendPost.comments || [],
+        createdAt: backendPost.createdAt || new Date().toISOString()
       });
       familyPhotoFeed = familyPhotoFeed.slice(0, 80);
     }
@@ -5515,11 +5585,26 @@
         </div>
       `).join("") : `<div class="notice-card">No proof photos in the family feed yet.</div>`;
       document.querySelectorAll("[data-like-post]").forEach(button => {
-        button.addEventListener("click", () => {
+        button.addEventListener("click", async () => {
           const post = familyPhotoFeed.find(item => item.id === button.dataset.likePost);
           if (!post) return;
           if (hasPostLike(post)) {
             document.getElementById("familyFeedStatus").textContent = "You already liked this photo, so no duplicate points were added.";
+            return;
+          }
+          try {
+            const payload = await saveProductionFamilyFeedReaction(post, "like");
+            if (payload?.familyPhotoFeed) {
+              hydrateProductionFamilyFeed(payload);
+              addMonthlyPoints(post.childId, 5);
+              persistBetaData();
+              renderFamilyPhotoFeed();
+              renderPointsPodium();
+              document.getElementById("familyFeedStatus").textContent = `${currentActorName()} liked ${post.childName}'s photo in the backend. ${post.childName} earned 5 positivity points.`;
+              return;
+            }
+          } catch (error) {
+            document.getElementById("familyFeedStatus").textContent = `Cloud family feed like failed: ${error.message}`;
             return;
           }
           post.likes.push({ actorId: currentActorId(), by: currentActorName(), at: new Date().toISOString() });
@@ -5531,11 +5616,26 @@
         });
       });
       document.querySelectorAll("[data-comment-post]").forEach(button => {
-        button.addEventListener("click", () => {
+        button.addEventListener("click", async () => {
           const post = familyPhotoFeed.find(item => item.id === button.dataset.commentPost);
           if (!post) return;
           if (hasPostEncouragement(post)) {
             document.getElementById("familyFeedStatus").textContent = "You already encouraged this photo, so no duplicate points were added.";
+            return;
+          }
+          try {
+            const payload = await saveProductionFamilyFeedReaction(post, "comment");
+            if (payload?.familyPhotoFeed) {
+              hydrateProductionFamilyFeed(payload);
+              addMonthlyPoints(post.childId, 10);
+              persistBetaData();
+              renderFamilyPhotoFeed();
+              renderPointsPodium();
+              document.getElementById("familyFeedStatus").textContent = `${currentActorName()} encouraged ${post.childName} in the backend. ${post.childName} earned 10 positivity points.`;
+              return;
+            }
+          } catch (error) {
+            document.getElementById("familyFeedStatus").textContent = `Cloud family feed encouragement failed: ${error.message}`;
             return;
           }
           post.comments.push({ actorId: currentActorId(), by: currentActorName(), text: "Great work!", at: new Date().toISOString() });
@@ -6262,6 +6362,7 @@
         readinessRow("Twilio SMS", Boolean(checks.sms?.ok), checks.sms?.message || ""),
         readinessRow("Helper pay records", Boolean(checks.helperPay?.ok), checks.helperPay?.message || ""),
         readinessRow("Helper workspace records", Boolean(checks.helperWorkspace?.ok), checks.helperWorkspace?.message || ""),
+        readinessRow("Family feed records", Boolean(checks.familyFeed?.ok), checks.familyFeed?.message || ""),
         memberRows
       ].join("");
       document.getElementById("backendReadinessStatus").textContent = payload.readyForWorkflowBeta

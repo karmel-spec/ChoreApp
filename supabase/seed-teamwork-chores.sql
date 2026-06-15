@@ -162,6 +162,50 @@ create policy "helpers create own ingredient requests" on ingredient_requests fo
 drop policy if exists "admins manage ingredient requests" on ingredient_requests;
 create policy "admins manage ingredient requests" on ingredient_requests for all using (is_admin()) with check (is_admin());
 
+create table if not exists family_feed_posts (
+  id uuid primary key default gen_random_uuid(),
+  family_id uuid not null references families(id) on delete cascade,
+  child_id uuid references family_members(id) on delete set null,
+  chore_record_id uuid references chore_records(id) on delete set null,
+  chore_name text not null,
+  image_path text not null,
+  created_by uuid references family_members(id),
+  created_at timestamptz not null default now()
+);
+
+create table if not exists family_feed_reactions (
+  id uuid primary key default gen_random_uuid(),
+  family_id uuid not null references families(id) on delete cascade,
+  post_id uuid not null references family_feed_posts(id) on delete cascade,
+  actor_id uuid not null references family_members(id) on delete cascade,
+  reaction_type text not null check (reaction_type in ('like', 'comment')),
+  comment_text text not null default '',
+  points integer not null default 0,
+  created_at timestamptz not null default now(),
+  unique(post_id, actor_id, reaction_type)
+);
+
+alter table family_feed_posts enable row level security;
+alter table family_feed_reactions enable row level security;
+
+drop policy if exists "members read family feed posts" on family_feed_posts;
+create policy "members read family feed posts" on family_feed_posts for select using (auth.uid() is not null);
+
+drop policy if exists "members create family feed posts" on family_feed_posts;
+create policy "members create family feed posts" on family_feed_posts for insert with check (created_by = current_member_id() or is_admin());
+
+drop policy if exists "admins manage family feed posts" on family_feed_posts;
+create policy "admins manage family feed posts" on family_feed_posts for all using (is_admin()) with check (is_admin());
+
+drop policy if exists "members read family feed reactions" on family_feed_reactions;
+create policy "members read family feed reactions" on family_feed_reactions for select using (auth.uid() is not null);
+
+drop policy if exists "members create own family feed reactions" on family_feed_reactions;
+create policy "members create own family feed reactions" on family_feed_reactions for insert with check (actor_id = current_member_id());
+
+drop policy if exists "admins manage family feed reactions" on family_feed_reactions;
+create policy "admins manage family feed reactions" on family_feed_reactions for all using (is_admin()) with check (is_admin());
+
 with family as (
   select id from families where name = 'Teamwork Chores' order by created_at limit 1
 )

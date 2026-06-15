@@ -71,6 +71,7 @@ exports.handler = async (event) => {
     money: { ok: false, message: "Money ledger table has not been checked." },
     helperPay: { ok: false, message: "Helper pay table has not been checked." },
     helperWorkspace: { ok: false, message: "Helper workspace tables have not been checked." },
+    familyFeed: { ok: false, message: "Family feed tables have not been checked." },
     sms: {
       ok: boolsReady(env, ["twilioAccountSid", "twilioAuthToken", "twilioMessagingServiceSid"]),
       message: "Twilio credentials must be configured."
@@ -193,6 +194,19 @@ exports.handler = async (event) => {
         ok: !helperTasksError && !ingredientError,
         message: helperTasksError?.message || ingredientError?.message || "Helper priority and ingredient request tables are reachable."
       };
+
+      const { error: feedPostError } = await supabase
+        .from("family_feed_posts")
+        .select("id")
+        .limit(1);
+      const { error: feedReactionError } = await supabase
+        .from("family_feed_reactions")
+        .select("id")
+        .limit(1);
+      checks.familyFeed = {
+        ok: !feedPostError && !feedReactionError,
+        message: feedPostError?.message || feedReactionError?.message || "Family feed post and reaction tables are reachable."
+      };
     } catch (error) {
       checks.database = {
         ok: false,
@@ -205,7 +219,7 @@ exports.handler = async (event) => {
   const authLinked = checks.members.length > 0 && checks.members.every(member => member.authLinked);
   const gmailLinked = checks.members.length > 0 && checks.members.every(member => member.gmailLinked);
   const requiredEnvOk = boolsReady(env, ["supabaseUrl", "supabaseAnonKey", "supabaseServiceRoleKey", "googleClientId", "twilioAccountSid", "twilioAuthToken", "twilioMessagingServiceSid", "webPushVapidPublicKey", "webPushVapidPrivateKey"]);
-  const ready = Boolean(requiredEnvOk && checks.database.ok && checks.storage.ok && checks.notifications.ok && checks.reminderPreferences.ok && checks.push.ok && checks.adminConfig.ok && checks.familyTextContacts.ok && checks.choreRecords.ok && checks.money.ok && checks.helperPay.ok && checks.helperWorkspace.ok && checks.sms.ok && checks.google.ok && membersPresent && authLinked && gmailLinked);
+  const ready = Boolean(requiredEnvOk && checks.database.ok && checks.storage.ok && checks.notifications.ok && checks.reminderPreferences.ok && checks.push.ok && checks.adminConfig.ok && checks.familyTextContacts.ok && checks.choreRecords.ok && checks.money.ok && checks.helperPay.ok && checks.helperWorkspace.ok && checks.familyFeed.ok && checks.sms.ok && checks.google.ok && membersPresent && authLinked && gmailLinked);
 
   return json(200, {
     ready,
@@ -223,6 +237,7 @@ exports.handler = async (event) => {
       !checks.money.ok ? "Confirm ledger_entries exists so fines, bonuses, and paid-fine records can be saved server-side." : "",
       !checks.helperPay.ok ? "Confirm helper_pay_records exists so Vanessa's time-card and pay records can be saved server-side." : "",
       !checks.helperWorkspace.ok ? "Confirm helper_tasks and ingredient_requests exist so Vanessa's priorities and shopping requests can be saved server-side." : "",
+      !checks.familyFeed.ok ? "Confirm family_feed_posts and family_feed_reactions exist so proof photo feed activity can be saved server-side." : "",
       !membersPresent ? "Seed all expected family member records with the correct roles." : "",
       !gmailLinked ? "Add Gmail addresses to every family member record." : "",
       !authLinked ? "Have every family member sign in once with Google so auth_user_id is linked." : "",

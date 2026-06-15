@@ -64,6 +64,7 @@ Never expose `SUPABASE_SERVICE_ROLE_KEY` or Twilio secrets in browser JavaScript
 - `helper-workspace`: lets Vanessa or parent admins save Vanessa's priority task order and ingredient requests, while only parent admins can mark ingredients purchased.
 - `photo-upload-url`: creates a private Supabase Storage signed upload URL for family photos.
 - `photo-record`: records or clears uploaded family hero, profile, proof, and feed photos in Supabase with role checks.
+- `family-feed`: reloads proof-photo family feed posts, creates feed posts from stored proof photos, and records duplicate-safe likes and encouragement comments.
 - `send-sms`: lets parent admins send trusted Twilio SMS reminders and logs each send.
 - `teen-reminder`: lets parent admins send opted-in child chore reminder or redo texts and logs each send.
 - `notification-log`: lets parent admins review recent backend SMS and Web Push sends for workflow testing and audit history.
@@ -103,6 +104,8 @@ The `member-rules` function keeps parent-controlled child settings out of browse
 The `helper-time` function is the production source for Vanessa's time-card and weekly pay records. Vanessa can save her own shifts after Google sign-in, parent admins can save or correct shifts, and only Brigham or Karmel can mark a paycheck paid after the money confirmation guardrail.
 
 The `helper-workspace` function is the production source for Vanessa's daily recurring tasks, project priorities, time-permitting tasks, and ingredient requests. Vanessa can update her workspace after Google sign-in; Brigham and Karmel can also manage it and mark ingredient requests purchased.
+
+The `family-feed` function is the production source for the social-style proof photo feed. Chore proof uploads can create backend feed posts using private Supabase Storage paths, and family members can add one like and one encouragement comment per post for points without browser-only duplication.
 
 ## Family Seed Data
 

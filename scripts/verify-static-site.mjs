@@ -46,6 +46,7 @@ const requiredFiles = [
   "netlify/functions/chore-library.js",
   "netlify/functions/extension-decision.js",
   "netlify/functions/extension-request.js",
+  "netlify/functions/family-feed.js",
   "netlify/functions/family-snapshot.js",
   "netlify/functions/family-settings.js",
   "netlify/functions/helper-time.js",
@@ -103,6 +104,7 @@ const choreRecordFunction = await readFile("netlify/functions/chore-record.js", 
 const choreLibraryFunction = await readFile("netlify/functions/chore-library.js", "utf8");
 const extensionDecisionFunction = await readFile("netlify/functions/extension-decision.js", "utf8");
 const extensionRequestFunction = await readFile("netlify/functions/extension-request.js", "utf8");
+const familyFeedFunction = await readFile("netlify/functions/family-feed.js", "utf8");
 const familySnapshotFunction = await readFile("netlify/functions/family-snapshot.js", "utf8");
 const familySettingsFunction = await readFile("netlify/functions/family-settings.js", "utf8");
 const helperTimeFunction = await readFile("netlify/functions/helper-time.js", "utf8");
@@ -440,6 +442,12 @@ const requiredMarkers = [
   "Cloud helper priority save failed",
   "Cloud ingredient request save failed",
   "Cloud ingredient purchase update failed",
+  "loadProductionFamilyFeed",
+  "saveProductionFamilyFeedPost",
+  "saveProductionFamilyFeedReaction",
+  "family-feed",
+  "Cloud family feed like failed",
+  "Cloud family feed encouragement failed",
   "enableChildPushNotifications",
   "urlBase64ToUint8Array",
   "family-settings",
@@ -1052,6 +1060,8 @@ const requiredSchemaMarkers = [
   "create table helper_tasks",
   "create table ingredient_requests",
   "create table photos",
+  "create table family_feed_posts",
+  "create table family_feed_reactions",
   "create table notification_preferences",
   "create table push_subscriptions",
   "create table notification_log",
@@ -1237,7 +1247,7 @@ for (const marker of [
   }
 }
 
-for (const marker of ["expectedMembers", "family-photos", "notification_log", "notification_preferences", "push_subscriptions", "Teen reminder preference and push subscription rows are reachable", "WEB_PUSH_VAPID_PUBLIC_KEY", "WEB_PUSH_VAPID_PRIVATE_KEY", "Family settings and chore library tables are reachable", "family_settings", "chore_records", "Chore record table is reachable", "ledger_entries", "Money ledger table is reachable", "helper_pay_records", "Helper pay table is reachable", "helper_tasks", "ingredient_requests", "Helper priority and ingredient request tables are reachable", "readyForWorkflowBeta", "TWILIO_MESSAGING_SERVICE_SID", "authLinked", "gmailLinked"]) {
+for (const marker of ["expectedMembers", "family-photos", "notification_log", "notification_preferences", "push_subscriptions", "Teen reminder preference and push subscription rows are reachable", "WEB_PUSH_VAPID_PUBLIC_KEY", "WEB_PUSH_VAPID_PRIVATE_KEY", "Family settings and chore library tables are reachable", "family_settings", "chore_records", "Chore record table is reachable", "ledger_entries", "Money ledger table is reachable", "helper_pay_records", "Helper pay table is reachable", "helper_tasks", "ingredient_requests", "Helper priority and ingredient request tables are reachable", "family_feed_posts", "family_feed_reactions", "Family feed post and reaction tables are reachable", "readyForWorkflowBeta", "TWILIO_MESSAGING_SERVICE_SID", "authLinked", "gmailLinked"]) {
   if (!backendHealthFunction.includes(marker)) {
     throw new Error(`Backend health function is missing readiness marker: ${marker}`);
   }
@@ -1319,6 +1329,22 @@ for (const marker of [
 ]) {
   if (!helperWorkspaceFunction.includes(marker)) {
     throw new Error(`Helper workspace function is missing: ${marker}`);
+  }
+}
+
+for (const marker of [
+  "Children can create feed posts only for their own proof photos",
+  "family_feed_posts",
+  "family_feed_reactions",
+  "createSignedUrl",
+  "This family member already reacted to that post",
+  "create_post",
+  "react",
+  "reactionType",
+  "commentText"
+]) {
+  if (!familyFeedFunction.includes(marker)) {
+    throw new Error(`Family feed function is missing: ${marker}`);
   }
 }
 
