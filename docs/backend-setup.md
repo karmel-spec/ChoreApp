@@ -61,6 +61,7 @@ Never expose `SUPABASE_SERVICE_ROLE_KEY` or Twilio secrets in browser JavaScript
 - `member-contact`: lets admins update any child phone/text opt-in and lets children update only their own setting.
 - `money-ledger`: lets signed-in family members read child ledger/account history, and requires a verified parent admin token plus the `CONFIRM MONEY` guardrail before charging fines, awarding bonuses, or marking fines paid.
 - `helper-time`: lets Vanessa or parent admins save Vanessa's helper shifts, while only parent admins can mark helper pay paid with the `CONFIRM MONEY` guardrail.
+- `helper-workspace`: lets Vanessa or parent admins save Vanessa's priority task order and ingredient requests, while only parent admins can mark ingredients purchased.
 - `photo-upload-url`: creates a private Supabase Storage signed upload URL for family photos.
 - `photo-record`: records or clears uploaded family hero, profile, proof, and feed photos in Supabase with role checks.
 - `send-sms`: lets parent admins send trusted Twilio SMS reminders and logs each send.
@@ -100,6 +101,8 @@ The `availability-hold` function is the production source for vacation, sick-day
 The `member-rules` function keeps parent-controlled child settings out of browser-only trust. Parent admins can save fine rates, daily work minutes, difficulty limits, and hard-chore targeting server-side; children can read those rules but cannot change them.
 
 The `helper-time` function is the production source for Vanessa's time-card and weekly pay records. Vanessa can save her own shifts after Google sign-in, parent admins can save or correct shifts, and only Brigham or Karmel can mark a paycheck paid after the money confirmation guardrail.
+
+The `helper-workspace` function is the production source for Vanessa's daily recurring tasks, project priorities, time-permitting tasks, and ingredient requests. Vanessa can update her workspace after Google sign-in; Brigham and Karmel can also manage it and mark ingredient requests purchased.
 
 ## Family Seed Data
 

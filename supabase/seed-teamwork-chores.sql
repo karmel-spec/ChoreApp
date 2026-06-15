@@ -116,6 +116,52 @@ create policy "helpers create own helper pay" on helper_pay_records for insert w
 drop policy if exists "admins manage helper pay" on helper_pay_records;
 create policy "admins manage helper pay" on helper_pay_records for all using (is_admin()) with check (is_admin());
 
+create table if not exists helper_tasks (
+  id uuid primary key default gen_random_uuid(),
+  family_id uuid not null references families(id) on delete cascade,
+  helper_id uuid not null references family_members(id) on delete cascade,
+  column_id text not null check (column_id in ('daily', 'projects', 'oneoff')),
+  title text not null,
+  detail text not null default '',
+  position integer not null default 0,
+  updated_by uuid references family_members(id),
+  updated_at timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
+
+create table if not exists ingredient_requests (
+  id uuid primary key default gen_random_uuid(),
+  family_id uuid not null references families(id) on delete cascade,
+  helper_id uuid not null references family_members(id) on delete cascade,
+  name text not null,
+  requested_by uuid references family_members(id),
+  requested_at timestamptz not null default now(),
+  purchased_by uuid references family_members(id),
+  purchased_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+alter table helper_tasks enable row level security;
+alter table ingredient_requests enable row level security;
+
+drop policy if exists "members read helper tasks" on helper_tasks;
+create policy "members read helper tasks" on helper_tasks for select using (auth.uid() is not null);
+
+drop policy if exists "helpers manage own helper tasks" on helper_tasks;
+create policy "helpers manage own helper tasks" on helper_tasks for all using (helper_id = current_member_id()) with check (helper_id = current_member_id());
+
+drop policy if exists "admins manage helper tasks" on helper_tasks;
+create policy "admins manage helper tasks" on helper_tasks for all using (is_admin()) with check (is_admin());
+
+drop policy if exists "members read ingredient requests" on ingredient_requests;
+create policy "members read ingredient requests" on ingredient_requests for select using (auth.uid() is not null);
+
+drop policy if exists "helpers create own ingredient requests" on ingredient_requests;
+create policy "helpers create own ingredient requests" on ingredient_requests for insert with check (helper_id = current_member_id());
+
+drop policy if exists "admins manage ingredient requests" on ingredient_requests;
+create policy "admins manage ingredient requests" on ingredient_requests for all using (is_admin()) with check (is_admin());
+
 with family as (
   select id from families where name = 'Teamwork Chores' order by created_at limit 1
 )

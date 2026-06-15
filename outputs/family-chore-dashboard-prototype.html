@@ -3223,6 +3223,13 @@
       helperRate = safeStoredNumber(currentRecord.rate, helperRate);
     }
 
+    function hydrateProductionHelperWorkspace(payload) {
+      if (payload?.helperBoardTasks) helperBoardTasks = normalizeHelperBoardTasks(payload.helperBoardTasks);
+      if (Array.isArray(payload?.ingredientRequests)) {
+        ingredientRequests = payload.ingredientRequests.map(normalizeIngredientRequest).slice(0, 120);
+      }
+    }
+
     const helperTaskColumns = ["daily", "projects", "oneoff"];
 
     function normalizeHelperTaskRecord(task, index = 0) {
@@ -4160,7 +4167,7 @@
 
     async function hydrateProductionBackendData() {
       if (!productionBackend.ready || !productionBackend.session?.access_token) return;
-      const [snapshotResult, settingsResult, choreResult, ledgerResult, choreRecordResult, extensionResult, holdResult, feedbackResult, notificationResult, helperTimeResult] = await Promise.allSettled([
+      const [snapshotResult, settingsResult, choreResult, ledgerResult, choreRecordResult, extensionResult, holdResult, feedbackResult, notificationResult, helperTimeResult, helperWorkspaceResult] = await Promise.allSettled([
         loadProductionFamilySnapshot(),
         loadProductionFamilySettings(),
         loadProductionChoreLibrary(),
@@ -4170,7 +4177,8 @@
         loadProductionAvailabilityHolds(),
         loadProductionChoreFeedback(),
         loadProductionNotificationLog(),
-        loadProductionHelperTime()
+        loadProductionHelperTime(),
+        loadProductionHelperWorkspace()
       ]);
       if (snapshotResult.status === "fulfilled" && Array.isArray(snapshotResult.value?.members)) {
         hydrateProductionFamilySnapshot(snapshotResult.value);
@@ -4203,6 +4211,9 @@
       }
       if (helperTimeResult.status === "fulfilled" && Array.isArray(helperTimeResult.value?.records)) {
         hydrateProductionHelperTime(helperTimeResult.value);
+      }
+      if (helperWorkspaceResult.status === "fulfilled" && helperWorkspaceResult.value) {
+        hydrateProductionHelperWorkspace(helperWorkspaceResult.value);
       }
       persistBetaData();
     }
@@ -4367,6 +4378,53 @@
           recordId,
           confirmationText: "CONFIRM MONEY"
         })
+      });
+    }
+
+    async function loadProductionHelperWorkspace() {
+      await loadProductionBackend();
+      if (!productionBackend.ready || !productionBackend.session?.access_token) return null;
+      return fetchJson("/.netlify/functions/helper-workspace", {
+        headers: productionAuthHeader()
+      });
+    }
+
+    async function saveProductionHelperBoardTasks(tasks) {
+      await loadProductionBackend();
+      if (!productionBackend.ready) return null;
+      if (!productionBackend.session?.access_token) {
+        throw new Error("Sign in with Google before saving helper priorities in production mode.");
+      }
+      return fetchJson("/.netlify/functions/helper-workspace", {
+        method: "POST",
+        headers: productionAuthHeader(),
+        body: JSON.stringify({ action: "save_tasks", helperBoardTasks: tasks })
+      });
+    }
+
+    async function addProductionIngredientRequests(names) {
+      await loadProductionBackend();
+      if (!productionBackend.ready) return null;
+      if (!productionBackend.session?.access_token) {
+        throw new Error("Sign in with Google before saving ingredient requests in production mode.");
+      }
+      return fetchJson("/.netlify/functions/helper-workspace", {
+        method: "POST",
+        headers: productionAuthHeader(),
+        body: JSON.stringify({ action: "add_ingredient", names })
+      });
+    }
+
+    async function markProductionIngredientPurchased(item) {
+      await loadProductionBackend();
+      if (!productionBackend.ready || !item?.id) return null;
+      if (!productionBackend.session?.access_token) {
+        throw new Error("Sign in with Google before marking ingredient requests purchased in production mode.");
+      }
+      return fetchJson("/.netlify/functions/helper-workspace", {
+        method: "PATCH",
+        headers: productionAuthHeader(),
+        body: JSON.stringify({ action: "mark_ingredient_purchased", ingredientId: item.id })
       });
     }
 
@@ -6203,6 +6261,7 @@
         readinessRow("Google OAuth", Boolean(checks.google?.ok), checks.google?.message || ""),
         readinessRow("Twilio SMS", Boolean(checks.sms?.ok), checks.sms?.message || ""),
         readinessRow("Helper pay records", Boolean(checks.helperPay?.ok), checks.helperPay?.message || ""),
+        readinessRow("Helper workspace records", Boolean(checks.helperWorkspace?.ok), checks.helperWorkspace?.message || ""),
         memberRows
       ].join("");
       document.getElementById("backendReadinessStatus").textContent = payload.readyForWorkflowBeta
@@ -7614,11 +7673,11 @@
           </span>
           ${ingredientRequestPurchased(item)
             ? `<span>Purchased</span>`
-            : `<button class="ghost-btn" type="button" data-ingredient-name="${encodeURIComponent(typeof item === "string" ? item : item.name)}" ${isAdmin() ? "" : "disabled"}>Mark Purchased</button>`}
+            : `<button class="ghost-btn" type="button" data-ingredient-name="${encodeURIComponent(typeof item === "string" ? item : item.name)}" data-ingredient-id="${escapeHtml(item.id || "")}" ${isAdmin() ? "" : "disabled"}>Mark Purchased</button>`}
         </div>
       `).join("") : `<div class="notice-card">No ingredient requests yet. Vanessa can add cooking needs here for Mom to approve.</div>`;
       document.querySelectorAll("[data-ingredient-name]").forEach(button => {
-        button.addEventListener("click", () => markIngredientPurchased(decodeURIComponent(button.dataset.ingredientName)));
+        button.addEventListener("click", () => markIngredientPurchased(decodeURIComponent(button.dataset.ingredientName), button.dataset.ingredientId || ""));
       });
     }
 
@@ -7635,10 +7694,26 @@
         : base;
     }
 
-    function markIngredientPurchased(name) {
+    async function markIngredientPurchased(name, ingredientId = "") {
       if (!isAdmin()) {
         document.getElementById("timeCardStatus").textContent = "Only Brigham or Karmel can mark ingredient requests purchased.";
         return;
+      }
+      const target = ingredientRequests.find(item => (ingredientId && item.id === ingredientId) || (typeof item === "string" ? item : item.name) === name);
+      if (target?.id) {
+        try {
+          const payload = await markProductionIngredientPurchased(target);
+          if (payload?.ingredientRequest) {
+            ingredientRequests = ingredientRequests.map(item => item.id === payload.ingredientRequest.id ? normalizeIngredientRequest(payload.ingredientRequest) : item);
+            persistBetaData();
+            renderIngredients();
+            document.getElementById("timeCardStatus").textContent = `${payload.ingredientRequest.name} marked purchased in the backend.`;
+            return;
+          }
+        } catch (error) {
+          document.getElementById("timeCardStatus").textContent = `Cloud ingredient purchase update failed: ${error.message}`;
+          return;
+        }
       }
       ingredientRequests = ingredientRequests.map(item => {
         const itemName = typeof item === "string" ? item : item.name;
@@ -7654,14 +7729,29 @@
       document.getElementById("timeCardStatus").textContent = `${name} marked purchased by ${currentUser?.name || "Admin"}.`;
     }
 
-    function addIngredientRequest() {
+    async function addIngredientRequest() {
       if (!canUseHelperWorkspace()) {
         document.getElementById("timeCardStatus").textContent = "Only Vanessa, Brigham, or Karmel can add ingredient requests.";
         return;
       }
       const raw = document.getElementById("ingredientRequest").value.trim();
       if (!raw) return;
-      raw.split(",").map(item => item.trim()).filter(Boolean).forEach(item => {
+      const names = raw.split(",").map(item => item.trim()).filter(Boolean);
+      try {
+        const payload = await addProductionIngredientRequests(names);
+        if (payload?.ingredientRequests) {
+          hydrateProductionHelperWorkspace(payload);
+          document.getElementById("ingredientRequest").value = "";
+          persistBetaData();
+          renderIngredients();
+          document.getElementById("timeCardStatus").textContent = "Ingredient request list saved to the backend.";
+          return;
+        }
+      } catch (error) {
+        document.getElementById("timeCardStatus").textContent = `Cloud ingredient request save failed: ${error.message}`;
+        return;
+      }
+      names.forEach(item => {
         const exists = ingredientRequests.some(existing => (typeof existing === "string" ? existing : existing.name).toLowerCase() === item.toLowerCase());
         if (!exists) {
           ingredientRequests.push({
@@ -7699,7 +7789,7 @@
       });
     }
 
-    function saveHelperBoardOrder() {
+    async function saveHelperBoardOrder() {
       if (!canUseHelperWorkspace()) return;
       const nextTasks = {};
       document.querySelectorAll(".priority-column").forEach(column => {
@@ -7710,6 +7800,13 @@
         })).filter(task => task.title);
       });
       helperBoardTasks = { ...helperBoardTasks, ...nextTasks };
+      try {
+        const payload = await saveProductionHelperBoardTasks(helperBoardTasks);
+        if (payload?.helperBoardTasks) hydrateProductionHelperWorkspace(payload);
+      } catch (error) {
+        document.getElementById("timeCardStatus").textContent = `Cloud helper priority save failed: ${error.message}`;
+        return;
+      }
       persistBetaData();
     }
 
@@ -7727,7 +7824,7 @@
       const [task] = tasks.splice(index, 1);
       tasks.splice(nextIndex, 0, task);
       helperBoardTasks[columnId] = tasks;
-      persistBetaData();
+      saveHelperBoardOrder();
       renderHelperBoard();
       document.getElementById("timeCardStatus").textContent = `${task.title} moved ${direction < 0 ? "up" : "down"} in Vanessa's priority list.`;
     }

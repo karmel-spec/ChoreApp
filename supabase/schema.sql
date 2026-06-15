@@ -127,6 +127,31 @@ create table helper_pay_records (
   unique(helper_id, week_label)
 );
 
+create table helper_tasks (
+  id uuid primary key default gen_random_uuid(),
+  family_id uuid not null references families(id) on delete cascade,
+  helper_id uuid not null references family_members(id) on delete cascade,
+  column_id text not null check (column_id in ('daily', 'projects', 'oneoff')),
+  title text not null,
+  detail text not null default '',
+  position integer not null default 0,
+  updated_by uuid references family_members(id),
+  updated_at timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
+
+create table ingredient_requests (
+  id uuid primary key default gen_random_uuid(),
+  family_id uuid not null references families(id) on delete cascade,
+  helper_id uuid not null references family_members(id) on delete cascade,
+  name text not null,
+  requested_by uuid references family_members(id),
+  requested_at timestamptz not null default now(),
+  purchased_by uuid references family_members(id),
+  purchased_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
 create table availability_holds (
   id uuid primary key default gen_random_uuid(),
   family_id uuid not null references families(id) on delete cascade,
@@ -235,6 +260,8 @@ alter table family_settings enable row level security;
 alter table chore_records enable row level security;
 alter table ledger_entries enable row level security;
 alter table helper_pay_records enable row level security;
+alter table helper_tasks enable row level security;
+alter table ingredient_requests enable row level security;
 alter table availability_holds enable row level security;
 alter table chore_feedback enable row level security;
 alter table extension_requests enable row level security;
@@ -291,6 +318,14 @@ create policy "members read helper pay" on helper_pay_records for select using (
 create policy "helpers update own unpaid helper pay" on helper_pay_records for update using (helper_id = current_member_id() and paid = false) with check (helper_id = current_member_id() and paid = false);
 create policy "helpers create own helper pay" on helper_pay_records for insert with check (helper_id = current_member_id());
 create policy "admins manage helper pay" on helper_pay_records for all using (is_admin()) with check (is_admin());
+
+create policy "members read helper tasks" on helper_tasks for select using (auth.uid() is not null);
+create policy "helpers manage own helper tasks" on helper_tasks for all using (helper_id = current_member_id()) with check (helper_id = current_member_id());
+create policy "admins manage helper tasks" on helper_tasks for all using (is_admin()) with check (is_admin());
+
+create policy "members read ingredient requests" on ingredient_requests for select using (auth.uid() is not null);
+create policy "helpers create own ingredient requests" on ingredient_requests for insert with check (helper_id = current_member_id());
+create policy "admins manage ingredient requests" on ingredient_requests for all using (is_admin()) with check (is_admin());
 
 create policy "members read holds" on availability_holds for select using (auth.uid() is not null);
 create policy "admins manage holds" on availability_holds for all using (is_admin()) with check (is_admin());
