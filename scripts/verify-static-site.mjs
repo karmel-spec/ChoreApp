@@ -52,6 +52,7 @@ const requiredFiles = [
   "netlify/functions/member-contact.js",
   "netlify/functions/member-rules.js",
   "netlify/functions/money-ledger.js",
+  "netlify/functions/notification-log.js",
   "netlify/functions/photo-record.js",
   "netlify/functions/photo-upload-url.js",
   "netlify/functions/push-subscription.js",
@@ -106,6 +107,7 @@ const linkGoogleFunction = await readFile("netlify/functions/link-google-member.
 const memberContactFunction = await readFile("netlify/functions/member-contact.js", "utf8");
 const memberRulesFunction = await readFile("netlify/functions/member-rules.js", "utf8");
 const moneyLedgerFunction = await readFile("netlify/functions/money-ledger.js", "utf8");
+const notificationLogFunction = await readFile("netlify/functions/notification-log.js", "utf8");
 const photoRecordFunction = await readFile("netlify/functions/photo-record.js", "utf8");
 const photoFunction = await readFile("netlify/functions/photo-upload-url.js", "utf8");
 const pushSubscriptionFunction = await readFile("netlify/functions/push-subscription.js", "utf8");
@@ -415,6 +417,11 @@ const requiredMarkers = [
   "saveProductionMemberRules",
   "sendProductionTeenReminder",
   "saveProductionPushSubscription",
+  "loadProductionNotificationLog",
+  "renderProductionNotificationLog",
+  "Production Notification Log",
+  "refreshNotificationLogBtn",
+  "notification-log",
   "enableChildPushNotifications",
   "urlBase64ToUint8Array",
   "family-settings",
@@ -734,6 +741,7 @@ const requiredGuideMarkers = [
   "family-settings",
   "chore-library",
   "scheduled opted-in teen reminder texts",
+  "notification-log",
   "Web Push subscriptions",
   "Web Push VAPID",
   "redo texts",
@@ -1246,6 +1254,20 @@ for (const marker of [
 
 if (!supabaseHelperFunction.includes("TWILIO_MESSAGING_SERVICE_SID") || !supabaseHelperFunction.includes("sendSms") || !smsFunction.includes("Only parent admins can send SMS reminders")) {
   throw new Error("SMS function is missing Twilio/admin guard behavior.");
+}
+
+for (const marker of [
+  "Only Brigham or Karmel can read notification logs",
+  "notification_log",
+  "provider_message_id",
+  "recipientName",
+  "createdByName",
+  ".eq(\"family_id\", actor.family_id)",
+  "order(\"created_at\", { ascending: false })"
+]) {
+  if (!notificationLogFunction.includes(marker)) {
+    throw new Error(`Notification log function is missing: ${marker}`);
+  }
 }
 
 for (const marker of [

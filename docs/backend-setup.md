@@ -64,6 +64,7 @@ Never expose `SUPABASE_SERVICE_ROLE_KEY` or Twilio secrets in browser JavaScript
 - `photo-record`: records or clears uploaded family hero, profile, proof, and feed photos in Supabase with role checks.
 - `send-sms`: lets parent admins send trusted Twilio SMS reminders and logs each send.
 - `teen-reminder`: lets parent admins send opted-in child chore reminder or redo texts and logs each send.
+- `notification-log`: lets parent admins review recent backend SMS and Web Push sends for workflow testing and audit history.
 - `push-subscription`: lets signed-in members save or disable their own browser push subscription, while parent admins can manage family member subscriptions.
 - `send-push`: lets parent admins send Web Push reminders to opted-in members with active browser subscriptions.
 - `extension-request`: lets signed-in family members reload extension requests, and lets a child or admin create an extension petition and text Brigham.

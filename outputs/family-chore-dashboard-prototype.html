@@ -2208,6 +2208,19 @@
 
         <section class="panel">
           <div class="panel-head">
+            <h3>Production Notification Log</h3>
+            <span>Admin audit</span>
+          </div>
+          <div class="side-body">
+            <div class="notice-card">Recent backend SMS and push sends appear here after Google sign-in, including noon review reminders, extension requests, redo notices, and teen reminders.</div>
+            <button class="ghost-btn" type="button" id="refreshNotificationLogBtn">Refresh Notification Log</button>
+            <div class="review-list" id="notificationLogList"></div>
+            <div class="admin-status" id="notificationLogStatus"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
             <h3>Beta Data Tools</h3>
             <span>Backup</span>
           </div>
@@ -2602,6 +2615,7 @@
     };
     let helperWeeklyHours = 14.25;
     let helperRate = 17;
+    let productionNotificationLog = [];
     let helperPayRecords = [
       { week: "Jun 1-7", hours: 16.5, rate: 17, paid: true },
       { week: "Jun 8-14", hours: 14.25, rate: 17, paid: false }
@@ -4119,7 +4133,7 @@
 
     async function hydrateProductionBackendData() {
       if (!productionBackend.ready || !productionBackend.session?.access_token) return;
-      const [snapshotResult, settingsResult, choreResult, ledgerResult, choreRecordResult, extensionResult, holdResult, feedbackResult] = await Promise.allSettled([
+      const [snapshotResult, settingsResult, choreResult, ledgerResult, choreRecordResult, extensionResult, holdResult, feedbackResult, notificationResult] = await Promise.allSettled([
         loadProductionFamilySnapshot(),
         loadProductionFamilySettings(),
         loadProductionChoreLibrary(),
@@ -4127,7 +4141,8 @@
         loadProductionChoreRecords(),
         loadProductionExtensionRequests(),
         loadProductionAvailabilityHolds(),
-        loadProductionChoreFeedback()
+        loadProductionChoreFeedback(),
+        loadProductionNotificationLog()
       ]);
       if (snapshotResult.status === "fulfilled" && Array.isArray(snapshotResult.value?.members)) {
         hydrateProductionFamilySnapshot(snapshotResult.value);
@@ -4154,6 +4169,9 @@
       }
       if (feedbackResult.status === "fulfilled" && Array.isArray(feedbackResult.value?.choreFeedback)) {
         choreFeedbackQueue = feedbackResult.value.choreFeedback.map(normalizeChoreFeedbackRecord).slice(0, 120);
+      }
+      if (notificationResult.status === "fulfilled" && Array.isArray(notificationResult.value?.notifications)) {
+        productionNotificationLog = notificationResult.value.notifications.slice(0, 120);
       }
       persistBetaData();
     }
@@ -4271,6 +4289,14 @@
       await loadProductionBackend();
       if (!productionBackend.ready || !productionBackend.session?.access_token) return null;
       return fetchJson("/.netlify/functions/chore-feedback", {
+        headers: productionAuthHeader()
+      });
+    }
+
+    async function loadProductionNotificationLog() {
+      await loadProductionBackend();
+      if (!productionBackend.ready || !productionBackend.session?.access_token || !isAdmin()) return null;
+      return fetchJson("/.netlify/functions/notification-log", {
         headers: productionAuthHeader()
       });
     }
@@ -6114,6 +6140,44 @@
         : `Ready check needs setup: ${(payload.nextSteps || []).join(" ")}`;
     }
 
+    function notificationKindLabel(kind) {
+      const labels = {
+        noon_review: "Noon review",
+        extension: "Extension request",
+        redo: "Redo text",
+        teen_reminder: "Teen reminder"
+      };
+      return labels[kind] || String(kind || "Notification").replace(/_/g, " ");
+    }
+
+    function renderProductionNotificationLog() {
+      const list = document.getElementById("notificationLogList");
+      const status = document.getElementById("notificationLogStatus");
+      if (!list || !status) return;
+      if (!isAdmin()) {
+        list.innerHTML = `<div class="notice-card">Only Brigham or Karmel can view production notification logs.</div>`;
+        status.textContent = "Notification audit is parent-admin only.";
+        return;
+      }
+      if (!productionBackend.ready || !productionBackend.session?.access_token) {
+        list.innerHTML = `<div class="notice-card">Sign in with Google after the production backend is configured to load real notification records.</div>`;
+        status.textContent = "Backend notification log has not been loaded.";
+        return;
+      }
+      list.innerHTML = productionNotificationLog.length ? productionNotificationLog.map(item => `
+        <div class="review-row">
+          <div>
+            <strong>${escapeHtml(notificationKindLabel(item.kind))} · ${escapeHtml(item.status || "queued")}</strong>
+            <span>${escapeHtml(item.recipientName || "Family contact")} · ${escapeHtml(item.destination || "destination not recorded")} · ${escapeHtml(shortDateTime(item.createdAt))}</span>
+            <span>${escapeHtml(item.body || "")}</span>
+            <span>${item.providerMessageId ? `Provider id ${escapeHtml(item.providerMessageId)}` : "No provider id recorded"}${item.createdByName ? ` · sent by ${escapeHtml(item.createdByName)}` : ""}</span>
+          </div>
+          <span class="status ${item.status === "failed" ? "warn" : "done"}">${escapeHtml(item.status || "queued")}</span>
+        </div>
+      `).join("") : `<div class="notice-card">No production notification sends have been logged yet.</div>`;
+      status.textContent = `${productionNotificationLog.length} recent backend notification records loaded.`;
+    }
+
     async function checkBackendReadiness() {
       document.getElementById("backendReadinessStatus").textContent = "Checking production backend readiness...";
       try {
@@ -6123,6 +6187,18 @@
         document.getElementById("backendReadinessSummary").textContent = "Production backend readiness cannot be checked from this environment yet.";
         document.getElementById("backendReadinessList").innerHTML = "";
         document.getElementById("backendReadinessStatus").textContent = error.message;
+      }
+    }
+
+    async function refreshProductionNotificationLog() {
+      const status = document.getElementById("notificationLogStatus");
+      if (status) status.textContent = "Loading production notification log...";
+      try {
+        const payload = await loadProductionNotificationLog();
+        productionNotificationLog = Array.isArray(payload?.notifications) ? payload.notifications.slice(0, 120) : [];
+        renderProductionNotificationLog();
+      } catch (error) {
+        if (status) status.textContent = `Notification log load failed: ${error.message}`;
       }
     }
 
@@ -7662,6 +7738,7 @@
       renderFeedbackLog();
       renderAvailabilityLedger();
       renderChoreFeedbackApprovals();
+      renderProductionNotificationLog();
       renderFamilyPhotoFeed();
       renderView();
     }
@@ -7794,6 +7871,8 @@
     document.getElementById("freshStartAccountsBtn").addEventListener("click", () => freshStartChildAccounts());
 
     document.getElementById("checkBackendReadinessBtn").addEventListener("click", checkBackendReadiness);
+
+    document.getElementById("refreshNotificationLogBtn").addEventListener("click", refreshProductionNotificationLog);
 
     document.getElementById("saveChildContactBtn").addEventListener("click", saveChildContactSettings);
 
