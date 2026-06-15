@@ -68,6 +68,7 @@ exports.handler = async (event) => {
     adminConfig: { ok: false, message: "Family settings and chore library have not been checked." },
     familyTextContacts: { ok: false, message: "Family text contacts have not been checked." },
     choreRecords: { ok: false, message: "Chore record table has not been checked." },
+    reviewFinalizations: { ok: false, message: "Review finalization table has not been checked." },
     money: { ok: false, message: "Money ledger table has not been checked." },
     helperPay: { ok: false, message: "Helper pay table has not been checked." },
     helperWorkspace: { ok: false, message: "Helper workspace tables have not been checked." },
@@ -164,6 +165,15 @@ exports.handler = async (event) => {
         message: choreRecordError ? choreRecordError.message : "Chore record table is reachable."
       };
 
+      const { error: reviewFinalizationError } = await supabase
+        .from("review_finalizations")
+        .select("id")
+        .limit(1);
+      checks.reviewFinalizations = {
+        ok: !reviewFinalizationError,
+        message: reviewFinalizationError ? reviewFinalizationError.message : "Review finalization table is reachable."
+      };
+
       const { error: moneyError } = await supabase
         .from("ledger_entries")
         .select("id")
@@ -219,7 +229,7 @@ exports.handler = async (event) => {
   const authLinked = checks.members.length > 0 && checks.members.every(member => member.authLinked);
   const gmailLinked = checks.members.length > 0 && checks.members.every(member => member.gmailLinked);
   const requiredEnvOk = boolsReady(env, ["supabaseUrl", "supabaseAnonKey", "supabaseServiceRoleKey", "googleClientId", "twilioAccountSid", "twilioAuthToken", "twilioMessagingServiceSid", "webPushVapidPublicKey", "webPushVapidPrivateKey"]);
-  const ready = Boolean(requiredEnvOk && checks.database.ok && checks.storage.ok && checks.notifications.ok && checks.reminderPreferences.ok && checks.push.ok && checks.adminConfig.ok && checks.familyTextContacts.ok && checks.choreRecords.ok && checks.money.ok && checks.helperPay.ok && checks.helperWorkspace.ok && checks.familyFeed.ok && checks.sms.ok && checks.google.ok && membersPresent && authLinked && gmailLinked);
+  const ready = Boolean(requiredEnvOk && checks.database.ok && checks.storage.ok && checks.notifications.ok && checks.reminderPreferences.ok && checks.push.ok && checks.adminConfig.ok && checks.familyTextContacts.ok && checks.choreRecords.ok && checks.reviewFinalizations.ok && checks.money.ok && checks.helperPay.ok && checks.helperWorkspace.ok && checks.familyFeed.ok && checks.sms.ok && checks.google.ok && membersPresent && authLinked && gmailLinked);
 
   return json(200, {
     ready,
@@ -234,6 +244,7 @@ exports.handler = async (event) => {
       !checks.adminConfig.ok ? "Confirm family_settings and chores exist so parent admin rules and chore library edits save server-side." : "",
       !checks.familyTextContacts.ok ? "Save valid Mom review and Dad extension text contacts in Backend Admin family rules." : "",
       !checks.choreRecords.ok ? "Confirm chore_records exists so completion, proof, approval, and redo records can be saved server-side." : "",
+      !checks.reviewFinalizations.ok ? "Confirm review_finalizations exists so same-day noon review locks save server-side." : "",
       !checks.money.ok ? "Confirm ledger_entries exists so fines, bonuses, and paid-fine records can be saved server-side." : "",
       !checks.helperPay.ok ? "Confirm helper_pay_records exists so Vanessa's time-card and pay records can be saved server-side." : "",
       !checks.helperWorkspace.ok ? "Confirm helper_tasks and ingredient_requests exist so Vanessa's priorities and shopping requests can be saved server-side." : "",

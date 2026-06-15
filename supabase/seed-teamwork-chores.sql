@@ -206,6 +206,32 @@ create policy "members create own family feed reactions" on family_feed_reaction
 drop policy if exists "admins manage family feed reactions" on family_feed_reactions;
 create policy "admins manage family feed reactions" on family_feed_reactions for all using (is_admin()) with check (is_admin());
 
+create table if not exists review_finalizations (
+  id uuid primary key default gen_random_uuid(),
+  family_id uuid not null references families(id) on delete cascade,
+  child_id uuid not null references family_members(id) on delete cascade,
+  service_date date not null,
+  deadline text not null,
+  missed text[] not null default '{}',
+  charged numeric(10,2) not null default 0,
+  ledger_entry_id uuid references ledger_entries(id) on delete set null,
+  existing_deadline_fine boolean not null default false,
+  streak_credited boolean not null default false,
+  excused boolean not null default false,
+  hold_reason text not null default '',
+  finalized_by uuid references family_members(id),
+  finalized_at timestamptz not null default now(),
+  unique(child_id, service_date)
+);
+
+alter table review_finalizations enable row level security;
+
+drop policy if exists "members read review finalizations" on review_finalizations;
+create policy "members read review finalizations" on review_finalizations for select using (auth.uid() is not null);
+
+drop policy if exists "admins manage review finalizations" on review_finalizations;
+create policy "admins manage review finalizations" on review_finalizations for all using (is_admin()) with check (is_admin());
+
 with family as (
   select id from families where name = 'Teamwork Chores' order by created_at limit 1
 )

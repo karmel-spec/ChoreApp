@@ -165,6 +165,24 @@ create table availability_holds (
   created_at timestamptz not null default now()
 );
 
+create table review_finalizations (
+  id uuid primary key default gen_random_uuid(),
+  family_id uuid not null references families(id) on delete cascade,
+  child_id uuid not null references family_members(id) on delete cascade,
+  service_date date not null,
+  deadline text not null,
+  missed text[] not null default '{}',
+  charged numeric(10,2) not null default 0,
+  ledger_entry_id uuid references ledger_entries(id) on delete set null,
+  existing_deadline_fine boolean not null default false,
+  streak_credited boolean not null default false,
+  excused boolean not null default false,
+  hold_reason text not null default '',
+  finalized_by uuid references family_members(id),
+  finalized_at timestamptz not null default now(),
+  unique(child_id, service_date)
+);
+
 create table chore_feedback (
   id uuid primary key default gen_random_uuid(),
   family_id uuid not null references families(id) on delete cascade,
@@ -286,6 +304,7 @@ alter table helper_pay_records enable row level security;
 alter table helper_tasks enable row level security;
 alter table ingredient_requests enable row level security;
 alter table availability_holds enable row level security;
+alter table review_finalizations enable row level security;
 alter table chore_feedback enable row level security;
 alter table extension_requests enable row level security;
 alter table photos enable row level security;
@@ -354,6 +373,9 @@ create policy "admins manage ingredient requests" on ingredient_requests for all
 
 create policy "members read holds" on availability_holds for select using (auth.uid() is not null);
 create policy "admins manage holds" on availability_holds for all using (is_admin()) with check (is_admin());
+
+create policy "members read review finalizations" on review_finalizations for select using (auth.uid() is not null);
+create policy "admins manage review finalizations" on review_finalizations for all using (is_admin()) with check (is_admin());
 
 create policy "members read chore feedback" on chore_feedback for select using (auth.uid() is not null);
 create policy "children submit own chore feedback" on chore_feedback for insert with check (child_id = current_member_id());

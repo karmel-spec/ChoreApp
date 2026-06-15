@@ -3322,6 +3322,31 @@
       }, {});
     }
 
+    function hydrateProductionReviewFinalizations(payload) {
+      if (!Array.isArray(payload?.reviewFinalizations)) return;
+      const mapped = normalizeFineAssessments(Object.fromEntries(payload.reviewFinalizations.map(item => [
+        `${item.date}|${item.childProfileKey}`,
+        {
+          childId: item.childProfileKey,
+          date: item.date,
+          deadline: item.deadline,
+          missed: item.missed || [],
+          charged: item.charged || 0,
+          backendLedgerEntryId: item.ledgerEntryId || "",
+          existingDeadlineFine: item.existingDeadlineFine,
+          streakCredited: item.streakCredited,
+          excused: item.excused,
+          holdReason: item.holdReason || "",
+          finalizedBy: item.finalizedBy || "Backend admin",
+          finalizedAt: item.finalizedAt
+        }
+      ])));
+      fineAssessments = {
+        ...fineAssessments,
+        ...mapped
+      };
+    }
+
     function normalizeExtensionAuditRecord(record, index = 0) {
       const recordData = record && typeof record === "object" ? record : {};
       const childId = normalizeChildId(recordData.childId, selectedChildId);
@@ -4172,7 +4197,7 @@
 
     async function hydrateProductionBackendData() {
       if (!productionBackend.ready || !productionBackend.session?.access_token) return;
-      const [snapshotResult, settingsResult, choreResult, ledgerResult, choreRecordResult, extensionResult, holdResult, feedbackResult, notificationResult, helperTimeResult, helperWorkspaceResult, familyFeedResult] = await Promise.allSettled([
+      const [snapshotResult, settingsResult, choreResult, ledgerResult, choreRecordResult, extensionResult, holdResult, feedbackResult, notificationResult, helperTimeResult, helperWorkspaceResult, familyFeedResult, reviewFinalizationResult] = await Promise.allSettled([
         loadProductionFamilySnapshot(),
         loadProductionFamilySettings(),
         loadProductionChoreLibrary(),
@@ -4184,7 +4209,8 @@
         loadProductionNotificationLog(),
         loadProductionHelperTime(),
         loadProductionHelperWorkspace(),
-        loadProductionFamilyFeed()
+        loadProductionFamilyFeed(),
+        loadProductionReviewFinalizations()
       ]);
       if (snapshotResult.status === "fulfilled" && Array.isArray(snapshotResult.value?.members)) {
         hydrateProductionFamilySnapshot(snapshotResult.value);
@@ -4223,6 +4249,9 @@
       }
       if (familyFeedResult.status === "fulfilled" && familyFeedResult.value) {
         hydrateProductionFamilyFeed(familyFeedResult.value);
+      }
+      if (reviewFinalizationResult.status === "fulfilled" && reviewFinalizationResult.value) {
+        hydrateProductionReviewFinalizations(reviewFinalizationResult.value);
       }
       persistBetaData();
     }
@@ -4478,6 +4507,55 @@
           postId: post.id,
           reactionType,
           commentText: "Great work!"
+        })
+      });
+    }
+
+    async function loadProductionReviewFinalizations() {
+      await loadProductionBackend();
+      if (!productionBackend.ready || !productionBackend.session?.access_token) return null;
+      return fetchJson(`/.netlify/functions/review-finalization?startDate=${encodeURIComponent(localDateKey(-7))}&endDate=${encodeURIComponent(localDateKey(7))}`, {
+        headers: productionAuthHeader()
+      });
+    }
+
+    async function saveProductionReviewFinalization(child, assessment) {
+      await loadProductionBackend();
+      if (!productionBackend.ready) return null;
+      if (!productionBackend.session?.access_token) {
+        throw new Error("Sign in with Google before finalizing review records in production mode.");
+      }
+      return fetchJson("/.netlify/functions/review-finalization", {
+        method: "POST",
+        headers: productionAuthHeader(),
+        body: JSON.stringify({
+          childProfileKey: child.id,
+          serviceDate: assessment.date || localDateKey(),
+          deadline: assessment.deadline,
+          missed: assessment.missed || [],
+          charged: assessment.charged || 0,
+          ledgerEntryId: assessment.backendLedgerEntryId || "",
+          existingDeadlineFine: Boolean(assessment.existingDeadlineFine),
+          streakCredited: Boolean(assessment.streakCredited),
+          excused: Boolean(assessment.excused),
+          holdReason: assessment.holdReason || ""
+        })
+      });
+    }
+
+    async function linkProductionReviewFinalizationLedger(child, assessment, ledgerEntryId) {
+      await loadProductionBackend();
+      if (!productionBackend.ready || !ledgerEntryId) return null;
+      if (!productionBackend.session?.access_token) {
+        throw new Error("Sign in with Google before linking review fine records in production mode.");
+      }
+      return fetchJson("/.netlify/functions/review-finalization", {
+        method: "PATCH",
+        headers: productionAuthHeader(),
+        body: JSON.stringify({
+          childProfileKey: child.id,
+          serviceDate: assessment.date || localDateKey(),
+          ledgerEntryId
         })
       });
     }
@@ -6360,6 +6438,7 @@
         readinessRow("Family text contacts", Boolean(checks.familyTextContacts?.ok), checks.familyTextContacts?.message || ""),
         readinessRow("Google OAuth", Boolean(checks.google?.ok), checks.google?.message || ""),
         readinessRow("Twilio SMS", Boolean(checks.sms?.ok), checks.sms?.message || ""),
+        readinessRow("Review finalizations", Boolean(checks.reviewFinalizations?.ok), checks.reviewFinalizations?.message || ""),
         readinessRow("Helper pay records", Boolean(checks.helperPay?.ok), checks.helperPay?.message || ""),
         readinessRow("Helper workspace records", Boolean(checks.helperWorkspace?.ok), checks.helperWorkspace?.message || ""),
         readinessRow("Family feed records", Boolean(checks.familyFeed?.ok), checks.familyFeed?.message || ""),
@@ -6805,6 +6884,13 @@
     }
 
     async function finalizeChildReview(child) {
+      try {
+        const payload = await loadProductionReviewFinalizations();
+        if (payload?.reviewFinalizations) hydrateProductionReviewFinalizations(payload);
+      } catch (error) {
+        document.getElementById("reviewStatus").textContent = `Cloud finalized review reload failed: ${error.message}`;
+        throw error;
+      }
       const key = assessmentKey(child);
       if (fineAssessments[key]?.finalizedAt) {
         return {
@@ -6831,6 +6917,8 @@
           finalizedBy: currentUser?.name || "Admin",
           finalizedAt: new Date().toISOString()
         };
+        const saved = await saveProductionReviewFinalization(child, fineAssessments[key]);
+        if (saved?.reviewFinalization) hydrateProductionReviewFinalizations({ reviewFinalizations: [saved.reviewFinalization] });
         persistBetaData();
         return {
           child,
@@ -6864,6 +6952,9 @@
       };
       if (amount > 0) {
         const title = `${deadline} review: ${missed.length} unfinished rotating chore${missed.length === 1 ? "" : "s"}`;
+        fineAssessments[key] = assessmentRecord;
+        const saved = await saveProductionReviewFinalization(child, assessmentRecord);
+        if (saved?.reviewFinalization) hydrateProductionReviewFinalizations({ reviewFinalizations: [saved.reviewFinalization] });
         let backendEntryId = "";
         const payload = await saveProductionMoneyLedger("charge_fine", {
           childProfileKey: child.id,
@@ -6874,10 +6965,17 @@
           reason: missedDetail || "parent noon review"
         });
         backendEntryId = payload?.ledgerEntry?.id || "";
+        assessmentRecord.backendLedgerEntryId = backendEntryId;
         fineAssessments[key] = assessmentRecord;
+        if (backendEntryId) {
+          const linked = await linkProductionReviewFinalizationLedger(child, assessmentRecord, backendEntryId);
+          if (linked?.reviewFinalization) hydrateProductionReviewFinalizations({ reviewFinalizations: [linked.reviewFinalization] });
+        }
         addFineToLedger(child, title, amount, deadline, backendEntryId);
       } else {
         fineAssessments[key] = assessmentRecord;
+        const saved = await saveProductionReviewFinalization(child, assessmentRecord);
+        if (saved?.reviewFinalization) hydrateProductionReviewFinalizations({ reviewFinalizations: [saved.reviewFinalization] });
         persistBetaData();
       }
       return {

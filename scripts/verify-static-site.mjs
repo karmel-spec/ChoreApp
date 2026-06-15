@@ -59,6 +59,7 @@ const requiredFiles = [
   "netlify/functions/photo-record.js",
   "netlify/functions/photo-upload-url.js",
   "netlify/functions/push-subscription.js",
+  "netlify/functions/review-finalization.js",
   "netlify/functions/runtime-config.js",
   "netlify/functions/scheduled-noon-review.js",
   "netlify/functions/scheduled-teen-reminders.js",
@@ -117,6 +118,7 @@ const notificationLogFunction = await readFile("netlify/functions/notification-l
 const photoRecordFunction = await readFile("netlify/functions/photo-record.js", "utf8");
 const photoFunction = await readFile("netlify/functions/photo-upload-url.js", "utf8");
 const pushSubscriptionFunction = await readFile("netlify/functions/push-subscription.js", "utf8");
+const reviewFinalizationFunction = await readFile("netlify/functions/review-finalization.js", "utf8");
 const runtimeConfigFunction = await readFile("netlify/functions/runtime-config.js", "utf8");
 const scheduledNoonFunction = await readFile("netlify/functions/scheduled-noon-review.js", "utf8");
 const scheduledTeenFunction = await readFile("netlify/functions/scheduled-teen-reminders.js", "utf8");
@@ -428,6 +430,12 @@ const requiredMarkers = [
   "Production Notification Log",
   "refreshNotificationLogBtn",
   "notification-log",
+  "loadProductionReviewFinalizations",
+  "saveProductionReviewFinalization",
+  "linkProductionReviewFinalizationLedger",
+  "hydrateProductionReviewFinalizations",
+  "review-finalization",
+  "Cloud finalized review reload failed",
   "loadProductionHelperTime",
   "saveProductionHelperTimeShift",
   "markProductionHelperPayPaid",
@@ -1015,6 +1023,8 @@ const requiredBackendMarkers = [
   "read child ledger/account history",
   "signed family/profile photo URLs",
   "reload chore completion/review records",
+  "review-finalization",
+  "same-day finalization locks",
   "reload extension requests",
   "availability-hold",
   "read vacation/sick holds",
@@ -1054,6 +1064,7 @@ const requiredSchemaMarkers = [
   "create table family_settings",
   "bonus_rules jsonb",
   "create table chore_records",
+  "create table review_finalizations",
   "create table chore_feedback",
   "create table ledger_entries",
   "create table helper_pay_records",
@@ -1070,6 +1081,7 @@ const requiredSchemaMarkers = [
   "create policy \"admins manage family settings\"",
   "create policy \"children submit own chore feedback\"",
   "create policy \"admins manage chore feedback\"",
+  "create policy \"admins manage review finalizations\"",
   "create policy \"members update own notification preferences\"",
   "create policy \"members manage own push subscriptions\""
 ];
@@ -1247,7 +1259,7 @@ for (const marker of [
   }
 }
 
-for (const marker of ["expectedMembers", "family-photos", "notification_log", "notification_preferences", "push_subscriptions", "Teen reminder preference and push subscription rows are reachable", "WEB_PUSH_VAPID_PUBLIC_KEY", "WEB_PUSH_VAPID_PRIVATE_KEY", "Family settings and chore library tables are reachable", "family_settings", "chore_records", "Chore record table is reachable", "ledger_entries", "Money ledger table is reachable", "helper_pay_records", "Helper pay table is reachable", "helper_tasks", "ingredient_requests", "Helper priority and ingredient request tables are reachable", "family_feed_posts", "family_feed_reactions", "Family feed post and reaction tables are reachable", "readyForWorkflowBeta", "TWILIO_MESSAGING_SERVICE_SID", "authLinked", "gmailLinked"]) {
+for (const marker of ["expectedMembers", "family-photos", "notification_log", "notification_preferences", "push_subscriptions", "Teen reminder preference and push subscription rows are reachable", "WEB_PUSH_VAPID_PUBLIC_KEY", "WEB_PUSH_VAPID_PRIVATE_KEY", "Family settings and chore library tables are reachable", "family_settings", "chore_records", "Chore record table is reachable", "review_finalizations", "Review finalization table is reachable", "ledger_entries", "Money ledger table is reachable", "helper_pay_records", "Helper pay table is reachable", "helper_tasks", "ingredient_requests", "Helper priority and ingredient request tables are reachable", "family_feed_posts", "family_feed_reactions", "Family feed post and reaction tables are reachable", "readyForWorkflowBeta", "TWILIO_MESSAGING_SERVICE_SID", "authLinked", "gmailLinked"]) {
   if (!backendHealthFunction.includes(marker)) {
     throw new Error(`Backend health function is missing readiness marker: ${marker}`);
   }
@@ -1280,6 +1292,24 @@ for (const marker of [
 ]) {
   if (!pushSubscriptionFunction.includes(marker)) {
     throw new Error(`Push subscription function is missing: ${marker}`);
+  }
+}
+
+for (const marker of [
+  "Only Brigham or Karmel can finalize noon reviews",
+  "Only Brigham or Karmel can link review fines",
+  "This child review is already finalized for that date",
+  "review_finalizations",
+  "service_date",
+  "existing_deadline_fine",
+  "streak_credited",
+  "ledger_entry_id",
+  "event.httpMethod === \"GET\"",
+  "event.httpMethod === \"POST\"",
+  "event.httpMethod === \"PATCH\""
+]) {
+  if (!reviewFinalizationFunction.includes(marker)) {
+    throw new Error(`Review finalization function is missing: ${marker}`);
   }
 }
 
