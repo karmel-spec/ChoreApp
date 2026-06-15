@@ -317,7 +317,7 @@ const requiredMarkers = [
   "deadline ${item.deadline}",
   "Beta Data Tools",
   "appBuildLabel",
-  "Beta build 2026-06-12",
+  "Beta build 2026-06-15",
   "appBuildSummary",
   "build: appBuildLabel",
   "Use this label after each GitHub/Netlify publish",
@@ -535,6 +535,9 @@ const requiredMarkers = [
   "restorePendingBetaStatus",
   "The dashboard reloaded so imported beta data is clean",
   "Local beta data reset complete",
+  "Relaunch Today",
+  "relaunchTodayForBeta",
+  "reshuffles today's rotating chores",
   "Fresh Start Accounts",
   "freshStartChildAccounts",
   "Fresh start applied today",
@@ -869,6 +872,7 @@ const requiredAppIds = [
   "backupFileSummary",
   "exportBetaDataBtn",
   "importBetaDataBtn",
+  "relaunchTodayBtn",
   "resetBetaDataBtn",
   "freshStartAccountsBtn",
   "feedbackForm",
@@ -1313,8 +1317,8 @@ for (const marker of [
   }
 }
 
-if (!supabaseHelperFunction.includes("TWILIO_MESSAGING_SERVICE_SID") || !supabaseHelperFunction.includes("sendSms") || !smsFunction.includes("Only parent admins can send SMS reminders")) {
-  throw new Error("SMS function is missing Twilio/admin guard behavior.");
+if (!supabaseHelperFunction.includes("TWILIO_MESSAGING_SERVICE_SID") || !supabaseHelperFunction.includes("sendSms") || !supabaseHelperFunction.includes("sendPushToMember") || !supabaseHelperFunction.includes("webPush.sendNotification") || !supabaseHelperFunction.includes("push_subscriptions") || !smsFunction.includes("Only parent admins can send SMS reminders")) {
+  throw new Error("SMS/push helper functions are missing Twilio, Web Push, or admin guard behavior.");
 }
 
 for (const marker of [
@@ -1379,13 +1383,10 @@ for (const marker of [
 }
 
 for (const marker of [
-  "WEB_PUSH_VAPID_PUBLIC_KEY",
-  "WEB_PUSH_VAPID_PRIVATE_KEY",
   "Only Brigham or Karmel can send push reminders",
-  "webPush.sendNotification",
-  "push_subscriptions",
+  "sendPushToMember",
   "has not opted in to push notifications",
-  "logNotification"
+  "does not have an active push subscription"
 ]) {
   if (!pushFunction.includes(marker)) {
     throw new Error(`Push send function is missing: ${marker}`);
@@ -1394,6 +1395,8 @@ for (const marker of [
 
 for (const marker of [
   "Only Brigham or Karmel can send child chore reminder texts",
+  "sendPushToMember",
+  "push_enabled",
   "notify_redo",
   "notify_teen_reminders",
   "has not opted in",
@@ -1409,6 +1412,8 @@ for (const marker of [
 for (const marker of [
   'schedule: "0 15 * * *"',
   "alreadySentToday",
+  "sendPushToMember",
+  "push_enabled",
   "notify_teen_reminders",
   "already_sent",
   "Teamwork Chores reminder for",
@@ -1427,7 +1432,7 @@ if (!extensionDecisionFunction.includes("Only Brigham can approve or deny") || !
   throw new Error("Extension decision function is missing Brigham-only approval or opted-in child SMS behavior.");
 }
 
-if (!scheduledNoonFunction.includes('schedule: "0 18 * * *"') || !scheduledNoonFunction.includes("review_contact") || !scheduledNoonFunction.includes("KARMEL_NOON_REVIEW_PHONE") || !scheduledNoonFunction.includes("already_sent")) {
+if (!scheduledNoonFunction.includes('schedule: "0 18 * * *"') || !scheduledNoonFunction.includes("review_contact") || !scheduledNoonFunction.includes("KARMEL_NOON_REVIEW_PHONE") || !scheduledNoonFunction.includes("sendPushToMember") || !scheduledNoonFunction.includes("notify_noon_review") || !scheduledNoonFunction.includes("already_sent")) {
   throw new Error("Scheduled noon review function is missing cron, family settings phone fallback, or duplicate-send guard behavior.");
 }
 

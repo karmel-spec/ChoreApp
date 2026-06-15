@@ -1591,9 +1591,12 @@
       .app-shell.sidebar-collapsed {
         grid-template-columns: minmax(0, 1fr);
       }
+      .sidebar {
+        position: static;
+      }
       .side-stack {
         grid-column: 1 / -1;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: 1fr;
       }
     }
 
@@ -2230,6 +2233,7 @@
               <div class="backup-actions">
                 <button class="primary-btn" type="button" id="exportBetaDataBtn">Export Backup</button>
                 <button class="ghost-btn" type="button" id="importBetaDataBtn">Import Backup</button>
+                <button class="ghost-btn" type="button" id="relaunchTodayBtn">Relaunch Today</button>
                 <button class="ghost-btn" type="button" id="freshStartAccountsBtn">Fresh Start Accounts</button>
                 <button class="ghost-btn" type="button" id="resetBetaDataBtn">Reset Test Data</button>
                 <div class="backup-file">
@@ -2568,7 +2572,7 @@
     const betaDataStoreKey = "teamworkChoresBetaData";
     const betaDataMetaStoreKey = "teamworkChoresBetaDataMeta";
     const betaDataPendingStatusKey = "teamworkChoresPendingBetaStatus";
-    const appBuildLabel = "Beta build 2026-06-12";
+    const appBuildLabel = "Beta build 2026-06-15";
     const appBackupVersion = 1;
     const defaultReviewRecipient = "Mom Karmel";
     const defaultReviewContact = "801-427-9293";
@@ -3812,7 +3816,7 @@
       return Object.fromEntries(validChildIds.map(childId => [childId, []]));
     }
 
-    function freshStartChildAccounts({ confirmReset = true, reload = false } = {}) {
+    function freshStartChildAccounts({ confirmReset = true, reload = false, reshuffleToday = false } = {}) {
       if (!isAdmin()) {
         document.getElementById("betaDataStatus").textContent = "Only Brigham or Karmel can reset child account balances.";
         return;
@@ -3838,16 +3842,31 @@
       choreFeedbackQueue = [];
       familyPhotoFeed = [];
       monthlyPoints = {};
+      if (reshuffleToday) shuffleOffset += 17;
       localStorage.removeItem(choreStateStoreKey);
       saveBetaDataMeta({ lastAccountFreshStartAt: new Date().toISOString() });
       persistBetaData();
-      sessionStorage.setItem(betaDataPendingStatusKey, "Fresh start applied today: child account balances, fines, streaks, points, ledgers, review records, and chore checkboxes reset to zero.");
+      sessionStorage.setItem(betaDataPendingStatusKey, reshuffleToday
+        ? "Relaunch applied today: child account balances, fines, streaks, points, ledgers, review records, chore checkboxes, and monthly points reset to zero. Today's rotating assignments were reshuffled for beta testing."
+        : "Fresh start applied today: child account balances, fines, streaks, points, ledgers, review records, and chore checkboxes reset to zero.");
       if (reload) {
         window.location.reload();
         return;
       }
       render();
       restorePendingBetaStatus();
+    }
+
+    function relaunchTodayForBeta() {
+      if (!isAdmin()) {
+        document.getElementById("betaDataStatus").textContent = "Only Brigham or Karmel can relaunch today's beta assignments.";
+        return;
+      }
+      if (!window.confirm("Relaunch today for beta testing? This resets all child account numbers, fines, streaks, points, ledgers, finalized reviews, extension logs, photo feed posts, and chore checkboxes to zero, then reshuffles today's rotating chores. Photos, Gmail links, chore list, family settings, and helper setup stay saved.")) {
+        document.getElementById("betaDataStatus").textContent = "Relaunch cancelled.";
+        return;
+      }
+      freshStartChildAccounts({ confirmReset: false, reshuffleToday: true });
     }
 
     function applyFreshStartFromUrl() {
@@ -8294,6 +8313,8 @@
     document.getElementById("betaDataFile").addEventListener("change", updateBackupFileSummary);
 
     document.getElementById("resetBetaDataBtn").addEventListener("click", resetBetaData);
+
+    document.getElementById("relaunchTodayBtn").addEventListener("click", relaunchTodayForBeta);
 
     document.getElementById("freshStartAccountsBtn").addEventListener("click", () => freshStartChildAccounts());
 

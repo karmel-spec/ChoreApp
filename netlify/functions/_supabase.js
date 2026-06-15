@@ -1,4 +1,5 @@
 const { createClient } = require("@supabase/supabase-js");
+const webPush = require("web-push");
 
 function requireEnv(name) {
   const value = process.env[name];
@@ -73,6 +74,14 @@ function twilioClient() {
   return require("twilio")(accountSid, authToken);
 }
 
+function configureWebPush() {
+  const publicKey = process.env.WEB_PUSH_VAPID_PUBLIC_KEY;
+  const privateKey = process.env.WEB_PUSH_VAPID_PRIVATE_KEY;
+  const subject = process.env.WEB_PUSH_SUBJECT || process.env.TEAMWORK_CHORES_SITE_URL || "mailto:admin@teamworkchores.com";
+  if (!publicKey || !privateKey) throw new Error("Web Push VAPID keys are not configured.");
+  webPush.setVapidDetails(subject, publicKey, privateKey);
+}
+
 async function sendSms({ to, message }) {
   const destination = e164(to);
   if (!destination || !String(message || "").trim()) {
@@ -84,6 +93,81 @@ async function sendSms({ to, message }) {
     to: destination,
     body: String(message).trim()
   });
+}
+
+async function sendPushToMember({ supabase, memberId, familyId, title, message, kind, createdBy, url }) {
+  if (!memberId || !String(message || "").trim()) {
+    return { status: "not_configured", sentCount: 0, results: [] };
+  }
+
+  const { data: preference, error: preferenceError } = await supabase
+    .from("notification_preferences")
+    .select("push_enabled")
+    .eq("member_id", memberId)
+    .maybeSingle();
+  if (preferenceError) throw preferenceError;
+  if (!preference?.push_enabled) {
+    return { status: "not_opted_in", sentCount: 0, results: [] };
+  }
+
+  const { data: subscriptions, error: subscriptionError } = await supabase
+    .from("push_subscriptions")
+    .select("id,endpoint,p256dh,auth")
+    .eq("member_id", memberId)
+    .eq("enabled", true);
+  if (subscriptionError) throw subscriptionError;
+  if (!subscriptions?.length) {
+    return { status: "no_subscription", sentCount: 0, results: [] };
+  }
+
+  configureWebPush();
+  const payload = JSON.stringify({
+    title: String(title || "Teamwork Chores").trim(),
+    body: String(message).trim(),
+    url: url || process.env.TEAMWORK_CHORES_SITE_URL || "/app"
+  });
+  const results = [];
+
+  for (const subscription of subscriptions) {
+    try {
+      const response = await webPush.sendNotification({
+        endpoint: subscription.endpoint,
+        keys: {
+          p256dh: subscription.p256dh,
+          auth: subscription.auth
+        }
+      }, payload);
+      results.push({ id: subscription.id, status: response.statusCode || "sent" });
+    } catch (error) {
+      results.push({ id: subscription.id, status: "failed", error: error.message });
+      if (error.statusCode === 404 || error.statusCode === 410) {
+        await supabase
+          .from("push_subscriptions")
+          .update({ enabled: false, updated_at: new Date().toISOString() })
+          .eq("id", subscription.id);
+      }
+    }
+  }
+
+  const sentCount = results.filter(result => result.status !== "failed").length;
+  if (familyId && kind) {
+    await logNotification({
+      supabase,
+      familyId,
+      recipientId: memberId,
+      kind,
+      destination: "web-push",
+      body: `${String(title || "Teamwork Chores").trim()}: ${String(message).trim()}`,
+      status: sentCount ? "sent" : "failed",
+      createdBy
+    });
+  }
+
+  return {
+    status: sentCount ? "sent" : "failed",
+    sentCount,
+    results
+  };
 }
 
 async function logNotification({ supabase, familyId, recipientId, kind, destination, body, providerMessageId, status, createdBy }) {
@@ -108,6 +192,7 @@ module.exports = {
   normalizeUsPhone,
   parseBody,
   requireAdmin,
+  sendPushToMember,
   sendSms,
   serviceClient
 };

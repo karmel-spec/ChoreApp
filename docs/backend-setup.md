@@ -136,9 +136,9 @@ Phase-one SMS should use Twilio through Netlify Functions:
 - Redo request texts to opted-in teens
 - Optional teen reminder texts for unfinished chores
 
-The current scheduled functions are `scheduled-noon-review` with the cron expression `0 18 * * *`, which is noon Mountain Daylight Time, and `scheduled-teen-reminders` with `0 15 * * *`, which is 9:00 AM Mountain Daylight Time. If the family wants exact local times through daylight-saving changes, configure a timezone-aware scheduler or adjust the cron seasonally.
+The current scheduled functions are `scheduled-noon-review` with the cron expression `0 18 * * *`, which is noon Mountain Daylight Time, and `scheduled-teen-reminders` with `0 15 * * *`, which is 9:00 AM Mountain Daylight Time. Both scheduled jobs log SMS sends and opted-in Web Push sends to `notification_log`. If the family wants exact local times through daylight-saving changes, configure a timezone-aware scheduler or adjust the cron seasonally.
 
-Push notifications use browser Web Push with VAPID keys. A child or parent admin can enable push from the child dashboard on each device after Google sign-in. Parent admins can then use `send-push` for trusted reminders; each send is logged in `notification_log`.
+Push notifications use browser Web Push with VAPID keys. A child or parent admin can enable push from the child dashboard on each device after Google sign-in. Parent admins can then use `send-push` for trusted reminders, and scheduled noon/teen reminder jobs will also use push when the member has an active subscription and matching notification preference; each send is logged in `notification_log`.
 
 ## Photo Storage
 

@@ -2,6 +2,7 @@ const {
   e164,
   json,
   logNotification,
+  sendPushToMember,
   sendSms,
   serviceClient
 } = require("./_supabase");
@@ -46,6 +47,7 @@ exports.handler = async () => {
     const recipient = settings.review_recipient || "Mom Karmel";
     const time = settings.review_reminder_time || "12:00 PM";
     const message = `Teamwork Chores ${time} review for ${recipient}: please inspect today's chores for completion and approve, redo, or charge fines as needed.`;
+    const result = { familyId: settings.family_id, sms: "not_sent", push: "not_sent" };
     const sent = await sendSms({ to: reviewPhone, message });
     await logNotification({
       supabase,
@@ -56,7 +58,43 @@ exports.handler = async () => {
       providerMessageId: sent.sid,
       status: sent.status || "sent"
     });
-    results.push({ familyId: settings.family_id, status: sent.status || "sent", sid: sent.sid });
+    result.sms = sent.status || "sent";
+    result.sid = sent.sid;
+
+    const { data: karmel } = await supabase
+      .from("family_members")
+      .select(`
+        id,
+        notification_preferences (
+          push_enabled,
+          notify_noon_review
+        )
+      `)
+      .eq("family_id", settings.family_id)
+      .eq("profile_key", "karmel")
+      .maybeSingle();
+    const preference = Array.isArray(karmel?.notification_preferences)
+      ? karmel.notification_preferences[0]
+      : karmel?.notification_preferences;
+    if (karmel?.id && preference?.push_enabled && preference?.notify_noon_review) {
+      try {
+        const pushed = await sendPushToMember({
+          supabase,
+          memberId: karmel.id,
+          familyId: settings.family_id,
+          title: "Noon Chore Review",
+          message,
+          kind: "noon_review"
+        });
+        result.push = pushed.status;
+        result.pushSentCount = pushed.sentCount;
+      } catch (error) {
+        result.push = "failed";
+        result.pushError = error.message;
+      }
+    }
+    result.status = result.sms === "sent" || result.push === "sent" ? "sent" : result.sms;
+    results.push(result);
   }
 
   return json(200, { date: today, results });

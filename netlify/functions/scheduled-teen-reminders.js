@@ -2,6 +2,7 @@ const {
   e164,
   json,
   logNotification,
+  sendPushToMember,
   sendSms,
   serviceClient
 } = require("./_supabase");
@@ -37,6 +38,7 @@ exports.handler = async () => {
       notification_preferences (
         cell_phone,
         sms_enabled,
+        push_enabled,
         notify_teen_reminders
       )
     `)
@@ -53,7 +55,7 @@ exports.handler = async () => {
       ? child.notification_preferences[0]
       : child.notification_preferences;
     const phone = preference?.cell_phone || child.cell_phone;
-    if (!preference?.sms_enabled || !preference?.notify_teen_reminders || !phone) {
+    if (!preference?.notify_teen_reminders || (!phone && !preference?.push_enabled)) {
       results.push({ childId: child.id, status: "not_opted_in" });
       continue;
     }
@@ -63,18 +65,41 @@ exports.handler = async () => {
     }
 
     const message = `Teamwork Chores reminder for ${child.display_name}: please finish today's chores before the family deadline. You've got this.`;
-    const sent = await sendSms({ to: phone, message });
-    await logNotification({
-      supabase,
-      familyId: child.family_id,
-      recipientId: child.id,
-      kind: "teen_reminder",
-      destination: e164(phone),
-      body: message,
-      providerMessageId: sent.sid,
-      status: sent.status || "sent"
-    });
-    results.push({ childId: child.id, status: sent.status || "sent", sid: sent.sid });
+    const childResult = { childId: child.id, sms: "not_sent", push: "not_sent" };
+    if (preference?.sms_enabled && phone) {
+      const sent = await sendSms({ to: phone, message });
+      await logNotification({
+        supabase,
+        familyId: child.family_id,
+        recipientId: child.id,
+        kind: "teen_reminder",
+        destination: e164(phone),
+        body: message,
+        providerMessageId: sent.sid,
+        status: sent.status || "sent"
+      });
+      childResult.sms = sent.status || "sent";
+      childResult.sid = sent.sid;
+    }
+    if (preference?.push_enabled) {
+      try {
+        const pushed = await sendPushToMember({
+          supabase,
+          memberId: child.id,
+          familyId: child.family_id,
+          title: "Teamwork Chores Reminder",
+          message,
+          kind: "teen_reminder"
+        });
+        childResult.push = pushed.status;
+        childResult.pushSentCount = pushed.sentCount;
+      } catch (error) {
+        childResult.push = "failed";
+        childResult.pushError = error.message;
+      }
+    }
+    childResult.status = childResult.sms === "sent" || childResult.push === "sent" ? "sent" : "queued";
+    results.push(childResult);
   }
 
   return json(200, { date, results });
