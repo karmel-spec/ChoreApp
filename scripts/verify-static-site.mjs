@@ -48,6 +48,7 @@ const requiredFiles = [
   "netlify/functions/extension-request.js",
   "netlify/functions/family-snapshot.js",
   "netlify/functions/family-settings.js",
+  "netlify/functions/helper-time.js",
   "netlify/functions/link-google-member.js",
   "netlify/functions/member-contact.js",
   "netlify/functions/member-rules.js",
@@ -103,6 +104,7 @@ const extensionDecisionFunction = await readFile("netlify/functions/extension-de
 const extensionRequestFunction = await readFile("netlify/functions/extension-request.js", "utf8");
 const familySnapshotFunction = await readFile("netlify/functions/family-snapshot.js", "utf8");
 const familySettingsFunction = await readFile("netlify/functions/family-settings.js", "utf8");
+const helperTimeFunction = await readFile("netlify/functions/helper-time.js", "utf8");
 const linkGoogleFunction = await readFile("netlify/functions/link-google-member.js", "utf8");
 const memberContactFunction = await readFile("netlify/functions/member-contact.js", "utf8");
 const memberRulesFunction = await readFile("netlify/functions/member-rules.js", "utf8");
@@ -422,6 +424,12 @@ const requiredMarkers = [
   "Production Notification Log",
   "refreshNotificationLogBtn",
   "notification-log",
+  "loadProductionHelperTime",
+  "saveProductionHelperTimeShift",
+  "markProductionHelperPayPaid",
+  "helper-time",
+  "Cloud helper time save failed",
+  "Cloud helper pay update failed",
   "enableChildPushNotifications",
   "urlBase64ToUint8Array",
   "family-settings",
@@ -1030,6 +1038,7 @@ const requiredSchemaMarkers = [
   "create table chore_records",
   "create table chore_feedback",
   "create table ledger_entries",
+  "create table helper_pay_records",
   "create table photos",
   "create table notification_preferences",
   "create table push_subscriptions",
@@ -1216,7 +1225,7 @@ for (const marker of [
   }
 }
 
-for (const marker of ["expectedMembers", "family-photos", "notification_log", "notification_preferences", "push_subscriptions", "Teen reminder preference and push subscription rows are reachable", "WEB_PUSH_VAPID_PUBLIC_KEY", "WEB_PUSH_VAPID_PRIVATE_KEY", "Family settings and chore library tables are reachable", "family_settings", "chore_records", "Chore record table is reachable", "ledger_entries", "Money ledger table is reachable", "readyForWorkflowBeta", "TWILIO_MESSAGING_SERVICE_SID", "authLinked", "gmailLinked"]) {
+for (const marker of ["expectedMembers", "family-photos", "notification_log", "notification_preferences", "push_subscriptions", "Teen reminder preference and push subscription rows are reachable", "WEB_PUSH_VAPID_PUBLIC_KEY", "WEB_PUSH_VAPID_PRIVATE_KEY", "Family settings and chore library tables are reachable", "family_settings", "chore_records", "Chore record table is reachable", "ledger_entries", "Money ledger table is reachable", "helper_pay_records", "Helper pay table is reachable", "readyForWorkflowBeta", "TWILIO_MESSAGING_SERVICE_SID", "authLinked", "gmailLinked"]) {
   if (!backendHealthFunction.includes(marker)) {
     throw new Error(`Backend health function is missing readiness marker: ${marker}`);
   }
@@ -1267,6 +1276,21 @@ for (const marker of [
 ]) {
   if (!notificationLogFunction.includes(marker)) {
     throw new Error(`Notification log function is missing: ${marker}`);
+  }
+}
+
+for (const marker of [
+  "Only Vanessa, Brigham, or Karmel can save helper time",
+  "Only Brigham or Karmel can mark Vanessa's pay paid",
+  "CONFIRM MONEY",
+  "helper_pay_records",
+  "add_shift",
+  "mark_paid",
+  "Vanessa helper profile not found",
+  ".eq(\"family_id\", actor.family_id)"
+]) {
+  if (!helperTimeFunction.includes(marker)) {
+    throw new Error(`Helper time function is missing: ${marker}`);
   }
 }
 

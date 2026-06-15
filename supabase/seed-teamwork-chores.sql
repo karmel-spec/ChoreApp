@@ -85,6 +85,37 @@ on conflict (id) do update set public = false;
 alter table family_settings
   add column if not exists bonus_rules jsonb not null default '{"monthly":[{"days":5,"amount":5},{"days":7,"amount":10},{"days":30,"amount":50}],"super":[{"days":100,"amount":100}],"points":[{"rank":1,"amount":25},{"rank":2,"amount":15},{"rank":3,"amount":10}]}'::jsonb;
 
+create table if not exists helper_pay_records (
+  id uuid primary key default gen_random_uuid(),
+  family_id uuid not null references families(id) on delete cascade,
+  helper_id uuid not null references family_members(id) on delete cascade,
+  week_label text not null,
+  hours numeric(8,2) not null default 0,
+  rate numeric(8,2) not null default 17,
+  paid boolean not null default false,
+  paid_by uuid references family_members(id),
+  paid_at timestamptz,
+  shifts jsonb not null default '[]'::jsonb,
+  updated_by uuid references family_members(id),
+  updated_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  unique(helper_id, week_label)
+);
+
+alter table helper_pay_records enable row level security;
+
+drop policy if exists "members read helper pay" on helper_pay_records;
+create policy "members read helper pay" on helper_pay_records for select using (auth.uid() is not null);
+
+drop policy if exists "helpers update own unpaid helper pay" on helper_pay_records;
+create policy "helpers update own unpaid helper pay" on helper_pay_records for update using (helper_id = current_member_id() and paid = false) with check (helper_id = current_member_id() and paid = false);
+
+drop policy if exists "helpers create own helper pay" on helper_pay_records;
+create policy "helpers create own helper pay" on helper_pay_records for insert with check (helper_id = current_member_id());
+
+drop policy if exists "admins manage helper pay" on helper_pay_records;
+create policy "admins manage helper pay" on helper_pay_records for all using (is_admin()) with check (is_admin());
+
 with family as (
   select id from families where name = 'Teamwork Chores' order by created_at limit 1
 )

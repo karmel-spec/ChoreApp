@@ -3196,6 +3196,33 @@
       });
     }
 
+    function hydrateProductionHelperTime(payload) {
+      if (!Array.isArray(payload.records)) return;
+      helperPayRecords = payload.records.map(record => normalizeHelperPayRecord({
+        id: record.id,
+        week: record.week,
+        hours: record.hours,
+        rate: record.rate,
+        paid: record.paid,
+        paidBy: record.paidBy ? "Backend admin" : "",
+        paidAt: record.paidAt,
+        shifts: record.shifts || [],
+        updatedAt: record.updatedAt
+      })).slice(0, 80);
+      if (!helperPayRecords.length) {
+        helperPayRecords = [{
+          week: currentWeekLabel(),
+          hours: 0,
+          rate: helperRate,
+          paid: false,
+          shifts: []
+        }];
+      }
+      const currentRecord = helperPayRecords.find(item => item.week === currentWeekLabel()) || helperPayRecords[0];
+      helperWeeklyHours = safeStoredNumber(currentRecord.hours, helperWeeklyHours);
+      helperRate = safeStoredNumber(currentRecord.rate, helperRate);
+    }
+
     const helperTaskColumns = ["daily", "projects", "oneoff"];
 
     function normalizeHelperTaskRecord(task, index = 0) {
@@ -4133,7 +4160,7 @@
 
     async function hydrateProductionBackendData() {
       if (!productionBackend.ready || !productionBackend.session?.access_token) return;
-      const [snapshotResult, settingsResult, choreResult, ledgerResult, choreRecordResult, extensionResult, holdResult, feedbackResult, notificationResult] = await Promise.allSettled([
+      const [snapshotResult, settingsResult, choreResult, ledgerResult, choreRecordResult, extensionResult, holdResult, feedbackResult, notificationResult, helperTimeResult] = await Promise.allSettled([
         loadProductionFamilySnapshot(),
         loadProductionFamilySettings(),
         loadProductionChoreLibrary(),
@@ -4142,7 +4169,8 @@
         loadProductionExtensionRequests(),
         loadProductionAvailabilityHolds(),
         loadProductionChoreFeedback(),
-        loadProductionNotificationLog()
+        loadProductionNotificationLog(),
+        loadProductionHelperTime()
       ]);
       if (snapshotResult.status === "fulfilled" && Array.isArray(snapshotResult.value?.members)) {
         hydrateProductionFamilySnapshot(snapshotResult.value);
@@ -4172,6 +4200,9 @@
       }
       if (notificationResult.status === "fulfilled" && Array.isArray(notificationResult.value?.notifications)) {
         productionNotificationLog = notificationResult.value.notifications.slice(0, 120);
+      }
+      if (helperTimeResult.status === "fulfilled" && Array.isArray(helperTimeResult.value?.records)) {
+        hydrateProductionHelperTime(helperTimeResult.value);
       }
       persistBetaData();
     }
@@ -4298,6 +4329,44 @@
       if (!productionBackend.ready || !productionBackend.session?.access_token || !isAdmin()) return null;
       return fetchJson("/.netlify/functions/notification-log", {
         headers: productionAuthHeader()
+      });
+    }
+
+    async function loadProductionHelperTime() {
+      await loadProductionBackend();
+      if (!productionBackend.ready || !productionBackend.session?.access_token) return null;
+      return fetchJson("/.netlify/functions/helper-time", {
+        headers: productionAuthHeader()
+      });
+    }
+
+    async function saveProductionHelperTimeShift(payload) {
+      await loadProductionBackend();
+      if (!productionBackend.ready) return null;
+      if (!productionBackend.session?.access_token) {
+        throw new Error("Sign in with Google before saving helper time in production mode.");
+      }
+      return fetchJson("/.netlify/functions/helper-time", {
+        method: "POST",
+        headers: productionAuthHeader(),
+        body: JSON.stringify({ action: "add_shift", ...payload })
+      });
+    }
+
+    async function markProductionHelperPayPaid(recordId) {
+      await loadProductionBackend();
+      if (!productionBackend.ready) return null;
+      if (!productionBackend.session?.access_token) {
+        throw new Error("Sign in with Google before marking helper pay paid in production mode.");
+      }
+      return fetchJson("/.netlify/functions/helper-time", {
+        method: "PATCH",
+        headers: productionAuthHeader(),
+        body: JSON.stringify({
+          action: "mark_paid",
+          recordId,
+          confirmationText: "CONFIRM MONEY"
+        })
       });
     }
 
@@ -6133,6 +6202,7 @@
         readinessRow("Family text contacts", Boolean(checks.familyTextContacts?.ok), checks.familyTextContacts?.message || ""),
         readinessRow("Google OAuth", Boolean(checks.google?.ok), checks.google?.message || ""),
         readinessRow("Twilio SMS", Boolean(checks.sms?.ok), checks.sms?.message || ""),
+        readinessRow("Helper pay records", Boolean(checks.helperPay?.ok), checks.helperPay?.message || ""),
         memberRows
       ].join("");
       document.getElementById("backendReadinessStatus").textContent = payload.readyForWorkflowBeta
@@ -7423,7 +7493,7 @@
       });
     }
 
-    function markHelperPayPaid(recordIndex) {
+    async function markHelperPayPaid(recordIndex) {
       if (!isAdmin()) {
         document.getElementById("timeCardStatus").textContent = "Only Brigham or Karmel can mark Vanessa's pay paid.";
         return;
@@ -7431,6 +7501,31 @@
       const record = helperPayRecords[recordIndex];
       if (!record || record.paid) return;
       if (!confirmMoneyAction(`Mark Vanessa's ${record.week} paycheck of $${(record.hours * record.rate).toFixed(2)} paid?`, "timeCardStatus")) return;
+      if (record.id) {
+        try {
+          const payload = await markProductionHelperPayPaid(record.id);
+          if (payload?.record) {
+            const updatedRecord = normalizeHelperPayRecord({
+              id: payload.record.id,
+              week: payload.record.week,
+              hours: payload.record.hours,
+              rate: payload.record.rate,
+              paid: payload.record.paid,
+              paidBy: payload.record.paidBy ? "Backend admin" : currentUser?.name || "Admin",
+              paidAt: payload.record.paidAt,
+              shifts: payload.record.shifts || []
+            });
+            helperPayRecords = helperPayRecords.map(item => item.id === updatedRecord.id ? updatedRecord : item);
+            persistBetaData();
+            renderHelperPay();
+            document.getElementById("timeCardStatus").textContent = `${updatedRecord.week} pay marked paid in the backend.`;
+            return;
+          }
+        } catch (error) {
+          document.getElementById("timeCardStatus").textContent = `Cloud helper pay update failed: ${error.message}`;
+          return;
+        }
+      }
       record.paid = true;
       record.paidBy = currentUser?.name || "Admin";
       record.paidAt = new Date().toISOString();
@@ -7439,7 +7534,7 @@
       document.getElementById("timeCardStatus").textContent = `${record.week} pay marked paid by ${record.paidBy}.`;
     }
 
-    function saveHelperTimeCard() {
+    async function saveHelperTimeCard() {
       if (!canUseHelperWorkspace()) {
         document.getElementById("timeCardStatus").textContent = "Only Vanessa, Brigham, or Karmel can save helper time.";
         return;
@@ -7455,20 +7550,56 @@
         return;
       }
       const currentRecord = syncCurrentHelperWeek();
-      helperWeeklyHours += hours;
-      helperRate = rate;
-      currentRecord.hours = helperWeeklyHours;
-      currentRecord.rate = rate;
-      currentRecord.paid = false;
-      currentRecord.shifts = currentRecord.shifts || [];
-      currentRecord.shifts.push({
+      const shift = {
         date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" }),
         arrival: document.getElementById("helperArrival").value.trim(),
         exit: document.getElementById("helperExit").value.trim(),
         hours,
         savedBy: currentUser?.name || "Vanessa",
         savedAt: new Date().toISOString()
-      });
+      };
+      try {
+        const payload = await saveProductionHelperTimeShift({
+          week: currentRecord.week,
+          date: shift.date,
+          arrival: shift.arrival,
+          exit: shift.exit,
+          hours,
+          rate
+        });
+        if (payload?.record) {
+          const updatedRecord = normalizeHelperPayRecord({
+            id: payload.record.id,
+            week: payload.record.week,
+            hours: payload.record.hours,
+            rate: payload.record.rate,
+            paid: payload.record.paid,
+            paidBy: payload.record.paidBy ? "Backend admin" : "",
+            paidAt: payload.record.paidAt,
+            shifts: payload.record.shifts || []
+          });
+          helperPayRecords = [
+            updatedRecord,
+            ...helperPayRecords.filter(item => item.id !== updatedRecord.id && item.week !== updatedRecord.week)
+          ].slice(0, 80);
+          helperWeeklyHours = updatedRecord.hours;
+          helperRate = updatedRecord.rate;
+          persistBetaData();
+          renderHelperPay();
+          document.getElementById("timeCardStatus").textContent = `Saved ${hours.toFixed(2)} hours for Vanessa in the backend.`;
+          return;
+        }
+      } catch (error) {
+        document.getElementById("timeCardStatus").textContent = `Cloud helper time save failed: ${error.message}`;
+        return;
+      }
+      helperWeeklyHours += hours;
+      helperRate = rate;
+      currentRecord.hours = helperWeeklyHours;
+      currentRecord.rate = rate;
+      currentRecord.paid = false;
+      currentRecord.shifts = currentRecord.shifts || [];
+      currentRecord.shifts.push(shift);
       persistBetaData();
       document.getElementById("timeCardStatus").textContent = `Saved ${hours.toFixed(2)} hours for Vanessa today.`;
       renderHelperPay();

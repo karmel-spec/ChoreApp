@@ -60,6 +60,7 @@ Never expose `SUPABASE_SERVICE_ROLE_KEY` or Twilio secrets in browser JavaScript
 - `member-rules`: lets signed-in family members read child fine/work rules, and lets parent admins update fine rates, daily work targets, difficulty limits, and hard-chore targeting.
 - `member-contact`: lets admins update any child phone/text opt-in and lets children update only their own setting.
 - `money-ledger`: lets signed-in family members read child ledger/account history, and requires a verified parent admin token plus the `CONFIRM MONEY` guardrail before charging fines, awarding bonuses, or marking fines paid.
+- `helper-time`: lets Vanessa or parent admins save Vanessa's helper shifts, while only parent admins can mark helper pay paid with the `CONFIRM MONEY` guardrail.
 - `photo-upload-url`: creates a private Supabase Storage signed upload URL for family photos.
 - `photo-record`: records or clears uploaded family hero, profile, proof, and feed photos in Supabase with role checks.
 - `send-sms`: lets parent admins send trusted Twilio SMS reminders and logs each send.
@@ -97,6 +98,8 @@ The `family-snapshot` function is the production reload path for profile photos,
 The `availability-hold` function is the production source for vacation, sick-day, travel, and unavailable-day holds. Parent admins can add or remove holds server-side; children and helpers can read active holds so the app can mute chores and block fine accrual consistently across devices.
 
 The `member-rules` function keeps parent-controlled child settings out of browser-only trust. Parent admins can save fine rates, daily work minutes, difficulty limits, and hard-chore targeting server-side; children can read those rules but cannot change them.
+
+The `helper-time` function is the production source for Vanessa's time-card and weekly pay records. Vanessa can save her own shifts after Google sign-in, parent admins can save or correct shifts, and only Brigham or Karmel can mark a paycheck paid after the money confirmation guardrail.
 
 ## Family Seed Data
 

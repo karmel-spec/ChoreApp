@@ -110,6 +110,23 @@ create table ledger_entries (
   created_at timestamptz not null default now()
 );
 
+create table helper_pay_records (
+  id uuid primary key default gen_random_uuid(),
+  family_id uuid not null references families(id) on delete cascade,
+  helper_id uuid not null references family_members(id) on delete cascade,
+  week_label text not null,
+  hours numeric(8,2) not null default 0,
+  rate numeric(8,2) not null default 17,
+  paid boolean not null default false,
+  paid_by uuid references family_members(id),
+  paid_at timestamptz,
+  shifts jsonb not null default '[]'::jsonb,
+  updated_by uuid references family_members(id),
+  updated_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  unique(helper_id, week_label)
+);
+
 create table availability_holds (
   id uuid primary key default gen_random_uuid(),
   family_id uuid not null references families(id) on delete cascade,
@@ -217,6 +234,7 @@ alter table chores enable row level security;
 alter table family_settings enable row level security;
 alter table chore_records enable row level security;
 alter table ledger_entries enable row level security;
+alter table helper_pay_records enable row level security;
 alter table availability_holds enable row level security;
 alter table chore_feedback enable row level security;
 alter table extension_requests enable row level security;
@@ -268,6 +286,11 @@ create policy "admins manage chore records" on chore_records for all using (is_a
 
 create policy "members read ledger" on ledger_entries for select using (auth.uid() is not null);
 create policy "admins manage ledger" on ledger_entries for all using (is_admin()) with check (is_admin());
+
+create policy "members read helper pay" on helper_pay_records for select using (auth.uid() is not null);
+create policy "helpers update own unpaid helper pay" on helper_pay_records for update using (helper_id = current_member_id() and paid = false) with check (helper_id = current_member_id() and paid = false);
+create policy "helpers create own helper pay" on helper_pay_records for insert with check (helper_id = current_member_id());
+create policy "admins manage helper pay" on helper_pay_records for all using (is_admin()) with check (is_admin());
 
 create policy "members read holds" on availability_holds for select using (auth.uid() is not null);
 create policy "admins manage holds" on availability_holds for all using (is_admin()) with check (is_admin());
