@@ -99,6 +99,88 @@
       display: none;
     }
 
+    body.chore-list-fullscreen {
+      overflow: hidden;
+    }
+
+    body.chore-list-fullscreen main {
+      padding: 0;
+    }
+
+    body.chore-list-fullscreen .app-shell {
+      max-width: none;
+      display: block;
+      margin: 0;
+    }
+
+    body.chore-list-fullscreen .sidebar,
+    body.chore-list-fullscreen .dashboard,
+    body.chore-list-fullscreen .side-stack > section:not(#masterChoreListPanel) {
+      display: none;
+    }
+
+    body.chore-list-fullscreen #masterChoreListPanel {
+      position: fixed;
+      inset: 12px;
+      z-index: 40;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      overflow: hidden;
+    }
+
+    body.chore-list-fullscreen #masterChoreListPanel .side-body,
+    body.chore-list-fullscreen #masterChoreTableScroll {
+      min-height: 0;
+    }
+
+    body.chore-list-fullscreen #masterChoreTableScroll {
+      overflow: auto;
+    }
+
+    body.chore-list-fullscreen .chore-table {
+      min-width: 0;
+      table-layout: fixed;
+      font-size: 11px;
+    }
+
+    body.chore-list-fullscreen .chore-table th,
+    body.chore-list-fullscreen .chore-table td {
+      padding: 7px 6px;
+    }
+
+    body.chore-list-fullscreen .chore-edit-notes {
+      min-height: 54px;
+    }
+
+    body.chore-list-fullscreen .chore-table th:nth-child(1),
+    body.chore-list-fullscreen .chore-table td:nth-child(1) { width: 17%; }
+    body.chore-list-fullscreen .chore-table th:nth-child(2),
+    body.chore-list-fullscreen .chore-table td:nth-child(2),
+    body.chore-list-fullscreen .chore-table th:nth-child(3),
+    body.chore-list-fullscreen .chore-table td:nth-child(3) { width: 5%; }
+    body.chore-list-fullscreen .chore-table th:nth-child(4),
+    body.chore-list-fullscreen .chore-table td:nth-child(4),
+    body.chore-list-fullscreen .chore-table th:nth-child(5),
+    body.chore-list-fullscreen .chore-table td:nth-child(5) { width: 10%; }
+    body.chore-list-fullscreen .chore-table th:nth-child(6),
+    body.chore-list-fullscreen .chore-table td:nth-child(6) { width: 12%; }
+    body.chore-list-fullscreen .chore-table th:nth-child(7),
+    body.chore-list-fullscreen .chore-table td:nth-child(7) { width: 24%; }
+    body.chore-list-fullscreen .chore-table th:nth-child(8),
+    body.chore-list-fullscreen .chore-table td:nth-child(8),
+    body.chore-list-fullscreen .chore-table th:nth-child(9),
+    body.chore-list-fullscreen .chore-table td:nth-child(9),
+    body.chore-list-fullscreen .chore-table th:nth-child(10),
+    body.chore-list-fullscreen .chore-table td:nth-child(10) { width: 6%; }
+
+    .panel-head-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
     .panel {
       background: rgba(255, 255, 255, .9);
       border: 1px solid rgba(32, 33, 36, .1);
@@ -2029,13 +2111,16 @@
           </div>
         </section>
 
-        <section class="panel">
+        <section class="panel" id="masterChoreListPanel">
           <div class="panel-head">
             <h3>Backend Admin: Master Chore List</h3>
-            <span id="choreCountLabel">Editable</span>
+            <div class="panel-head-actions">
+              <span id="choreCountLabel">Editable</span>
+              <button class="ghost-btn" type="button" id="toggleChoreFullscreenBtn" onclick="toggleChoreListFullscreen()">Full Screen</button>
+            </div>
           </div>
           <div class="side-body">
-            <div class="table-scroll">
+            <div class="table-scroll" id="masterChoreTableScroll">
               <table class="chore-table">
                 <thead>
                   <tr>
@@ -4952,6 +5037,20 @@
     function toggleFamilySidebar() {
       applySidebarCollapsed(!document.getElementById("appShell").classList.contains("sidebar-collapsed"));
     }
+
+    function setChoreListFullscreen(enabled) {
+      document.body.classList.toggle("chore-list-fullscreen", enabled);
+      const button = document.getElementById("toggleChoreFullscreenBtn");
+      if (button) button.textContent = enabled ? "Exit Full Screen" : "Full Screen";
+      if (enabled) document.getElementById("masterChoreTableScroll")?.scrollTo({ left: 0, top: 0 });
+    }
+
+    function toggleChoreListFullscreen() {
+      setChoreListFullscreen(!document.body.classList.contains("chore-list-fullscreen"));
+    }
+
+    window.setChoreListFullscreen = setChoreListFullscreen;
+    window.toggleChoreListFullscreen = toggleChoreListFullscreen;
 
     function loginSelectedAccount() {
       const account = getAccountById(selectedLoginId);
@@ -8205,6 +8304,12 @@
     });
 
     document.getElementById("toggleSidebarBtn").addEventListener("click", toggleFamilySidebar);
+
+    window.addEventListener("keydown", event => {
+      if (event.key === "Escape" && document.body.classList.contains("chore-list-fullscreen")) {
+        setChoreListFullscreen(false);
+      }
+    });
 
     document.getElementById("saveFamilySettingsBtn").addEventListener("click", saveFamilySettings);
 
