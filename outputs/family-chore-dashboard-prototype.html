@@ -5293,6 +5293,12 @@
         url.searchParams.set("child", selectedChildId);
         url.searchParams.delete("view");
         window.history.replaceState({}, "", url);
+      } else if (account.role === "admin") {
+        activeWorkspace = "admin";
+        const url = new URL(window.location.href);
+        url.searchParams.set("view", "admin");
+        url.searchParams.set("child", selectedChildId);
+        window.history.replaceState({}, "", url);
       } else if (account.role !== "admin" && activeWorkspace === "admin") {
         activeWorkspace = "child";
         const url = new URL(window.location.href);
@@ -5953,9 +5959,14 @@
 
     function renderFamilyList() {
       const list = document.getElementById("familyList");
-      const visibleChildren = currentUser?.role === "child"
-        ? children.filter(child => child.id === currentUser.childId)
-        : children;
+      const showFamilySummary = isParentAdminWorkspace();
+      list.hidden = !showFamilySummary;
+      list.setAttribute("aria-hidden", showFamilySummary ? "false" : "true");
+      if (!showFamilySummary) {
+        list.innerHTML = "";
+        return;
+      }
+      const visibleChildren = children;
       list.innerHTML = visibleChildren.map(child => `
         <button class="child-button ${child.id === selectedChildId ? "active" : ""}" type="button" data-child="${child.id}">
           ${renderChildPhoto(child)}
@@ -5968,7 +5979,6 @@
       `).join("");
       list.querySelectorAll("button").forEach(button => {
         button.addEventListener("click", () => {
-          if (currentUser?.role === "child" && currentUser.childId !== button.dataset.child) return;
           activeWorkspace = "child";
           selectedChildId = button.dataset.child;
           const url = new URL(window.location.href);
