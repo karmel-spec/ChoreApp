@@ -504,9 +504,9 @@
 
     .task {
       display: grid;
-      grid-template-columns: 34px 34px minmax(0, 1fr) auto;
+      grid-template-columns: 34px 34px minmax(0, 1fr) minmax(220px, auto);
       gap: 10px;
-      align-items: center;
+      align-items: start;
       padding: 10px;
       background: #fff;
       border: 1px solid var(--line);
@@ -569,11 +569,41 @@
     }
 
     .task-actions {
-      display: flex;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(72px, auto));
       gap: 6px;
       align-items: center;
-      flex-wrap: wrap;
       justify-content: flex-end;
+      min-width: 220px;
+    }
+
+    .task-actions .check-btn {
+      grid-column: 1;
+    }
+
+    .task-actions .proof-btn {
+      grid-column: 2;
+    }
+
+    .actual-minutes-input,
+    .actual-difficulty-input {
+      width: 76px;
+      min-width: 0;
+      min-height: 32px;
+      padding: 0 8px;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    .task-actions [data-feedback-task] {
+      grid-column: 1;
+    }
+
+    .task-actions .proof-thumb,
+    .task-actions .status {
+      grid-column: 2;
+      justify-self: end;
     }
 
     .status {
@@ -1719,10 +1749,14 @@
       }
       .task-actions {
         grid-column: 1 / -1;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         justify-content: stretch;
+        min-width: 0;
       }
-      .task-actions button {
-        flex: 1 1 104px;
+      .task-actions button,
+      .actual-minutes-input,
+      .actual-difficulty-input {
+        width: 100%;
       }
       .review-row,
       .ledger-row,
