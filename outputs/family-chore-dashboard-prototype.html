@@ -943,14 +943,17 @@
       display: none;
     }
 
-    .parent-admin-panel.role-hidden {
+    .parent-admin-panel,
+    .helper-access-panel,
+    .parent-admin-panel.role-hidden,
+    .helper-access-panel.role-hidden {
       display: none;
     }
 
-    .app-shell.role-child .parent-admin-panel,
-    .app-shell.role-helper .parent-admin-panel,
-    .app-shell.role-signed-out .parent-admin-panel {
-      display: none;
+    .app-shell.role-admin .parent-admin-panel,
+    .app-shell.role-admin .helper-access-panel,
+    .app-shell.role-helper .helper-access-panel {
+      display: block;
     }
 
     .side-stack {
@@ -1856,7 +1859,7 @@
   </header>
 
   <main>
-    <div class="app-shell" id="appShell">
+    <div class="app-shell role-signed-out" id="appShell">
       <aside class="panel sidebar">
         <div class="panel-head">
           <h2>Family</h2>
@@ -2550,7 +2553,7 @@
           </div>
         </section>
 
-        <section class="panel parent-admin-panel">
+        <section class="panel helper-access-panel">
           <div class="panel-head">
             <h3>Mom's Helper</h3>
             <span>Vanessa</span>
@@ -5402,11 +5405,16 @@
       });
     }
 
-    function renderParentAdminPanelVisibility() {
-      const hidden = !isAdmin();
+    function renderRestrictedPanelVisibility() {
+      const parentHidden = !isAdmin();
       document.querySelectorAll(".parent-admin-panel").forEach(panel => {
-        panel.classList.toggle("role-hidden", hidden);
-        panel.setAttribute("aria-hidden", hidden ? "true" : "false");
+        panel.classList.toggle("role-hidden", parentHidden);
+        panel.setAttribute("aria-hidden", parentHidden ? "true" : "false");
+      });
+      const helperHidden = !canUseHelperWorkspace();
+      document.querySelectorAll(".helper-access-panel").forEach(panel => {
+        panel.classList.toggle("role-hidden", helperHidden);
+        panel.setAttribute("aria-hidden", helperHidden ? "true" : "false");
       });
     }
 
@@ -8590,7 +8598,7 @@
       renderBetaDataSummary();
       renderChoreTable();
       renderHelperPay();
-      renderParentAdminPanelVisibility();
+      renderRestrictedPanelVisibility();
       renderAdminLocks();
       renderHelperLocks();
       renderHelperBoard();
