@@ -1496,6 +1496,27 @@
       min-height: 54px;
     }
 
+    .chore-autosave-status {
+      display: inline-block;
+      min-width: 74px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      line-height: 1.25;
+    }
+
+    .chore-autosave-status.saving {
+      color: var(--blue);
+    }
+
+    .chore-autosave-status.saved {
+      color: var(--teal);
+    }
+
+    .chore-autosave-status.warn {
+      color: var(--red);
+    }
+
     .difficulty {
       display: inline-block;
       min-width: 28px;
@@ -2167,7 +2188,7 @@
             </div>
           </div>
           <div class="side-body">
-            <div class="notice-card">Add a new chore here, or edit, toggle, save, and delete existing chores directly in the table. Delete removes the chore from future rotations.</div>
+            <div class="notice-card">Add a new chore here, or edit, toggle, and delete existing chores directly in the table. Master list edits autosave after a short pause. Delete removes the chore from future rotations.</div>
             <div class="admin-form admin-only" id="masterChoreAddForm">
               <label for="masterChoreName">New Chore Name</label>
               <input id="masterChoreName" placeholder="Add a new chore">
@@ -2241,7 +2262,7 @@
                     <th>Notice</th>
                     <th>Training</th>
                     <th>Rotation</th>
-                    <th>Save</th>
+                    <th>Autosave</th>
                     <th>Delete</th>
                   </tr>
                 </thead>
@@ -3129,6 +3150,7 @@
     const allowedChoreFits = ["Anyone", "Boys", "Older kids", "Louis and Brielle", "Brielle only", "Boys only", "Vanessa"];
     const allowedChoreNotices = ["Starts after 24 hours", "Start today", "Start next week"];
     const allowedWeeklyDays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const choreAutosaveTimers = new Map();
     const requiredChoreSeeds = [
       { name: "Make 10 layered salad jars", minutes: 30, difficulty: 7, fit: "Older kids", frequency: "Weekly", active: true, trainingNotes: "Make 5 pint jars and 5 quart jars. Keep wet ingredients low, add sturdy vegetables next, greens near the top, seal and label with date." },
       { name: "Prep breakfast burritos", minutes: 25, difficulty: 6, fit: "Older kids", frequency: "Weekly", active: true, trainingNotes: "Cook filling safely, cool before wrapping, label the freezer bag with date and count." },
@@ -7519,6 +7541,8 @@
     }
 
     function renderChoreTable() {
+      choreAutosaveTimers.forEach(timer => clearTimeout(timer));
+      choreAutosaveTimers.clear();
       const activeCount = choreLibrary.filter(chore => chore.active !== false).length;
       document.getElementById("choreCountLabel").textContent = `${activeCount} on / ${choreLibrary.length} saved`;
       document.getElementById("choreTable").innerHTML = choreLibrary.map((chore, index) => `
@@ -7538,7 +7562,7 @@
           </td>
           <td><textarea class="chore-edit-notes" data-edit-chore-training="${index}" ${isAdmin() ? "" : "disabled"}>${escapeHtml(chore.trainingNotes || "")}</textarea></td>
           <td><button class="toggle-btn ${chore.active === false ? "off" : ""}" type="button" data-chore-index="${index}" ${isAdmin() ? "" : "disabled"}>${chore.active === false ? "Off" : "On"}</button></td>
-          <td><button class="primary-btn" type="button" data-save-chore-index="${index}" ${isAdmin() ? "" : "disabled"}>Save</button></td>
+          <td><span class="chore-autosave-status saved" data-chore-autosave-index="${index}">${isAdmin() ? "Saved" : "View only"}</span></td>
           <td><button class="ghost-btn" type="button" data-delete-chore-index="${index}" ${isAdmin() ? "" : "disabled"}>Delete</button></td>
         </tr>
       `).join("");
@@ -7574,18 +7598,45 @@
       document.querySelectorAll("[data-delete-chore-index]").forEach(button => {
         button.addEventListener("click", () => deleteChore(Number(button.dataset.deleteChoreIndex)));
       });
-      document.querySelectorAll("[data-save-chore-index]").forEach(button => {
-        button.addEventListener("click", () => saveChoreEdit(Number(button.dataset.saveChoreIndex)));
+      document.querySelectorAll("[data-edit-chore-name], [data-edit-chore-minutes], [data-edit-chore-difficulty], [data-edit-chore-training]").forEach(field => {
+        field.addEventListener("input", () => scheduleChoreAutosave(choreEditIndexFromField(field), 850));
       });
+      document.querySelectorAll("[data-edit-chore-frequency], [data-edit-chore-weekly-day], [data-edit-chore-fit], [data-edit-chore-notice]").forEach(field => {
+        field.addEventListener("change", () => scheduleChoreAutosave(choreEditIndexFromField(field), 80));
+      });
+    }
+
+    function choreEditIndexFromField(field) {
+      const match = Array.from(field.attributes).find(attribute => attribute.name.startsWith("data-edit-chore-"));
+      return match ? Number(match.value) : -1;
+    }
+
+    function setChoreAutosaveStatus(index, text, className = "") {
+      const status = document.querySelector(`[data-chore-autosave-index="${index}"]`);
+      if (!status) return;
+      status.textContent = text;
+      status.className = `chore-autosave-status ${className}`.trim();
+    }
+
+    function scheduleChoreAutosave(index, delay = 850) {
+      if (!isAdmin() || index < 0) return;
+      clearTimeout(choreAutosaveTimers.get(index));
+      setChoreAutosaveStatus(index, "Saving...", "saving");
+      choreAutosaveTimers.set(index, setTimeout(() => {
+        choreAutosaveTimers.delete(index);
+        saveChoreEdit(index, { autosave: true });
+      }, delay));
     }
 
     function editFieldValue(selector, index) {
       return document.querySelector(`[${selector}="${index}"]`)?.value || "";
     }
 
-    async function saveChoreEdit(index) {
+    async function saveChoreEdit(index, options = {}) {
+      const autosave = options.autosave === true;
       if (!isAdmin()) {
         document.getElementById("adminStatus").textContent = "Only Brigham or Karmel can edit chores in the master rotation.";
+        if (autosave) setChoreAutosaveStatus(index, "View only", "warn");
         return;
       }
       const chore = choreLibrary[index];
@@ -7600,23 +7651,28 @@
       const trainingNotes = editFieldValue("data-edit-chore-training", index).trim();
       if (!name) {
         document.getElementById("adminStatus").textContent = "Chore name cannot be blank.";
+        if (autosave) setChoreAutosaveStatus(index, "Needs name", "warn");
         return;
       }
       if (minutes === null) {
         document.getElementById("adminStatus").textContent = "Use whole minutes from 1 to 180 for chore edits.";
+        if (autosave) setChoreAutosaveStatus(index, "Fix minutes", "warn");
         return;
       }
       if (difficulty === null) {
         document.getElementById("adminStatus").textContent = "Use a whole difficulty rating from 1 to 10 for chore edits.";
+        if (autosave) setChoreAutosaveStatus(index, "Fix diff", "warn");
         return;
       }
       if (!allowedChoreFrequencies.includes(frequency) || !allowedWeeklyDays.includes(weeklyDay) || !allowedChoreFits.includes(fit) || !allowedChoreNotices.includes(notice)) {
         document.getElementById("adminStatus").textContent = "Choose valid schedule, weekly day, approved-for, and notice values.";
+        if (autosave) setChoreAutosaveStatus(index, "Needs edit", "warn");
         return;
       }
       const duplicate = choreLibrary.find((item, duplicateIndex) => duplicateIndex !== index && item.name.trim().toLowerCase() === name.toLowerCase());
       if (duplicate) {
         document.getElementById("adminStatus").textContent = `${name} already exists in the master chore list. Keep chore names unique for scheduling and review history.`;
+        if (autosave) setChoreAutosaveStatus(index, "Duplicate", "warn");
         return;
       }
       let backendChoreId = chore.backendChoreId || chore.id || "";
@@ -7637,6 +7693,7 @@
         backendChoreId = payload?.chore?.id || backendChoreId;
       } catch (error) {
         document.getElementById("adminStatus").textContent = `Cloud chore edit failed: ${error.message}`;
+        if (autosave) setChoreAutosaveStatus(index, "Cloud fail", "warn");
         return;
       }
       Object.assign(chore, {
@@ -7654,7 +7711,8 @@
       });
       shuffleOffset += 7;
       persistBetaData();
-      render();
+      if (!autosave) render();
+      if (autosave) setChoreAutosaveStatus(index, "Saved", "saved");
       document.getElementById("adminStatus").textContent = `${name} updated by ${chore.updatedBy}. Future rotations and fairness previews now use the new settings.`;
     }
 
