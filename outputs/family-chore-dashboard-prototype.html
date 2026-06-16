@@ -5413,12 +5413,14 @@
         panel.hidden = parentHidden;
         panel.classList.toggle("role-hidden", parentHidden);
         panel.setAttribute("aria-hidden", parentHidden ? "true" : "false");
+        panel.style.setProperty("display", parentHidden ? "none" : "block", parentHidden ? "important" : "");
       });
       const helperHidden = !canUseHelperWorkspace();
       document.querySelectorAll(".helper-access-panel").forEach(panel => {
         panel.hidden = helperHidden;
         panel.classList.toggle("role-hidden", helperHidden);
         panel.setAttribute("aria-hidden", helperHidden ? "true" : "false");
+        panel.style.setProperty("display", helperHidden ? "none" : "block", helperHidden ? "important" : "");
       });
     }
 
