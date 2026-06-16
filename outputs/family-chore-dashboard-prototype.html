@@ -2127,7 +2127,7 @@
                   <input id="bonus5" value="5" inputmode="decimal">
                 </div>
                 <div>
-                  <label for="bonus7">7-Day Bonus</label>
+                  <label for="bonus7">14-Day Bonus</label>
                   <input id="bonus7" value="10" inputmode="decimal">
                 </div>
                 <div>
@@ -2911,7 +2911,7 @@
     let bonusRules = {
       monthly: [
         { days: 5, amount: 5 },
-        { days: 7, amount: 10 },
+        { days: 14, amount: 10 },
         { days: 30, amount: 50 }
       ],
       super: [
@@ -3188,7 +3188,7 @@
       const defaultRules = {
         monthly: [
           { days: 5, amount: 5 },
-          { days: 7, amount: 10 },
+          { days: 14, amount: 10 },
           { days: 30, amount: 50 }
         ],
         super: [
@@ -6876,7 +6876,7 @@
       document.getElementById("bonusPeriodNote").textContent = `Current monthly bonus period: ${currentBonusMonthLabel()}. Next monthly bonus reset: ${nextBonusResetLabel()}.`;
       document.getElementById("bonusEligibilityNote").textContent = nextBonusEligibility(child);
       document.getElementById("bonus5").value = bonusRules.monthly.find(rule => rule.days === 5)?.amount ?? 5;
-      document.getElementById("bonus7").value = bonusRules.monthly.find(rule => rule.days === 7)?.amount ?? 10;
+      document.getElementById("bonus7").value = bonusRules.monthly.find(rule => rule.days === 14)?.amount ?? 10;
       document.getElementById("bonus30").value = bonusRules.monthly.find(rule => rule.days === 30)?.amount ?? 50;
       document.getElementById("super100").value = bonusRules.super.find(rule => rule.days === 100)?.amount ?? 100;
       document.getElementById("pointsFirst").value = monthlyPointsBonusForRank(1);
@@ -7042,7 +7042,7 @@
       const nextRules = {
         monthly: [
           { days: 5, amount: bonus5 },
-          { days: 7, amount: bonus7 },
+          { days: 14, amount: bonus7 },
           { days: 30, amount: bonus30 }
         ],
         super: [
