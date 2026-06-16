@@ -570,40 +570,38 @@
 
     .task-actions {
       display: grid;
-      grid-template-columns: repeat(2, minmax(72px, auto));
-      gap: 6px;
-      align-items: center;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 8px;
+      align-items: start;
       justify-content: flex-end;
       min-width: 220px;
     }
 
-    .task-actions .check-btn {
-      grid-column: 1;
+    .task-completion-actions,
+    .task-feedback-actions {
+      display: grid;
+      gap: 6px;
+      justify-content: end;
+      align-items: center;
     }
 
-    .task-actions .proof-btn {
-      grid-column: 2;
+    .task-completion-actions {
+      grid-template-columns: repeat(2, max-content);
+    }
+
+    .task-feedback-actions {
+      grid-template-columns: 62px 62px max-content;
     }
 
     .actual-minutes-input,
     .actual-difficulty-input {
-      width: 76px;
+      width: 62px;
       min-width: 0;
       min-height: 32px;
       padding: 0 8px;
       font-size: 12px;
       font-weight: 800;
       color: var(--ink);
-    }
-
-    .task-actions [data-feedback-task] {
-      grid-column: 1;
-    }
-
-    .task-actions .proof-thumb,
-    .task-actions .status {
-      grid-column: 2;
-      justify-self: end;
     }
 
     .status {
@@ -1749,11 +1747,19 @@
       }
       .task-actions {
         grid-column: 1 / -1;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
         justify-content: stretch;
         min-width: 0;
       }
-      .task-actions button,
+      .task-completion-actions,
+      .task-feedback-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        justify-content: stretch;
+      }
+      .task-feedback-actions [data-feedback-task] {
+        grid-column: 1 / -1;
+      }
+      .task-completion-actions button,
+      .task-feedback-actions button,
       .actual-minutes-input,
       .actual-difficulty-input {
         width: 100%;
@@ -5916,14 +5922,18 @@
         : finalized && !completed && record.reviewStatus !== "approved" ? "Review finalized" : choreStatusText(record, fallbackStatus);
       const difficulty = choreDifficulty(chore);
       return `
-        <button class="check-btn ${completed ? "completed" : ""}" type="button" data-chore-type="${choreType}" data-chore-name="${encodedName}" ${completionDisabled ? "disabled" : ""}>${completeLabel}</button>
-        <button class="proof-btn" type="button" data-proof-key="${proofKey}" data-chore-type="${choreType}" data-chore-name="${encodedName}" ${finalized || !canManage ? "disabled" : ""}>${record.proofImage ? "Photo saved" : "Photo"}</button>
         <input class="proof-input" type="file" accept="image/*" data-proof-key="${proofKey}" data-chore-type="${choreType}" data-chore-name="${encodedName}">
-        <input class="actual-minutes-input" aria-label="Actual minutes for ${escapeHtml(chore.name)}" inputmode="numeric" placeholder="${chore.minutes}m" data-feedback-minutes="${proofKey}" ${!canManage ? "disabled" : ""}>
-        <input class="actual-difficulty-input" aria-label="Actual difficulty for ${escapeHtml(chore.name)}" inputmode="numeric" placeholder="D${difficulty}" data-feedback-difficulty="${proofKey}" ${!canManage ? "disabled" : ""}>
-        <button class="ghost-btn" type="button" data-feedback-task="${proofKey}" data-chore-type="${choreType}" data-chore-name="${encodedName}" ${!canManage ? "disabled" : ""}>Suggest Edit</button>
-        ${proofThumb}
-        <span class="status ${statusClass}">${escapeHtml(statusText)}</span>
+        <div class="task-completion-actions">
+          <button class="check-btn ${completed ? "completed" : ""}" type="button" data-chore-type="${choreType}" data-chore-name="${encodedName}" ${completionDisabled ? "disabled" : ""}>${completeLabel}</button>
+          <button class="proof-btn" type="button" data-proof-key="${proofKey}" data-chore-type="${choreType}" data-chore-name="${encodedName}" ${finalized || !canManage ? "disabled" : ""}>${record.proofImage ? "Photo saved" : "Photo"}</button>
+          ${proofThumb}
+          <span class="status ${statusClass}">${escapeHtml(statusText)}</span>
+        </div>
+        <div class="task-feedback-actions">
+          <input class="actual-minutes-input" aria-label="Actual minutes for ${escapeHtml(chore.name)}" inputmode="numeric" placeholder="${chore.minutes}m" data-feedback-minutes="${proofKey}" ${!canManage ? "disabled" : ""}>
+          <input class="actual-difficulty-input" aria-label="Actual difficulty for ${escapeHtml(chore.name)}" inputmode="numeric" placeholder="D${difficulty}" data-feedback-difficulty="${proofKey}" ${!canManage ? "disabled" : ""}>
+          <button class="ghost-btn" type="button" data-feedback-task="${proofKey}" data-chore-type="${choreType}" data-chore-name="${encodedName}" ${!canManage ? "disabled" : ""}>Suggest Edit</button>
+        </div>
       `;
     }
 
