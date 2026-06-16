@@ -97,7 +97,7 @@ Once per week:
 2. Edit bonus rules as admin.
 3. Try one invalid bonus amount and one invalid fine amount, then confirm the app blocks saving until both are valid.
 4. Award an eligible bonus.
-5. Confirm separate 5-day, 14-day, 30-day, and super-bonus milestones do not block each other.
+5. Confirm separate 7-day, 14-day, 30-day, and super-bonus milestones do not block each other.
 6. Confirm bonus rows show who awarded the money and when it was awarded.
 7. Sign in as a child and Vanessa to confirm they cannot edit fine rates, bonus rates, pay rates, or award/charge money.
 8. Confirm the chore account balance changes only once per awarded milestone.

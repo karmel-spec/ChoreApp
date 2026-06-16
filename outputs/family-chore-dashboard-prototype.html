@@ -2123,7 +2123,7 @@
             <div class="admin-form admin-only" id="bonusAdminForm">
               <div class="form-row three">
                 <div>
-                  <label for="bonus5">5-Day Bonus</label>
+                  <label for="bonus5">7-Day Bonus</label>
                   <input id="bonus5" value="5" inputmode="decimal">
                 </div>
                 <div>
@@ -2910,7 +2910,7 @@
     let renderedChoreDayOffset = 0;
     let bonusRules = {
       monthly: [
-        { days: 5, amount: 5 },
+        { days: 7, amount: 5 },
         { days: 14, amount: 10 },
         { days: 30, amount: 50 }
       ],
@@ -3187,7 +3187,7 @@
     function normalizeBonusRules(rules) {
       const defaultRules = {
         monthly: [
-          { days: 5, amount: 5 },
+          { days: 7, amount: 5 },
           { days: 14, amount: 10 },
           { days: 30, amount: 50 }
         ],
@@ -6875,7 +6875,7 @@
       document.getElementById("bonusBalanceMetric").textContent = `$${child.accountBalance}`;
       document.getElementById("bonusPeriodNote").textContent = `Current monthly bonus period: ${currentBonusMonthLabel()}. Next monthly bonus reset: ${nextBonusResetLabel()}.`;
       document.getElementById("bonusEligibilityNote").textContent = nextBonusEligibility(child);
-      document.getElementById("bonus5").value = bonusRules.monthly.find(rule => rule.days === 5)?.amount ?? 5;
+      document.getElementById("bonus5").value = bonusRules.monthly.find(rule => rule.days === 7)?.amount ?? 5;
       document.getElementById("bonus7").value = bonusRules.monthly.find(rule => rule.days === 14)?.amount ?? 10;
       document.getElementById("bonus30").value = bonusRules.monthly.find(rule => rule.days === 30)?.amount ?? 50;
       document.getElementById("super100").value = bonusRules.super.find(rule => rule.days === 100)?.amount ?? 100;
@@ -7041,7 +7041,7 @@
       }
       const nextRules = {
         monthly: [
-          { days: 5, amount: bonus5 },
+          { days: 7, amount: bonus5 },
           { days: 14, amount: bonus7 },
           { days: 30, amount: bonus30 }
         ],
