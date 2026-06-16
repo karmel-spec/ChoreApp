@@ -276,8 +276,7 @@
 
     .avatar img,
     .profile-photo img,
-    .podium-photo img,
-    .task-person img {
+    .podium-photo img {
       width: 100%;
       height: 100%;
       object-fit: cover;
@@ -529,7 +528,7 @@
 
     .task {
       display: grid;
-      grid-template-columns: 34px 34px minmax(0, 1fr);
+      grid-template-columns: 34px minmax(0, 1fr);
       gap: 10px;
       align-items: start;
       padding: 10px;
@@ -547,19 +546,6 @@
       font-weight: 900;
       background: #e8f2ff;
       color: var(--blue);
-    }
-
-    .task-person {
-      width: 34px;
-      height: 34px;
-      border-radius: 8px;
-      display: grid;
-      place-items: center;
-      color: #fff;
-      font-weight: 900;
-      font-size: 12px;
-      overflow: hidden;
-      background: var(--teal);
     }
 
     .task.streak .task-icon {
@@ -1802,12 +1788,6 @@
         grid-template-columns: 1fr;
         flex-direction: column;
         align-items: stretch;
-      }
-      .task {
-        grid-template-columns: 34px minmax(0, 1fr);
-      }
-      .task-person {
-        display: none;
       }
       .task-actions {
         grid-column: 1 / -1;
@@ -6225,7 +6205,6 @@
         return `
         <div class="task streak ${record.completedAt ? "completed" : ""}">
           <div class="task-icon">${index + 1}</div>
-          ${renderChildPhoto(child, "task-person")}
           <div>
             <strong>${escapeHtml(chore.name)}</strong>
             <span>Estimated ${chore.minutes} minutes. Complete these before rotating fined chores. ${escapeHtml(familySettings.reviewRecipient)} still reviews at ${escapeHtml(familySettings.reviewReminderTime)}.</span>
@@ -6245,7 +6224,6 @@
         return `
         <div class="task ${warning ? "overdue" : ""} ${record.completedAt ? "completed" : ""}">
           <div class="task-icon">${chore.difficulty}</div>
-          ${renderChildPhoto(child, "task-person")}
           <div>
             <strong>${escapeHtml(chore.name)}</strong>
             <span>Difficulty ${chore.difficulty}/10. Estimated ${chore.minutes} minutes. Has until ${escapeHtml(todayDeadline)}. If incomplete by the deadline without ${escapeHtml(extensionApproverShortName())}’s extension, charge $${child.fineRate}.${chore.trainingNotes ? ` Training: ${escapeHtml(chore.trainingNotes)}` : ""}</span>
