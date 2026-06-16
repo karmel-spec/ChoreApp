@@ -59,15 +59,30 @@
     }
 
     .admin-chip {
-      justify-self: end;
+      font-weight: 800;
+      color: var(--blue);
+      white-space: nowrap;
+    }
+
+    .login-control {
       border: 1px solid var(--line);
       background: var(--white);
       box-shadow: 0 8px 26px rgba(24, 49, 63, .08);
       border-radius: 8px;
-      padding: 11px 14px;
-      font-weight: 800;
-      color: var(--blue);
-      white-space: nowrap;
+      padding: 10px;
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      max-width: 470px;
+    }
+
+    .login-control p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.3;
+      overflow-wrap: anywhere;
     }
 
     .header-actions {
@@ -1758,6 +1773,9 @@
       .admin-chip {
         justify-self: start;
       }
+      .login-control {
+        grid-template-columns: 1fr;
+      }
       .header-actions {
         justify-self: start;
         justify-content: flex-start;
@@ -1835,7 +1853,13 @@
     </div>
     <div class="header-actions">
       <button class="ghost-btn" type="button" id="toggleSidebarBtn">Hide Family Sidebar</button>
-      <div class="admin-chip" id="currentUserChip">Not signed in</div>
+      <div class="login-control">
+        <div>
+          <div class="admin-chip" id="currentUserChip">Not signed in</div>
+          <p id="loginSummary">Choose a family login to continue.</p>
+        </div>
+        <button class="ghost-btn" type="button" id="switchLoginBtn">Switch Login</button>
+      </div>
     </div>
   </header>
 
@@ -1845,11 +1869,6 @@
         <div class="panel-head">
           <h2>Family</h2>
           <span>Dashboards</span>
-        </div>
-        <div class="rule-box">
-          <strong>Signed In</strong>
-          <p id="loginSummary">Choose a family login to continue.</p>
-          <button class="ghost-btn" type="button" id="switchLoginBtn">Switch Login</button>
         </div>
         <div class="family-list" id="familyList"></div>
         <div class="rule-box">
