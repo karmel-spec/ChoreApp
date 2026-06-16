@@ -606,6 +606,8 @@ const requiredMarkers = [
   "parent-admin-panel",
   "renderParentAdminPanelVisibility",
   "role-hidden",
+  "role-child .parent-admin-panel",
+  "applyRoleVisibilityClass",
   "login-control",
   ".top-strip",
   "Finish by Noon",

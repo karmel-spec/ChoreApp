@@ -947,6 +947,12 @@
       display: none;
     }
 
+    .app-shell.role-child .parent-admin-panel,
+    .app-shell.role-helper .parent-admin-panel,
+    .app-shell.role-signed-out .parent-admin-panel {
+      display: none;
+    }
+
     .side-stack {
       display: grid;
       gap: 18px;
@@ -5208,6 +5214,7 @@
 
     function applyAccount(account) {
       currentUser = account;
+      applyRoleVisibilityClass();
       if (!account) {
         document.getElementById("loginOverlay").classList.add("show");
         document.getElementById("currentUserChip").textContent = "Not signed in";
@@ -5227,6 +5234,14 @@
       document.getElementById("currentUserChip").textContent = gmail ? `${roleLabel(account)} · Google` : roleLabel(account);
       document.getElementById("loginSummary").textContent = gmail ? `${roleLabel(account)} is signed in with ${gmail}.` : `${roleLabel(account)} is signed in.`;
       localStorage.setItem(sessionStoreKey, account.id);
+      applyRoleVisibilityClass();
+    }
+
+    function applyRoleVisibilityClass() {
+      const appShell = document.getElementById("appShell");
+      if (!appShell) return;
+      appShell.classList.remove("role-admin", "role-child", "role-helper", "role-signed-out");
+      appShell.classList.add(currentUser?.role ? `role-${currentUser.role}` : "role-signed-out");
     }
 
     function applySidebarCollapsed(collapsed) {
@@ -8556,6 +8571,7 @@
 
     function render() {
       enforceChildSessionScope();
+      applyRoleVisibilityClass();
       const child = children.find(item => item.id === selectedChildId);
       renderFamilySettings();
       renderFamilyList();
