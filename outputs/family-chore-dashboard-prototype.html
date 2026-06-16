@@ -243,6 +243,13 @@
       font-weight: 700;
     }
 
+    .sidebar-toggle-btn {
+      padding: 8px 10px;
+      font-size: 12px;
+      line-height: 1.1;
+      white-space: normal;
+    }
+
     .sidebar {
       position: sticky;
       top: 16px;
@@ -1887,7 +1894,7 @@
       <p class="intro" id="dailyThought">Teamwork grows when everyone contributes a little care to the home.</p>
     </div>
     <div class="header-actions">
-      <button class="ghost-btn" type="button" id="toggleSidebarBtn">Hide Family Sidebar</button>
+      <button class="ghost-btn" type="button" id="restoreSidebarBtn" hidden>Show Family Sidebar</button>
       <div class="login-control">
         <div>
           <div class="admin-chip" id="currentUserChip">Not signed in</div>
@@ -1902,8 +1909,11 @@
     <div class="app-shell role-signed-out" id="appShell">
       <aside class="panel sidebar">
         <div class="panel-head">
-          <h2>Family</h2>
-          <span>Dashboards</span>
+          <div>
+            <h2>Family</h2>
+            <span>Dashboards</span>
+          </div>
+          <button class="ghost-btn sidebar-toggle-btn" type="button" id="toggleSidebarBtn">Hide Family Sidebar</button>
         </div>
         <div class="dashboard-switch" id="dashboardSwitch"></div>
         <div class="family-list" id="familyList"></div>
@@ -5325,9 +5335,16 @@
     function applySidebarCollapsed(collapsed) {
       const appShell = document.getElementById("appShell");
       const toggleButton = document.getElementById("toggleSidebarBtn");
+      const restoreButton = document.getElementById("restoreSidebarBtn");
       appShell.classList.toggle("sidebar-collapsed", collapsed);
-      toggleButton.textContent = collapsed ? "Show Family Sidebar" : "Hide Family Sidebar";
-      toggleButton.setAttribute("aria-pressed", collapsed ? "true" : "false");
+      if (toggleButton) {
+        toggleButton.textContent = "Hide Family Sidebar";
+        toggleButton.setAttribute("aria-pressed", collapsed ? "true" : "false");
+      }
+      if (restoreButton) {
+        restoreButton.hidden = !collapsed;
+        restoreButton.setAttribute("aria-pressed", collapsed ? "true" : "false");
+      }
       localStorage.setItem(sidebarCollapsedKey, collapsed ? "true" : "false");
     }
 
@@ -8795,6 +8812,7 @@
     });
 
     document.getElementById("toggleSidebarBtn").addEventListener("click", toggleFamilySidebar);
+    document.getElementById("restoreSidebarBtn").addEventListener("click", toggleFamilySidebar);
 
     window.addEventListener("keydown", event => {
       if (event.key === "Escape" && document.body.classList.contains("chore-list-fullscreen")) {
