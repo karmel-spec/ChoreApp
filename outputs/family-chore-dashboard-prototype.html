@@ -504,7 +504,7 @@
 
     .task {
       display: grid;
-      grid-template-columns: 34px 34px minmax(0, 1fr) minmax(220px, auto);
+      grid-template-columns: 34px 34px minmax(0, 1fr);
       gap: 10px;
       align-items: start;
       padding: 10px;
@@ -556,9 +556,9 @@
       display: block;
       font-size: 13px;
       margin-bottom: 2px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      white-space: normal;
+      overflow: visible;
+      text-overflow: clip;
     }
 
     .task span {
@@ -569,24 +569,26 @@
     }
 
     .task-actions {
+      grid-column: 1 / -1;
       display: grid;
       grid-template-columns: minmax(0, 1fr);
       gap: 8px;
       align-items: start;
-      justify-content: flex-end;
-      min-width: 220px;
+      justify-content: stretch;
+      min-width: 0;
+      padding-top: 2px;
     }
 
     .task-completion-actions,
     .task-feedback-actions {
       display: grid;
       gap: 6px;
-      justify-content: end;
+      justify-content: start;
       align-items: center;
     }
 
     .task-completion-actions {
-      grid-template-columns: repeat(2, max-content);
+      grid-template-columns: repeat(4, max-content);
     }
 
     .task-feedback-actions {
