@@ -2167,6 +2167,67 @@
             </div>
           </div>
           <div class="side-body">
+            <div class="notice-card">Add a new chore here, or edit, toggle, save, and delete existing chores directly in the table. Delete removes the chore from future rotations.</div>
+            <div class="admin-form admin-only" id="masterChoreAddForm">
+              <label for="masterChoreName">New Chore Name</label>
+              <input id="masterChoreName" placeholder="Add a new chore">
+              <div class="form-row three">
+                <div>
+                  <label for="masterFrequency">Schedule</label>
+                  <select id="masterFrequency">
+                    <option>Daily</option>
+                    <option>Monday only</option>
+                    <option>Weekly</option>
+                    <option>Monthly</option>
+                    <option>One-off</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="masterWeeklyDay">Weekly Day</label>
+                  <select id="masterWeeklyDay">
+                    <option>Sunday</option>
+                    <option>Monday</option>
+                    <option>Tuesday</option>
+                    <option>Wednesday</option>
+                    <option>Thursday</option>
+                    <option>Friday</option>
+                    <option>Saturday</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="masterMinutes">Minutes</label>
+                  <input id="masterMinutes" value="10" inputmode="numeric">
+                </div>
+              </div>
+              <div class="form-row three">
+                <div>
+                  <label for="masterDifficulty">Difficulty</label>
+                  <input id="masterDifficulty" value="3" inputmode="numeric">
+                </div>
+                <div>
+                  <label for="masterFit">Approved For</label>
+                  <select id="masterFit">
+                    <option>Anyone</option>
+                    <option>Boys</option>
+                    <option>Older kids</option>
+                    <option>Louis and Brielle</option>
+                    <option>Brielle only</option>
+                    <option>Vanessa</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="masterNotice">Notice</label>
+                  <select id="masterNotice">
+                    <option>Starts after 24 hours</option>
+                    <option>Start today</option>
+                    <option>Start next week</option>
+                  </select>
+                </div>
+              </div>
+              <label for="masterTrainingNotes">Training Notes</label>
+              <textarea id="masterTrainingNotes" placeholder="Steps, checklist, or quality expectations"></textarea>
+              <button class="primary-btn" type="button" id="addMasterChoreBtn">Add New Chore</button>
+            </div>
             <div class="table-scroll" id="masterChoreTableScroll">
               <table class="chore-table">
                 <thead>
@@ -8261,19 +8322,50 @@
       });
     }
 
-    async function addAdminChore() {
+    function newChoreFormValue(source, fieldName) {
+      const ids = {
+        admin: {
+          name: "adminChoreName",
+          frequency: "adminFrequency",
+          weeklyDay: "adminWeeklyDay",
+          minutes: "adminMinutes",
+          difficulty: "adminDifficulty",
+          fit: "adminFit",
+          notice: "adminNotice",
+          trainingNotes: "adminTrainingNotes"
+        },
+        master: {
+          name: "masterChoreName",
+          frequency: "masterFrequency",
+          weeklyDay: "masterWeeklyDay",
+          minutes: "masterMinutes",
+          difficulty: "masterDifficulty",
+          fit: "masterFit",
+          notice: "masterNotice",
+          trainingNotes: "masterTrainingNotes"
+        }
+      };
+      return document.getElementById(ids[source][fieldName]);
+    }
+
+    function clearNewChoreForm(source) {
+      newChoreFormValue(source, "name").value = "";
+      newChoreFormValue(source, "trainingNotes").value = "";
+    }
+
+    async function addAdminChore(source = "admin") {
       if (!isAdmin()) {
         document.getElementById("adminStatus").textContent = "Only Brigham or Karmel can add chores to the master rotation.";
         return;
       }
-      const name = document.getElementById("adminChoreName").value.trim().replace(/\s+/g, " ");
-      const frequency = document.getElementById("adminFrequency").value;
-      const weeklyDay = document.getElementById("adminWeeklyDay").value;
-      const minutes = parseWholeNumberInput("adminMinutes", 1, 180);
-      const difficulty = parseWholeNumberInput("adminDifficulty", 1, 10);
-      const fit = document.getElementById("adminFit").value;
-      const notice = document.getElementById("adminNotice").value;
-      const trainingNotes = document.getElementById("adminTrainingNotes").value.trim();
+      const name = newChoreFormValue(source, "name").value.trim().replace(/\s+/g, " ");
+      const frequency = newChoreFormValue(source, "frequency").value;
+      const weeklyDay = newChoreFormValue(source, "weeklyDay").value;
+      const minutes = parseWholeNumberValue(newChoreFormValue(source, "minutes").value, 1, 180);
+      const difficulty = parseWholeNumberValue(newChoreFormValue(source, "difficulty").value, 1, 10);
+      const fit = newChoreFormValue(source, "fit").value;
+      const notice = newChoreFormValue(source, "notice").value;
+      const trainingNotes = newChoreFormValue(source, "trainingNotes").value.trim();
       if (!name) {
         document.getElementById("adminStatus").textContent = "Add a chore name first.";
         return;
@@ -8329,8 +8421,7 @@
       });
       shuffleOffset += 3;
       persistBetaData();
-      document.getElementById("adminChoreName").value = "";
-      document.getElementById("adminTrainingNotes").value = "";
+      clearNewChoreForm(source);
       document.getElementById("adminStatus").textContent = `${name} added by ${currentUser?.name || "Admin"} as ${frequency.toLowerCase()} and set to ${notice.toLowerCase()}.`;
       render();
     }
@@ -8492,7 +8583,8 @@
       document.getElementById("extensionStatus").textContent = `${familySettings.extensionApprover}-approved extension saved for ${child.name}: deadline moved to ${newDeadline}.`;
     });
 
-    document.getElementById("addChoreBtn").addEventListener("click", addAdminChore);
+    document.getElementById("addChoreBtn").addEventListener("click", () => addAdminChore("admin"));
+    document.getElementById("addMasterChoreBtn").addEventListener("click", () => addAdminChore("master"));
     document.getElementById("saveHoldBtn").addEventListener("click", saveAvailabilityHold);
 
     document.getElementById("addFeedbackBtn").addEventListener("click", addFeedback);
