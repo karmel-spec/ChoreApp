@@ -607,6 +607,7 @@ const requiredMarkers = [
   "renderParentAdminPanelVisibility",
   "role-hidden",
   "login-control",
+  ".top-strip",
   "toggleChoreListFullscreen",
   "chore-list-fullscreen",
   "Exit Full Screen",

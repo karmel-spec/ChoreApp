@@ -344,6 +344,7 @@
 
     .dashboard {
       min-width: 0;
+      overflow: visible;
     }
 
     .profile-card {
@@ -368,6 +369,9 @@
     }
 
     .top-strip {
+      position: sticky;
+      top: 0;
+      z-index: 24;
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
       gap: 16px;
@@ -375,6 +379,8 @@
       padding: 16px;
       background: linear-gradient(135deg, var(--navy), var(--teal));
       color: #fff;
+      border-radius: 8px 8px 0 0;
+      box-shadow: 0 10px 22px rgba(15, 23, 42, .12);
     }
 
     .top-strip h2 {
