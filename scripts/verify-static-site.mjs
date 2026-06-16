@@ -602,6 +602,7 @@ const requiredMarkers = [
   "chore-autosave-status",
   "scheduleChoreAutosave",
   "data-chore-autosave-index",
+  "position: sticky",
   "toggleChoreListFullscreen",
   "chore-list-fullscreen",
   "Exit Full Screen",
