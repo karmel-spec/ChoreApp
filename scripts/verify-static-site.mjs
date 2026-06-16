@@ -773,7 +773,7 @@ const requiredGuideMarkers = [
   "invalid minutes and invalid difficulty",
   "over-30-minute chore and confirm it does not appear",
   "approved-for fit",
-  "separate 7-day, 14-day, 30-day, and super-bonus milestones",
+  "separate 7-day, 14-day, 28-day, and super-bonus milestones",
   "bonus rows show who awarded the money and when it was awarded",
   "monthly positivity points update on the points podium",
   "duplicate likes or encouragements do not add extra points",

@@ -27,7 +27,7 @@ Core web app features:
 - Editable per-child daily fine rates for missed 12:00 PM deadlines
 - Extension petition flow where only Brigham-dad can approve deadline changes by text
 - Chore account balances for each child
-- Admin-editable streak bonus awards such as 7-day, 14-day, and 30-day monthly bonuses
+- Admin-editable streak bonus awards such as 7-day, 14-day, and 28-day monthly bonuses
 - Fine rates, bonus rates, and child profile photos editable only by Brigham and Karmel admin accounts
 - Editable child profile images shown on dashboards, family list, and chore tracker rows
 - Age-aware celebration responses when chores are marked complete, including sticker-style, game-style, teen, and mindful gratitude feedback
