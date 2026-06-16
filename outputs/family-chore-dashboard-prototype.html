@@ -2289,8 +2289,10 @@
                   </select>
                 </div>
                 <div>
-                  <label for="masterWeeklyDay">Weekly Day</label>
+                  <label for="masterWeeklyDay">Days / Weekly Day</label>
                   <select id="masterWeeklyDay">
+                    <option>All 7 days</option>
+                    <option>Weekdays only</option>
                     <option>Sunday</option>
                     <option>Monday</option>
                     <option>Tuesday</option>
@@ -2422,8 +2424,10 @@
               </div>
               <div class="form-row three">
                 <div>
-                  <label for="adminWeeklyDay">Weekly Day</label>
+                  <label for="adminWeeklyDay">Days / Weekly Day</label>
                   <select id="adminWeeklyDay">
+                    <option>All 7 days</option>
+                    <option>Weekdays only</option>
                     <option>Sunday</option>
                     <option>Monday</option>
                     <option>Tuesday</option>
@@ -3253,7 +3257,9 @@
     };
     const allowedChoreFits = ["Anyone", "Boys", "Older kids", "Louis and Brielle", "Brielle only", "Boys only", ...individualChoreFits];
     const allowedChoreNotices = ["Starts after 24 hours", "Start today", "Start next week"];
-    const allowedWeeklyDays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const dailyScheduleModes = ["All 7 days", "Weekdays only"];
+    const weeklyScheduleDays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const allowedWeeklyDays = [...dailyScheduleModes, ...weeklyScheduleDays];
     const choreAutosaveTimers = new Map();
     const requiredChoreSeeds = [
       { name: "Make 10 layered salad jars", minutes: 30, difficulty: 7, fit: "Older kids", frequency: "Weekly", active: true, trainingNotes: "Make 5 pint jars and 5 quart jars. Keep wet ingredients low, add sturdy vegetables next, greens near the top, seal and label with date." },
@@ -3268,7 +3274,7 @@
       const difficulty = Math.round(safeStoredNumber(chore?.difficulty, 3, 1));
       const frequency = allowedChoreFrequencies.includes(chore?.frequency) ? chore.frequency : "Daily";
       const storedWeeklyDay = chore?.weeklyDay || chore?.weekly_day;
-      const weeklyDay = allowedWeeklyDays.includes(storedWeeklyDay) ? storedWeeklyDay : defaultWeeklyDay(name);
+      const weeklyDay = scheduleDayValue(frequency, name, storedWeeklyDay);
       const fit = allowedChoreFits.includes(chore?.fit) ? chore.fit : "Anyone";
       const notice = allowedChoreNotices.includes(chore?.notice) ? chore.notice : (chore?.notice ? "Starts after 24 hours" : "");
       return {
@@ -5914,9 +5920,15 @@
     function frequencyAllowsChore(chore, dayOffset) {
       const frequency = chore.frequency || "Daily";
       const date = dateForOffset(dayOffset);
-      if (frequency === "Daily") return true;
+      if (frequency === "Daily") {
+        if (chore.weeklyDay === "Weekdays only") {
+          const weekday = date.getDay();
+          return weekday >= 1 && weekday <= 5;
+        }
+        return true;
+      }
       if (frequency === "Monday only") return date.getDay() === 1;
-      if (frequency === "Weekly") return date.getDay() === allowedWeeklyDays.indexOf(chore.weeklyDay || defaultWeeklyDay(chore.name));
+      if (frequency === "Weekly") return date.getDay() === weeklyScheduleDays.indexOf(scheduleDayValue(frequency, chore.name, chore.weeklyDay));
       if (frequency === "Monthly") return date.getDate() === ((seededIndex(chore.name.length + 11, 28) % 28) + 1);
       if (frequency === "One-off") return dayOffset === seededIndex(chore.name.length + shuffleOffset, 30);
       return true;
@@ -7822,7 +7834,49 @@
       const hash = String(choreName)
         .split("")
         .reduce((sum, char, index) => sum + (char.charCodeAt(0) * (index + 1)), 0);
-      return allowedWeeklyDays[hash % allowedWeeklyDays.length];
+      return weeklyScheduleDays[hash % weeklyScheduleDays.length];
+    }
+
+    function scheduleDayOptionsForFrequency(frequency) {
+      if (frequency === "Daily") return dailyScheduleModes;
+      if (frequency === "Weekly") return weeklyScheduleDays;
+      return allowedWeeklyDays;
+    }
+
+    function scheduleDayValue(frequency, choreName = "", storedValue = "") {
+      const options = scheduleDayOptionsForFrequency(frequency);
+      if (options.includes(storedValue)) return storedValue;
+      if (frequency === "Daily") return "All 7 days";
+      if (frequency === "Weekly") return weeklyScheduleDays.includes(storedValue) ? storedValue : defaultWeeklyDay(choreName);
+      return allowedWeeklyDays.includes(storedValue) ? storedValue : "All 7 days";
+    }
+
+    function syncScheduleDaySelect(frequencySelect, daySelect, choreName = "") {
+      if (!frequencySelect || !daySelect) return;
+      const selectedValue = scheduleDayValue(frequencySelect.value, choreName, daySelect.value);
+      daySelect.innerHTML = choreOptionTags(scheduleDayOptionsForFrequency(frequencySelect.value), selectedValue);
+    }
+
+    function setupNewChoreScheduleDayControls() {
+      [
+        { frequencyId: "masterFrequency", dayId: "masterWeeklyDay", nameId: "masterChoreName" },
+        { frequencyId: "adminFrequency", dayId: "adminWeeklyDay", nameId: "adminChoreName" }
+      ].forEach(({ frequencyId, dayId, nameId }) => {
+        const frequencySelect = document.getElementById(frequencyId);
+        const daySelect = document.getElementById(dayId);
+        const nameInput = document.getElementById(nameId);
+        if (!frequencySelect || !daySelect || frequencySelect.dataset.scheduleDayBound === "true") return;
+        frequencySelect.dataset.scheduleDayBound = "true";
+        frequencySelect.addEventListener("change", () => syncScheduleDaySelect(frequencySelect, daySelect, nameInput?.value || ""));
+        syncScheduleDaySelect(frequencySelect, daySelect, nameInput?.value || "");
+      });
+    }
+
+    function syncChoreRowScheduleDay(index) {
+      const frequencySelect = document.querySelector(`[data-edit-chore-frequency="${index}"]`);
+      const daySelect = document.querySelector(`[data-edit-chore-weekly-day="${index}"]`);
+      const nameInput = document.querySelector(`[data-edit-chore-name="${index}"]`);
+      syncScheduleDaySelect(frequencySelect, daySelect, nameInput?.value || "");
     }
 
     function renderChoreTable() {
@@ -7839,7 +7893,7 @@
           <td><input class="chore-edit-input small" value="${chore.minutes}" inputmode="numeric" data-edit-chore-minutes="${index}" ${isAdmin() ? "" : "disabled"}></td>
           <td><input class="chore-edit-input small" value="${chore.difficulty}" inputmode="numeric" data-edit-chore-difficulty="${index}" ${isAdmin() ? "" : "disabled"}></td>
           <td><select class="chore-edit-select" data-edit-chore-frequency="${index}" ${isAdmin() ? "" : "disabled"}>${choreOptionTags(allowedChoreFrequencies, chore.frequency || "Daily")}</select></td>
-          <td><select class="chore-edit-select" data-edit-chore-weekly-day="${index}" ${isAdmin() ? "" : "disabled"}>${choreOptionTags(allowedWeeklyDays, chore.weeklyDay || defaultWeeklyDay(chore.name))}</select></td>
+          <td><select class="chore-edit-select" data-edit-chore-weekly-day="${index}" ${isAdmin() ? "" : "disabled"}>${choreOptionTags(scheduleDayOptionsForFrequency(chore.frequency || "Daily"), scheduleDayValue(chore.frequency || "Daily", chore.name, chore.weeklyDay))}</select></td>
           <td><select class="chore-edit-select" data-edit-chore-fit="${index}" ${isAdmin() ? "" : "disabled"}>${choreOptionTags(allowedChoreFits, chore.fit || "Anyone")}</select></td>
           <td>
             <select class="chore-edit-select" data-edit-chore-notice="${index}" ${isAdmin() ? "" : "disabled"}>${choreOptionTags(allowedChoreNotices, chore.notice || "Starts after 24 hours")}</select>
@@ -7887,7 +7941,11 @@
         field.addEventListener("input", () => scheduleChoreAutosave(choreEditIndexFromField(field), 850));
       });
       document.querySelectorAll("[data-edit-chore-frequency], [data-edit-chore-weekly-day], [data-edit-chore-fit], [data-edit-chore-notice]").forEach(field => {
-        field.addEventListener("change", () => scheduleChoreAutosave(choreEditIndexFromField(field), 80));
+        field.addEventListener("change", () => {
+          const index = choreEditIndexFromField(field);
+          if (field.hasAttribute("data-edit-chore-frequency")) syncChoreRowScheduleDay(index);
+          scheduleChoreAutosave(index, 80);
+        });
       });
     }
 
@@ -7930,7 +7988,7 @@
       const minutes = parseWholeNumberValue(editFieldValue("data-edit-chore-minutes", index), 1, 180);
       const difficulty = parseWholeNumberValue(editFieldValue("data-edit-chore-difficulty", index), 1, 10);
       const frequency = editFieldValue("data-edit-chore-frequency", index);
-      const weeklyDay = editFieldValue("data-edit-chore-weekly-day", index);
+      const weeklyDay = scheduleDayValue(frequency, name, editFieldValue("data-edit-chore-weekly-day", index));
       const fit = editFieldValue("data-edit-chore-fit", index);
       const notice = editFieldValue("data-edit-chore-notice", index);
       const trainingNotes = editFieldValue("data-edit-chore-training", index).trim();
@@ -7949,7 +8007,7 @@
         if (autosave) setChoreAutosaveStatus(index, "Fix diff", "warn");
         return;
       }
-      if (!allowedChoreFrequencies.includes(frequency) || !allowedWeeklyDays.includes(weeklyDay) || !allowedChoreFits.includes(fit) || !allowedChoreNotices.includes(notice)) {
+      if (!allowedChoreFrequencies.includes(frequency) || !scheduleDayOptionsForFrequency(frequency).includes(weeklyDay) || !allowedChoreFits.includes(fit) || !allowedChoreNotices.includes(notice)) {
         document.getElementById("adminStatus").textContent = "Choose valid schedule, weekly day, approved-for, and notice values.";
         if (autosave) setChoreAutosaveStatus(index, "Needs edit", "warn");
         return;
@@ -8703,7 +8761,7 @@
       }
       const name = newChoreFormValue(source, "name").value.trim().replace(/\s+/g, " ");
       const frequency = newChoreFormValue(source, "frequency").value;
-      const weeklyDay = newChoreFormValue(source, "weeklyDay").value;
+      const weeklyDay = scheduleDayValue(frequency, name, newChoreFormValue(source, "weeklyDay").value);
       const minutes = parseWholeNumberValue(newChoreFormValue(source, "minutes").value, 1, 180);
       const difficulty = parseWholeNumberValue(newChoreFormValue(source, "difficulty").value, 1, 10);
       const fit = newChoreFormValue(source, "fit").value;
@@ -8721,8 +8779,8 @@
         document.getElementById("adminStatus").textContent = "Use a whole difficulty rating from 1 to 10.";
         return;
       }
-      if (!allowedChoreFrequencies.includes(frequency) || !allowedWeeklyDays.includes(weeklyDay)) {
-        document.getElementById("adminStatus").textContent = "Choose a valid schedule and weekly day.";
+      if (!allowedChoreFrequencies.includes(frequency) || !scheduleDayOptionsForFrequency(frequency).includes(weeklyDay)) {
+        document.getElementById("adminStatus").textContent = "Choose a valid schedule and day setting.";
         return;
       }
       const duplicate = choreLibrary.find(chore => chore.name.trim().toLowerCase() === name.toLowerCase());
@@ -8797,6 +8855,7 @@
       renderProfilePanel(child);
       renderBetaDataSummary();
       renderChoreTable();
+      setupNewChoreScheduleDayControls();
       renderHelperPay();
       renderRestrictedPanelVisibility();
       renderAdminLocks();
