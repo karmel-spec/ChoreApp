@@ -9,6 +9,7 @@ const {
 const frequencies = new Set(["Daily", "Monday only", "Weekly", "Monthly", "One-off"]);
 const fits = new Set(["Anyone", "Boys", "Older kids", "Louis and Brielle", "Brielle only", "Boys only", "Vanessa"]);
 const notices = new Set(["Starts after 24 hours", "Start today", "Start next week"]);
+const weeklyDays = new Set(["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]);
 const actions = new Set(["add", "update", "toggle", "delete"]);
 
 function cleanText(value, fallback = "") {
@@ -26,16 +27,18 @@ function chorePayload(body) {
   const minutes = wholeNumber(body.minutes, 1, 180);
   const difficulty = wholeNumber(body.difficulty, 1, 10);
   const frequency = cleanText(body.frequency, "Daily");
+  const weeklyDay = cleanText(body.weeklyDay, "Monday");
   const fit = cleanText(body.fit, "Anyone");
   const notice = cleanText(body.notice, "Starts after 24 hours");
-  if (!name || minutes === null || difficulty === null || !frequencies.has(frequency) || !fits.has(fit) || !notices.has(notice)) {
-    return { error: "Send a chore name, minutes 1-180, difficulty 1-10, and valid schedule, fit, and notice values." };
+  if (!name || minutes === null || difficulty === null || !frequencies.has(frequency) || !weeklyDays.has(weeklyDay) || !fits.has(fit) || !notices.has(notice)) {
+    return { error: "Send a chore name, minutes 1-180, difficulty 1-10, and valid schedule, weekly day, fit, and notice values." };
   }
   return {
     name,
     minutes,
     difficulty,
     frequency,
+    weekly_day: weeklyDay,
     fit,
     notice,
     training_notes: String(body.trainingNotes || "").trim(),
@@ -68,6 +71,7 @@ function publicChore(chore) {
     minutes: chore.minutes,
     difficulty: chore.difficulty,
     frequency: chore.frequency,
+    weeklyDay: chore.weekly_day || "Monday",
     fit: chore.fit,
     notice: chore.notice,
     trainingNotes: chore.training_notes || "",

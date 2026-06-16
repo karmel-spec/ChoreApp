@@ -2175,6 +2175,7 @@
                     <th>Min</th>
                     <th>Diff</th>
                     <th>When</th>
+                    <th>Weekly Day</th>
                     <th>Best Fit</th>
                     <th>Notice</th>
                     <th>Training</th>
@@ -2246,7 +2247,19 @@
                   <input id="adminDifficulty" value="7" inputmode="numeric">
                 </div>
               </div>
-              <div class="form-row">
+              <div class="form-row three">
+                <div>
+                  <label for="adminWeeklyDay">Weekly Day</label>
+                  <select id="adminWeeklyDay">
+                    <option>Sunday</option>
+                    <option>Monday</option>
+                    <option>Tuesday</option>
+                    <option>Wednesday</option>
+                    <option>Thursday</option>
+                    <option>Friday</option>
+                    <option>Saturday</option>
+                  </select>
+                </div>
                 <div>
                   <label for="adminFit">Approved For</label>
                   <select id="adminFit">
@@ -2704,7 +2717,7 @@
     const betaDataStoreKey = "teamworkChoresBetaData";
     const betaDataMetaStoreKey = "teamworkChoresBetaDataMeta";
     const betaDataPendingStatusKey = "teamworkChoresPendingBetaStatus";
-    const appBuildLabel = "Beta build 2026-06-15";
+    const appBuildLabel = "Beta build 2026-06-16";
     const appBackupVersion = 1;
     const defaultReviewRecipient = "Mom Karmel";
     const defaultReviewContact = "801-427-9293";
@@ -3054,6 +3067,7 @@
     const allowedChoreFrequencies = ["Daily", "Monday only", "Weekly", "Monthly", "One-off"];
     const allowedChoreFits = ["Anyone", "Boys", "Older kids", "Louis and Brielle", "Brielle only", "Boys only", "Vanessa"];
     const allowedChoreNotices = ["Starts after 24 hours", "Start today", "Start next week"];
+    const allowedWeeklyDays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     const requiredChoreSeeds = [
       { name: "Make 10 layered salad jars", minutes: 30, difficulty: 7, fit: "Older kids", frequency: "Weekly", active: true, trainingNotes: "Make 5 pint jars and 5 quart jars. Keep wet ingredients low, add sturdy vegetables next, greens near the top, seal and label with date." },
       { name: "Prep breakfast burritos", minutes: 25, difficulty: 6, fit: "Older kids", frequency: "Weekly", active: true, trainingNotes: "Cook filling safely, cool before wrapping, label the freezer bag with date and count." },
@@ -3066,6 +3080,8 @@
       const minutes = Math.round(safeStoredNumber(chore?.minutes, 10, 1));
       const difficulty = Math.round(safeStoredNumber(chore?.difficulty, 3, 1));
       const frequency = allowedChoreFrequencies.includes(chore?.frequency) ? chore.frequency : "Daily";
+      const storedWeeklyDay = chore?.weeklyDay || chore?.weekly_day;
+      const weeklyDay = allowedWeeklyDays.includes(storedWeeklyDay) ? storedWeeklyDay : defaultWeeklyDay(name);
       const fit = allowedChoreFits.includes(chore?.fit) ? chore.fit : "Anyone";
       const notice = allowedChoreNotices.includes(chore?.notice) ? chore.notice : (chore?.notice ? "Starts after 24 hours" : "");
       return {
@@ -3076,6 +3092,7 @@
         difficulty: Math.min(10, Math.max(1, difficulty)),
         fit,
         frequency,
+        weeklyDay,
         notice,
         trainingNotes: String(chore?.trainingNotes || "").trim(),
         active: chore?.active === false ? false : true
@@ -5609,7 +5626,7 @@
       const date = dateForOffset(dayOffset);
       if (frequency === "Daily") return true;
       if (frequency === "Monday only") return date.getDay() === 1;
-      if (frequency === "Weekly") return dayOffset % 7 === seededIndex(chore.name.length + shuffleOffset, 7);
+      if (frequency === "Weekly") return date.getDay() === allowedWeeklyDays.indexOf(chore.weeklyDay || defaultWeeklyDay(chore.name));
       if (frequency === "Monthly") return date.getDate() === ((seededIndex(chore.name.length + 11, 28) % 28) + 1);
       if (frequency === "One-off") return dayOffset === seededIndex(chore.name.length + shuffleOffset, 30);
       return true;
@@ -7433,6 +7450,13 @@
       return options.map(option => `<option${option === selectedValue ? " selected" : ""}>${escapeHtml(option)}</option>`).join("");
     }
 
+    function defaultWeeklyDay(choreName = "") {
+      const hash = String(choreName)
+        .split("")
+        .reduce((sum, char, index) => sum + (char.charCodeAt(0) * (index + 1)), 0);
+      return allowedWeeklyDays[hash % allowedWeeklyDays.length];
+    }
+
     function renderChoreTable() {
       const activeCount = choreLibrary.filter(chore => chore.active !== false).length;
       document.getElementById("choreCountLabel").textContent = `${activeCount} on / ${choreLibrary.length} saved`;
@@ -7445,6 +7469,7 @@
           <td><input class="chore-edit-input small" value="${chore.minutes}" inputmode="numeric" data-edit-chore-minutes="${index}" ${isAdmin() ? "" : "disabled"}></td>
           <td><input class="chore-edit-input small" value="${chore.difficulty}" inputmode="numeric" data-edit-chore-difficulty="${index}" ${isAdmin() ? "" : "disabled"}></td>
           <td><select class="chore-edit-select" data-edit-chore-frequency="${index}" ${isAdmin() ? "" : "disabled"}>${choreOptionTags(allowedChoreFrequencies, chore.frequency || "Daily")}</select></td>
+          <td><select class="chore-edit-select" data-edit-chore-weekly-day="${index}" ${isAdmin() ? "" : "disabled"}>${choreOptionTags(allowedWeeklyDays, chore.weeklyDay || defaultWeeklyDay(chore.name))}</select></td>
           <td><select class="chore-edit-select" data-edit-chore-fit="${index}" ${isAdmin() ? "" : "disabled"}>${choreOptionTags(allowedChoreFits, chore.fit || "Anyone")}</select></td>
           <td>
             <select class="chore-edit-select" data-edit-chore-notice="${index}" ${isAdmin() ? "" : "disabled"}>${choreOptionTags(allowedChoreNotices, chore.notice || "Starts after 24 hours")}</select>
@@ -7508,6 +7533,7 @@
       const minutes = parseWholeNumberValue(editFieldValue("data-edit-chore-minutes", index), 1, 180);
       const difficulty = parseWholeNumberValue(editFieldValue("data-edit-chore-difficulty", index), 1, 10);
       const frequency = editFieldValue("data-edit-chore-frequency", index);
+      const weeklyDay = editFieldValue("data-edit-chore-weekly-day", index);
       const fit = editFieldValue("data-edit-chore-fit", index);
       const notice = editFieldValue("data-edit-chore-notice", index);
       const trainingNotes = editFieldValue("data-edit-chore-training", index).trim();
@@ -7523,8 +7549,8 @@
         document.getElementById("adminStatus").textContent = "Use a whole difficulty rating from 1 to 10 for chore edits.";
         return;
       }
-      if (!allowedChoreFrequencies.includes(frequency) || !allowedChoreFits.includes(fit) || !allowedChoreNotices.includes(notice)) {
-        document.getElementById("adminStatus").textContent = "Choose valid schedule, approved-for, and notice values.";
+      if (!allowedChoreFrequencies.includes(frequency) || !allowedWeeklyDays.includes(weeklyDay) || !allowedChoreFits.includes(fit) || !allowedChoreNotices.includes(notice)) {
+        document.getElementById("adminStatus").textContent = "Choose valid schedule, weekly day, approved-for, and notice values.";
         return;
       }
       const duplicate = choreLibrary.find((item, duplicateIndex) => duplicateIndex !== index && item.name.trim().toLowerCase() === name.toLowerCase());
@@ -7541,6 +7567,7 @@
           minutes,
           difficulty,
           frequency,
+          weeklyDay,
           fit,
           notice,
           trainingNotes,
@@ -7557,6 +7584,7 @@
         minutes,
         difficulty,
         frequency,
+        weeklyDay,
         fit,
         notice,
         trainingNotes,
@@ -8240,6 +8268,7 @@
       }
       const name = document.getElementById("adminChoreName").value.trim().replace(/\s+/g, " ");
       const frequency = document.getElementById("adminFrequency").value;
+      const weeklyDay = document.getElementById("adminWeeklyDay").value;
       const minutes = parseWholeNumberInput("adminMinutes", 1, 180);
       const difficulty = parseWholeNumberInput("adminDifficulty", 1, 10);
       const fit = document.getElementById("adminFit").value;
@@ -8257,6 +8286,10 @@
         document.getElementById("adminStatus").textContent = "Use a whole difficulty rating from 1 to 10.";
         return;
       }
+      if (!allowedChoreFrequencies.includes(frequency) || !allowedWeeklyDays.includes(weeklyDay)) {
+        document.getElementById("adminStatus").textContent = "Choose a valid schedule and weekly day.";
+        return;
+      }
       const duplicate = choreLibrary.find(chore => chore.name.trim().toLowerCase() === name.toLowerCase());
       if (duplicate) {
         document.getElementById("adminStatus").textContent = `${name} is already in the master chore list. Toggle it on or edit the existing chore before adding a duplicate.`;
@@ -8270,6 +8303,7 @@
           difficulty,
           fit,
           frequency,
+          weeklyDay,
           notice,
           trainingNotes,
           active: true
@@ -8286,6 +8320,7 @@
         difficulty,
         fit,
         frequency,
+        weeklyDay,
         notice,
         trainingNotes,
         active: true,

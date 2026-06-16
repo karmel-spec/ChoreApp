@@ -317,7 +317,7 @@ const requiredMarkers = [
   "deadline ${item.deadline}",
   "Beta Data Tools",
   "appBuildLabel",
-  "Beta build 2026-06-15",
+  "Beta build 2026-06-16",
   "appBuildSummary",
   "build: appBuildLabel",
   "Use this label after each GitHub/Netlify publish",

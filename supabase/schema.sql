@@ -5,6 +5,7 @@ create extension if not exists pgcrypto;
 
 create type app_role as enum ('admin', 'child', 'helper');
 create type chore_frequency as enum ('Daily', 'Monday only', 'Weekly', 'Monthly', 'One-off');
+create type weekday_name as enum ('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday');
 create type chore_fit as enum ('Anyone', 'Boys', 'Older kids', 'Louis and Brielle', 'Brielle only', 'Boys only', 'Vanessa');
 create type chore_notice as enum ('Starts after 24 hours', 'Start today', 'Start next week');
 create type ledger_kind as enum ('fine', 'bonus', 'helper_pay');
@@ -47,6 +48,7 @@ create table chores (
   minutes integer not null check (minutes between 1 and 180),
   difficulty integer not null check (difficulty between 1 and 10),
   frequency chore_frequency not null default 'Daily',
+  weekly_day weekday_name not null default 'Monday',
   fit chore_fit not null default 'Anyone',
   notice chore_notice not null default 'Starts after 24 hours',
   training_notes text not null default '',

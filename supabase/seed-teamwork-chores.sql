@@ -280,8 +280,8 @@ using (bucket_id = 'family-photos');
 with family as (
   select id from families where name = 'Teamwork Chores' order by created_at limit 1
 )
-insert into chores (family_id, name, minutes, difficulty, frequency, fit, notice, training_notes, active)
-select family.id, chore.name, chore.minutes, chore.difficulty, chore.frequency::chore_frequency, chore.fit::chore_fit, chore.notice::chore_notice, chore.training_notes, chore.active
+insert into chores (family_id, name, minutes, difficulty, frequency, weekly_day, fit, notice, training_notes, active)
+select family.id, chore.name, chore.minutes, chore.difficulty, chore.frequency::chore_frequency, 'Monday'::weekday_name, chore.fit::chore_fit, chore.notice::chore_notice, chore.training_notes, chore.active
 from family
 cross join (values
   ('Take out trash', 2, 2, 'Daily', 'Anyone', 'Starts after 24 hours', '', true),
@@ -319,6 +319,7 @@ on conflict (family_id, lower(name)) do update set
   minutes = excluded.minutes,
   difficulty = excluded.difficulty,
   frequency = excluded.frequency,
+  weekly_day = excluded.weekly_day,
   fit = excluded.fit,
   notice = excluded.notice,
   training_notes = excluded.training_notes,
