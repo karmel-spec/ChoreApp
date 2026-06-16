@@ -945,9 +945,11 @@
 
     .parent-admin-panel,
     .helper-access-panel,
+    .parent-admin-panel[hidden],
+    .helper-access-panel[hidden],
     .parent-admin-panel.role-hidden,
     .helper-access-panel.role-hidden {
-      display: none;
+      display: none !important;
     }
 
     .app-shell.role-admin .parent-admin-panel,

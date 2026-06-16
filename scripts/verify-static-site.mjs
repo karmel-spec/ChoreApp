@@ -607,6 +607,8 @@ const requiredMarkers = [
   "helper-access-panel",
   "renderRestrictedPanelVisibility",
   "hidden aria-hidden=\"true\"",
+  ".parent-admin-panel[hidden]",
+  "display: none !important",
   "panel.hidden = parentHidden",
   "panel.hidden = helperHidden",
   "role-hidden",
