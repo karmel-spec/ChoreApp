@@ -1967,6 +1967,14 @@
             <span id="rotatingNote">Has until 12:00 PM</span>
           </div>
           <div class="task-list" id="rotatingTasks"></div>
+
+          <div class="history-section hidden" id="previousCycleSection">
+            <div class="section-title">
+              <h3>Previous Chore Cycle</h3>
+              <span id="previousCycleLabel">Available for review</span>
+            </div>
+            <div class="history-list" id="previousCycleList"></div>
+          </div>
         </div>
 
         <div class="content hidden" id="weeklyView">
@@ -2899,6 +2907,7 @@
     let activeViewer = "Karmel";
     let selectedLoginId = "karmel";
     let currentUser = null;
+    let renderedChoreDayOffset = 0;
     let bonusRules = {
       monthly: [
         { days: 5, amount: 5 },
@@ -3765,27 +3774,28 @@
       if (Number.isFinite(Number(data.shuffleOffset))) shuffleOffset = Number(data.shuffleOffset);
     }
 
-    function choreKey(child, chore, type) {
-      return `${localDateKey()}|${child.id}|${type}|${chore.name}`;
+    function choreKey(child, chore, type, offset = activeChoreDayOffset(child)) {
+      return `${localDateKey(offset)}|${child.id}|${type}|${chore.name}`;
     }
 
     function choreStateKey(date, childId, choreType, choreName) {
       return `${date}|${childId}|${choreType}|${choreName}`;
     }
 
-    function getChoreRecord(child, chore, type) {
-      return getStoredChoreState()[choreKey(child, chore, type)] || {};
+    function getChoreRecord(child, chore, type, offset = activeChoreDayOffset(child)) {
+      return getStoredChoreState()[choreKey(child, chore, type, offset)] || {};
     }
 
-    function updateChoreRecord(child, chore, type, updates) {
+    function updateChoreRecord(child, chore, type, updates, offset = activeChoreDayOffset(child)) {
       const state = getStoredChoreState();
-      const key = choreStateKey(localDateKey(), child.id, type, chore.name);
+      const date = localDateKey(offset);
+      const key = choreStateKey(date, child.id, type, chore.name);
       state[key] = {
         ...(state[key] || {}),
         childId: child.id,
         choreName: chore.name,
         choreType: type,
-        date: localDateKey(),
+        date,
         updatedAt: new Date().toISOString(),
         ...updates
       };
@@ -5031,11 +5041,12 @@
       return extensionDeadlines[extensionDeadlineKey(child, offset)] || familySettings.defaultDeadline;
     }
 
-    function deadlineDateForClock(clockValue) {
+    function deadlineDateForClock(clockValue, offset = 0) {
       const normalized = normalizeClockTime(clockValue) || familySettings.defaultDeadline || "12:00 PM";
       const match = normalized.match(/^(\d{1,2}):(\d{2})\s(AM|PM)$/);
       const date = new Date();
       date.setSeconds(0, 0);
+      date.setDate(date.getDate() + offset);
       if (!match) {
         date.setHours(12, 0, 0, 0);
         return date;
@@ -5048,8 +5059,8 @@
       return date;
     }
 
-    function countdownUntilDeadline(clockValue) {
-      const due = deadlineDateForClock(clockValue);
+    function countdownUntilDeadline(clockValue, offset = 0) {
+      const due = deadlineDateForClock(clockValue, offset);
       const remainingMs = due.getTime() - Date.now();
       if (remainingMs <= 0) return "Due now";
       const totalMinutes = Math.ceil(remainingMs / 60000);
@@ -5060,15 +5071,19 @@
       return `${minutes}m`;
     }
 
-    function updateDeadlineCountdown() {
-      const child = children.find(item => item.id === selectedChildId) || children[0];
+    function activeChoreDayOffset(child) {
+      if (!child) return 0;
+      return Date.now() > deadlineDateForClock(approvedDeadlineFor(child, 0), 0).getTime() ? 1 : 0;
+    }
+
+    function updateDeadlineCountdown(child = children.find(item => item.id === selectedChildId) || children[0], offset = activeChoreDayOffset(child)) {
       const label = document.getElementById("deadlineLabel");
       const time = document.getElementById("deadlineTime");
       if (!child || !label || !time) return;
-      const deadline = approvedDeadlineFor(child);
+      const deadline = approvedDeadlineFor(child, offset);
       label.textContent = "Finish by Noon";
-      time.textContent = countdownUntilDeadline(deadline);
-      time.title = `Due by ${deadline}`;
+      time.textContent = countdownUntilDeadline(deadline, offset);
+      time.title = `Due by ${deadline} on ${formatDate(offset)}`;
     }
 
     function setApprovedDeadline(child, deadline) {
@@ -5600,9 +5615,10 @@
           }
           const choreName = decodeURIComponent(button.dataset.choreName);
           const choreType = button.dataset.choreType;
-          const chore = findTodayChore(child, choreName, choreType);
+          const dayOffset = Number(button.dataset.dayOffset || activeChoreDayOffset(child));
+          const chore = findTodayChore(child, choreName, choreType, dayOffset);
           if (!chore) return;
-          const existingRecord = getChoreRecord(child, chore, choreType);
+          const existingRecord = getChoreRecord(child, chore, choreType, dayOffset);
           if (existingRecord.completedAt) {
             try {
               await saveProductionChoreRecord("reopen", child, chore, choreType);
@@ -5618,7 +5634,7 @@
               proofSubmittedAt: "",
               redoneAt: "",
               undoneAt: new Date().toISOString()
-            });
+            }, dayOffset);
             render();
             document.getElementById("reviewStatus").textContent = `${child.name}'s ${chore.name} was reopened before final review.`;
             return;
@@ -5637,7 +5653,7 @@
             reviewStatus: "waiting",
             redoneAt: existingRecord.reviewStatus === "redo" ? new Date().toISOString() : "",
             undoneAt: ""
-          });
+          }, dayOffset);
           showCelebration(child, chore.name);
           render();
           document.getElementById("reviewStatus").textContent = `${child.name}'s ${chore.name} is marked ready for ${familySettings.reviewRecipient}'s physical inspection.`;
@@ -5684,7 +5700,8 @@
           }
           const choreName = decodeURIComponent(input.dataset.choreName);
           const choreType = input.dataset.choreType;
-          const chore = findTodayChore(child, choreName, choreType);
+          const dayOffset = Number(input.dataset.dayOffset || activeChoreDayOffset(child));
+          const chore = findTodayChore(child, choreName, choreType, dayOffset);
           if (!chore) return;
           let backendProof = null;
           let backendFeedPost = null;
@@ -5702,7 +5719,7 @@
           }
           const reader = new FileReader();
           reader.onload = event => {
-            const existingRecord = getChoreRecord(child, chore, choreType);
+            const existingRecord = getChoreRecord(child, chore, choreType, dayOffset);
             updateChoreRecord(child, chore, choreType, {
               backendChoreRecordId: backendProof?.choreRecordId || existingRecord.backendChoreRecordId || "",
               backendProofPath: backendProof?.storagePath || existingRecord.backendProofPath || "",
@@ -5711,7 +5728,7 @@
               proofImage: event.target.result,
               proofName: file.name,
               proofSubmittedAt: new Date().toISOString()
-            });
+            }, dayOffset);
             addFamilyPhotoPost(child, chore, event.target.result, backendFeedPost || {});
             persistBetaData();
             render();
@@ -5733,7 +5750,8 @@
           }
           const choreName = decodeURIComponent(button.dataset.choreName);
           const choreType = button.dataset.choreType;
-          const chore = findTodayChore(child, choreName, choreType);
+          const dayOffset = Number(button.dataset.dayOffset || activeChoreDayOffset(child));
+          const chore = findTodayChore(child, choreName, choreType, dayOffset);
           if (!chore) return;
           const feedbackKey = button.dataset.feedbackTask;
           const actualMinutes = parseWholeNumberValue(document.querySelector(`[data-feedback-minutes="${feedbackKey}"]`)?.value, 1, 180);
@@ -6179,9 +6197,9 @@
       });
     }
 
-    function findTodayChore(child, choreName, choreType) {
+    function findTodayChore(child, choreName, choreType, offset = activeChoreDayOffset(child)) {
       const routines = getRoutines(child);
-      const rotating = getRotatingChores(child, 0);
+      const rotating = getRotatingChores(child, offset);
       const source = choreType === "priority" ? routines : rotating;
       return source.find(chore => chore.name === choreName);
     }
@@ -6201,10 +6219,10 @@
       return "";
     }
 
-    function renderTaskActions(child, chore, choreType, fallbackStatus, warning = false) {
-      const record = getChoreRecord(child, chore, choreType);
+    function renderTaskActions(child, chore, choreType, fallbackStatus, warning = false, offset = activeChoreDayOffset(child)) {
+      const record = getChoreRecord(child, chore, choreType, offset);
       const encodedName = encodeURIComponent(chore.name);
-      const proofKey = encodeURIComponent(choreKey(child, chore, choreType));
+      const proofKey = encodeURIComponent(choreKey(child, chore, choreType, offset));
       const completed = Boolean(record.completedAt);
       const finalized = isChildReviewFinalized(child);
       const statusClass = choreStatusClass(record, warning);
@@ -6217,17 +6235,17 @@
         : finalized && !completed && record.reviewStatus !== "approved" ? "Review finalized" : choreStatusText(record, fallbackStatus);
       const difficulty = choreDifficulty(chore);
       return `
-        <input class="proof-input" type="file" accept="image/*" data-proof-key="${proofKey}" data-chore-type="${choreType}" data-chore-name="${encodedName}">
+        <input class="proof-input" type="file" accept="image/*" data-proof-key="${proofKey}" data-day-offset="${offset}" data-chore-type="${choreType}" data-chore-name="${encodedName}">
         <div class="task-completion-actions">
-          <button class="check-btn ${completed ? "completed" : ""}" type="button" data-chore-type="${choreType}" data-chore-name="${encodedName}" ${completionDisabled ? "disabled" : ""}>${completeLabel}</button>
-          <button class="proof-btn" type="button" data-proof-key="${proofKey}" data-chore-type="${choreType}" data-chore-name="${encodedName}" ${finalized || !canManage ? "disabled" : ""}>${record.proofImage ? "Photo saved" : "Photo"}</button>
+          <button class="check-btn ${completed ? "completed" : ""}" type="button" data-day-offset="${offset}" data-chore-type="${choreType}" data-chore-name="${encodedName}" ${completionDisabled ? "disabled" : ""}>${completeLabel}</button>
+          <button class="proof-btn" type="button" data-proof-key="${proofKey}" data-day-offset="${offset}" data-chore-type="${choreType}" data-chore-name="${encodedName}" ${finalized || !canManage ? "disabled" : ""}>${record.proofImage ? "Photo saved" : "Photo"}</button>
           ${proofThumb}
           <span class="status ${statusClass}">${escapeHtml(statusText)}</span>
         </div>
         <div class="task-feedback-actions">
           <input class="actual-minutes-input" aria-label="Actual minutes for ${escapeHtml(chore.name)}" inputmode="numeric" placeholder="${chore.minutes}m" data-feedback-minutes="${proofKey}" ${!canManage ? "disabled" : ""}>
           <input class="actual-difficulty-input" aria-label="Actual difficulty for ${escapeHtml(chore.name)}" inputmode="numeric" placeholder="D${difficulty}" data-feedback-difficulty="${proofKey}" ${!canManage ? "disabled" : ""}>
-          <button class="ghost-btn" type="button" data-feedback-task="${proofKey}" data-chore-type="${choreType}" data-chore-name="${encodedName}" ${!canManage ? "disabled" : ""}>Suggest Edit</button>
+          <button class="ghost-btn" type="button" data-feedback-task="${proofKey}" data-day-offset="${offset}" data-chore-type="${choreType}" data-chore-name="${encodedName}" ${!canManage ? "disabled" : ""}>Suggest Edit</button>
         </div>
       `;
     }
@@ -6296,12 +6314,15 @@
     }
 
     function renderDaily(child) {
+      const dayOffset = activeChoreDayOffset(child);
+      renderedChoreDayOffset = dayOffset;
       const routines = getRoutines(child);
-      const rotating = getRotatingChores(child, 0);
+      const rotating = getRotatingChores(child, dayOffset);
       const rotatingMinutes = rotating.reduce((sum, chore) => sum + chore.minutes, 0);
       const routineMinutes = routines.reduce((sum, chore) => sum + chore.minutes, 0);
-      const todayDeadline = approvedDeadlineFor(child);
-      const activeHold = activeHoldFor(child);
+      const todayDeadline = approvedDeadlineFor(child, dayOffset);
+      const activeHold = activeHoldFor(child, dayOffset);
+      const showingNextCycle = dayOffset > 0;
 
       document.getElementById("dailyThought").textContent = dailyPositiveThought();
       document.getElementById("dashboardPhoto").outerHTML = renderChildPhoto(child, "profile-photo");
@@ -6309,8 +6330,10 @@
       document.getElementById("childHeading").textContent = `${child.name}'s Dashboard`;
       document.getElementById("childSubhead").textContent = activeHold
         ? `${child.name} is excused today: ${holdLabel(activeHold)}. No rotating fines accrue while muted.`
+        : showingNextCycle
+          ? `Showing the next chore cycle because today's noon deadline has passed. Earlier chores remain in history below.`
         : dailyPositiveThought();
-      updateDeadlineCountdown();
+      updateDeadlineCountdown(child, dayOffset);
       document.getElementById("rotatingNote").textContent = `Has until ${todayDeadline}`;
       updateExtensionPetitionState(child);
       document.getElementById("minutesMetric").textContent = `${rotatingMinutes} min`;
@@ -6324,7 +6347,7 @@
       document.getElementById("finalizeChildBtn").textContent = reviewFinalized ? "Selected Child Finalized" : "Finalize Selected Child";
 
       document.getElementById("streakTasks").innerHTML = routines.map((chore, index) => {
-        const record = getChoreRecord(child, chore, "priority");
+        const record = getChoreRecord(child, chore, "priority", dayOffset);
         return `
         <div class="task streak ${record.completedAt ? "completed" : ""}">
           <div class="task-icon">${index + 1}</div>
@@ -6333,7 +6356,7 @@
             <span>Estimated ${chore.minutes} minutes. Complete these before rotating fined chores. ${escapeHtml(familySettings.reviewRecipient)} still reviews at ${escapeHtml(familySettings.reviewReminderTime)}.</span>
           </div>
           <div class="task-actions">
-            ${renderTaskActions(child, chore, "priority", "Needs review")}
+            ${renderTaskActions(child, chore, "priority", "Needs review", false, dayOffset)}
           </div>
         </div>
       `;
@@ -6342,7 +6365,7 @@
       document.getElementById("rotatingTasks").innerHTML = activeHold
         ? `<div class="notice-card warn">${escapeHtml(child.name)} has chores muted for ${escapeHtml(holdLabel(activeHold))}. No rotating chore fines accrue during this hold.</div>`
         : rotating.length ? rotating.map((chore, index) => {
-        const record = getChoreRecord(child, chore, "rotating");
+        const record = getChoreRecord(child, chore, "rotating", dayOffset);
         const warning = index === 0 && child.openFines;
         return `
         <div class="task ${warning ? "overdue" : ""} ${record.completedAt ? "completed" : ""}">
@@ -6352,14 +6375,46 @@
             <span>Difficulty ${chore.difficulty}/10. Estimated ${chore.minutes} minutes. Has until ${escapeHtml(todayDeadline)}. If incomplete by the deadline without ${escapeHtml(extensionApproverShortName())}’s extension, charge $${child.fineRate}.${chore.trainingNotes ? ` Training: ${escapeHtml(chore.trainingNotes)}` : ""}</span>
           </div>
           <div class="task-actions">
-            ${renderTaskActions(child, chore, "rotating", warning ? `$${child.fineRate} risk` : "Due", warning)}
+            ${renderTaskActions(child, chore, "rotating", warning ? `$${child.fineRate} risk` : "Due", warning, dayOffset)}
           </div>
         </div>
       `;
       }).join("") : `<div class="notice-card warn">No eligible rotating chores under ${getDailyMinuteTarget(child)} minutes are active for ${escapeHtml(child.name)}. Turn on chores in the master list, lower an estimated time, or adjust difficulty approvals.</div>`;
 
       renderReviewList(child, routines, rotating);
+      renderPreviousCycleHistory(child, dayOffset);
       attachCompletionHandlers(child);
+    }
+
+    function renderPreviousCycleHistory(child, activeOffset) {
+      const section = document.getElementById("previousCycleSection");
+      const list = document.getElementById("previousCycleList");
+      const label = document.getElementById("previousCycleLabel");
+      if (!section || !list || !label) return;
+      if (activeOffset < 1) {
+        section.classList.add("hidden");
+        list.innerHTML = "";
+        return;
+      }
+      const previousOffset = activeOffset - 1;
+      const routines = getRoutines(child).map(chore => ({ chore, type: "priority", label: "Priority" }));
+      const rotating = getRotatingChores(child, previousOffset).map(chore => ({ chore, type: "rotating", label: "Rotating" }));
+      const items = [...routines, ...rotating];
+      label.textContent = `${formatDate(previousOffset)} · saved for review and discussion`;
+      list.innerHTML = items.length ? items.map(item => {
+        const record = getChoreRecord(child, item.chore, item.type, previousOffset);
+        const status = choreStatusText(record, "Not complete");
+        return `
+          <div class="review-row">
+            <div>
+              <strong>${escapeHtml(item.chore.name)}</strong>
+              <span>${escapeHtml(item.label)} chore · ${escapeHtml(item.chore.minutes)} min · ${escapeHtml(status)}</span>
+            </div>
+            <span class="status ${choreStatusClass(record, false)}">${escapeHtml(status)}</span>
+          </div>
+        `;
+      }).join("") : `<div class="notice-card">No previous chore cycle was assigned.</div>`;
+      section.classList.remove("hidden");
     }
 
     function renderReviewList(child, routines, rotating) {
@@ -6465,15 +6520,17 @@
 
     function renderWeekly(child) {
       const grid = document.getElementById("weekGrid");
+      const startOffset = activeChoreDayOffset(child);
       grid.innerHTML = Array.from({ length: 7 }).map((_, day) => {
+        const dayOffset = startOffset + day;
         const routines = getRoutines(child).slice(0, 2);
-        const hold = activeHoldFor(child, day);
-        const rotating = getRotatingChores(child, day);
+        const hold = activeHoldFor(child, dayOffset);
+        const rotating = getRotatingChores(child, dayOffset);
         const minutes = rotating.reduce((sum, chore) => sum + chore.minutes, 0);
         return `
           <div class="day-card ${day === 0 ? "today" : ""}">
-            <h4>${formatDate(day)}</h4>
-            <p>${hold ? `Muted: ${escapeHtml(hold.reason)}` : `${minutes} rotating min, due ${escapeHtml(day === 0 ? approvedDeadlineFor(child, day) : familySettings.defaultDeadline)}`}</p>
+            <h4>${formatDate(dayOffset)}</h4>
+            <p>${hold ? `Muted: ${escapeHtml(hold.reason)}` : `${minutes} rotating min, due ${escapeHtml(day === 0 ? approvedDeadlineFor(child, dayOffset) : familySettings.defaultDeadline)}`}</p>
             ${routines.map(chore => `<span class="mini-task streak">${escapeHtml(chore.name)}</span>`).join("")}
             ${hold ? `<span class="mini-task">Chores muted. No fines accrue.</span>` : rotating.length ? rotating.map(chore => `<span class="mini-task">${escapeHtml(chore.name)} · ${chore.minutes}m · D${chore.difficulty}</span>`).join("") : `<span class="mini-task">No eligible rotating chores active</span>`}
           </div>
@@ -8916,7 +8973,13 @@
     restorePendingBetaStatus();
     setInterval(() => {
       updateReviewCueState();
-      updateDeadlineCountdown();
+      const child = children.find(item => item.id === selectedChildId) || children[0];
+      const offset = activeChoreDayOffset(child);
+      if (offset !== renderedChoreDayOffset) {
+        render();
+        return;
+      }
+      updateDeadlineCountdown(child, offset);
     }, 30000);
   </script>
 </body>
