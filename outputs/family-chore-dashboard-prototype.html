@@ -1189,14 +1189,6 @@
       box-shadow: none;
     }
 
-    .podium-name {
-      display: block;
-      color: var(--ink);
-      font-size: 13px;
-      font-weight: 900;
-      overflow-wrap: anywhere;
-    }
-
     .podium-streak {
       display: block;
       color: var(--teal);
@@ -6108,7 +6100,6 @@
             <span class="podium-rank">${placeLabels[rank]} place</span>
             <span class="podium-medal">${medals[rank]}</span>
             ${renderChildPhoto(child, "podium-photo")}
-            <strong class="podium-name">${escapeHtml(child.name)}</strong>
             <span class="podium-streak">${child.streak} all-time days</span>
             <span class="podium-gap">${escapeHtml(gapText)}</span>
           </button>
@@ -6164,7 +6155,6 @@
         <button class="podium-place ${rank === 1 ? "first" : rank === 2 ? "second" : "third"} ${child.id === selectedChildId ? "active" : ""}" type="button" data-points-child="${child.id}" aria-label="Open ${escapeHtml(child.name)}'s dashboard, ${rankLabel(rank)} place with ${points} monthly positivity points and a $${amount} rank bonus">
           <span class="podium-rank">${rankLabel(rank)}</span>
           ${renderChildPhoto(child, "podium-photo")}
-          <strong class="podium-name">${escapeHtml(child.name)}</strong>
           <span class="podium-streak">${points} pts · $${amount}</span>
         </button>
       `).join("");
