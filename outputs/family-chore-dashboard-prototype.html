@@ -1904,8 +1904,8 @@
             </div>
           </div>
           <div class="timer">
-            <span id="deadlineLabel">Rotating chores due</span>
-            <strong id="deadlineTime">12:00 PM</strong>
+            <span id="deadlineLabel">Finish by Noon</span>
+            <strong id="deadlineTime">Loading</strong>
           </div>
         </div>
 
@@ -4998,6 +4998,46 @@
       return extensionDeadlines[extensionDeadlineKey(child, offset)] || familySettings.defaultDeadline;
     }
 
+    function deadlineDateForClock(clockValue) {
+      const normalized = normalizeClockTime(clockValue) || familySettings.defaultDeadline || "12:00 PM";
+      const match = normalized.match(/^(\d{1,2}):(\d{2})\s(AM|PM)$/);
+      const date = new Date();
+      date.setSeconds(0, 0);
+      if (!match) {
+        date.setHours(12, 0, 0, 0);
+        return date;
+      }
+      let hour = Number(match[1]);
+      const minute = Number(match[2]);
+      if (match[3] === "PM" && hour !== 12) hour += 12;
+      if (match[3] === "AM" && hour === 12) hour = 0;
+      date.setHours(hour, minute, 0, 0);
+      return date;
+    }
+
+    function countdownUntilDeadline(clockValue) {
+      const due = deadlineDateForClock(clockValue);
+      const remainingMs = due.getTime() - Date.now();
+      if (remainingMs <= 0) return "Due now";
+      const totalMinutes = Math.ceil(remainingMs / 60000);
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      if (hours && minutes) return `${hours}h ${minutes}m`;
+      if (hours) return `${hours}h`;
+      return `${minutes}m`;
+    }
+
+    function updateDeadlineCountdown() {
+      const child = children.find(item => item.id === selectedChildId) || children[0];
+      const label = document.getElementById("deadlineLabel");
+      const time = document.getElementById("deadlineTime");
+      if (!child || !label || !time) return;
+      const deadline = approvedDeadlineFor(child);
+      label.textContent = "Finish by Noon";
+      time.textContent = countdownUntilDeadline(deadline);
+      time.title = `Due by ${deadline}`;
+    }
+
     function setApprovedDeadline(child, deadline) {
       const key = extensionDeadlineKey(child);
       const cleanDeadline = normalizeClockTime(deadline) || familySettings.defaultDeadline;
@@ -6167,7 +6207,7 @@
       document.getElementById("childSubhead").textContent = activeHold
         ? `${child.name} is excused today: ${holdLabel(activeHold)}. No rotating fines accrue while muted.`
         : dailyPositiveThought();
-      document.getElementById("deadlineTime").textContent = todayDeadline;
+      updateDeadlineCountdown();
       document.getElementById("rotatingNote").textContent = `Has until ${todayDeadline}`;
       updateExtensionPetitionState(child);
       document.getElementById("minutesMetric").textContent = `${rotatingMinutes} min`;
@@ -8771,7 +8811,10 @@
       backendStatusMessage(`Browser beta mode is active because the production backend did not initialize: ${error.message}`);
     });
     restorePendingBetaStatus();
-    setInterval(updateReviewCueState, 30000);
+    setInterval(() => {
+      updateReviewCueState();
+      updateDeadlineCountdown();
+    }, 30000);
   </script>
 </body>
 </html>
