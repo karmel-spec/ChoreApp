@@ -6223,7 +6223,7 @@
         const warning = index === 0 && child.openFines;
         return `
         <div class="task ${warning ? "overdue" : ""} ${record.completedAt ? "completed" : ""}">
-          <div class="task-icon">${chore.difficulty}</div>
+          <div class="task-icon">${routines.length + index + 1}</div>
           <div>
             <strong>${escapeHtml(chore.name)}</strong>
             <span>Difficulty ${chore.difficulty}/10. Estimated ${chore.minutes} minutes. Has until ${escapeHtml(todayDeadline)}. If incomplete by the deadline without ${escapeHtml(extensionApproverShortName())}’s extension, charge $${child.fineRate}.${chore.trainingNotes ? ` Training: ${escapeHtml(chore.trainingNotes)}` : ""}</span>
