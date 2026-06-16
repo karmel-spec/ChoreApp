@@ -2318,6 +2318,12 @@
                     <option>Older kids</option>
                     <option>Louis and Brielle</option>
                     <option>Brielle only</option>
+                    <option>Thayne</option>
+                    <option>Brig Jr.</option>
+                    <option>Josh</option>
+                    <option>JoJo</option>
+                    <option>Louis</option>
+                    <option>Brielle</option>
                     <option>Vanessa</option>
                   </select>
                 </div>
@@ -2435,6 +2441,12 @@
                     <option>Older kids</option>
                     <option>Louis and Brielle</option>
                     <option>Brielle only</option>
+                    <option>Thayne</option>
+                    <option>Brig Jr.</option>
+                    <option>Josh</option>
+                    <option>JoJo</option>
+                    <option>Louis</option>
+                    <option>Brielle</option>
                     <option>Vanessa</option>
                   </select>
                 </div>
@@ -3230,7 +3242,16 @@
     }
 
     const allowedChoreFrequencies = ["Daily", "Monday only", "Weekly", "Monthly", "One-off"];
-    const allowedChoreFits = ["Anyone", "Boys", "Older kids", "Louis and Brielle", "Brielle only", "Boys only", "Vanessa"];
+    const individualChoreFits = ["Thayne", "Brig Jr.", "Josh", "JoJo", "Louis", "Brielle", "Vanessa"];
+    const choreFitChildIds = {
+      Thayne: "thayne",
+      "Brig Jr.": "brig",
+      Josh: "josh",
+      JoJo: "jojo",
+      Louis: "louis",
+      Brielle: "brielle"
+    };
+    const allowedChoreFits = ["Anyone", "Boys", "Older kids", "Louis and Brielle", "Brielle only", "Boys only", ...individualChoreFits];
     const allowedChoreNotices = ["Starts after 24 hours", "Start today", "Start next week"];
     const allowedWeeklyDays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     const choreAutosaveTimers = new Map();
@@ -5910,6 +5931,7 @@
       if (fit === "Older kids") return olderKids.includes(child.id);
       if (fit === "Louis and Brielle") return child.id === "louis" || child.id === "brielle";
       if (fit === "Brielle only") return child.id === "brielle";
+      if (choreFitChildIds[fit]) return child.id === choreFitChildIds[fit];
       if (fit === "Vanessa") return false;
       return true;
     }
