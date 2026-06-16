@@ -391,7 +391,6 @@ const requiredMarkers = [
   "The browser could not read that proof photo",
   "The browser could not read that profile photo",
   "loadProductionBackend",
-  "backendModeStatus",
   "signInWithOAuth",
   "link-google-member",
   "auth-google",

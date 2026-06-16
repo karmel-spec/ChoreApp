@@ -2735,7 +2735,6 @@
     <section class="login-card" aria-label="Sign in to Teamwork Chores">
       <h2>Sign In</h2>
       <p>Choose your family profile. Admin controls are available only for Brigham and Karmel.</p>
-      <div class="login-note" id="backendModeStatus">Google login prototype: select a profile and enter the Gmail address that belongs to that person. Production sign-in will use Supabase Google Auth when the backend environment is configured.</div>
       <div class="login-actions">
         <div>
           <label for="loginEmail">Gmail</label>
@@ -4228,8 +4227,7 @@
     }
 
     function backendStatusMessage(message) {
-      const status = document.getElementById("backendModeStatus");
-      if (status) status.textContent = message;
+      productionBackend.lastStatusMessage = message;
     }
 
     async function fetchJson(url, options = {}) {
@@ -4253,7 +4251,7 @@
         productionBackend.config = config;
         productionBackend.ready = Boolean(config.backendReady && config.supabaseUrl && config.supabaseAnonKey);
         if (!productionBackend.ready) {
-          backendStatusMessage("Browser beta mode is active. Real Google login, cloud photos, and server-side saves will turn on after Supabase/Twilio environment variables are configured.");
+          backendStatusMessage("Production backend is not configured.");
           return productionBackend;
         }
         const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
@@ -4273,7 +4271,7 @@
         }
       } catch (error) {
         productionBackend.ready = false;
-        backendStatusMessage(`Browser beta mode is active because the production backend is not reachable yet: ${error.message}`);
+        backendStatusMessage(`Production backend unavailable: ${error.message}`);
       }
       return productionBackend;
     }
@@ -8996,7 +8994,7 @@
     render();
     applyFreshStartFromUrl();
     loadProductionBackend().catch(error => {
-      backendStatusMessage(`Browser beta mode is active because the production backend did not initialize: ${error.message}`);
+      backendStatusMessage(`Production backend did not initialize: ${error.message}`);
     });
     restorePendingBetaStatus();
     setInterval(() => {
