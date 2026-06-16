@@ -114,6 +114,18 @@
       display: none;
     }
 
+    .app-shell.workspace-admin {
+      grid-template-columns: 240px minmax(0, 1fr);
+    }
+
+    .app-shell.workspace-admin .dashboard {
+      display: none;
+    }
+
+    .app-shell.workspace-admin .side-stack {
+      grid-column: 2;
+    }
+
     body.chore-list-fullscreen {
       overflow: hidden;
     }
@@ -240,6 +252,32 @@
       padding: 10px;
       display: grid;
       gap: 7px;
+    }
+
+    .dashboard-switch {
+      display: grid;
+      gap: 8px;
+      padding: 10px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .workspace-button {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      padding: 10px 12px;
+      font-weight: 900;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .workspace-button.active {
+      border-color: #98b9ff;
+      background: #edf4ff;
+      color: #2053a9;
+      box-shadow: inset 0 0 0 1px #98b9ff;
     }
 
     .child-button {
@@ -952,8 +990,8 @@
       display: none !important;
     }
 
-    .app-shell.role-admin .parent-admin-panel,
-    .app-shell.role-admin .helper-access-panel,
+    .app-shell.workspace-admin .parent-admin-panel,
+    .app-shell.workspace-admin .helper-access-panel,
     .app-shell.role-helper .helper-access-panel {
       display: block;
     }
@@ -1867,6 +1905,7 @@
           <h2>Family</h2>
           <span>Dashboards</span>
         </div>
+        <div class="dashboard-switch" id="dashboardSwitch"></div>
         <div class="family-list" id="familyList"></div>
         <div class="rule-box">
           <strong>All-Time Streak Podium</strong>
@@ -2817,7 +2856,9 @@
     };
 
     const validChildIds = ["thayne", "brig", "josh", "jojo", "louis", "brielle"];
-    const requestedChildId = new URLSearchParams(window.location.search).get("child");
+    const initialParams = new URLSearchParams(window.location.search);
+    const requestedChildId = initialParams.get("child");
+    const requestedWorkspace = initialParams.get("view") === "admin" ? "admin" : "child";
     const photoStoreKey = "choreAppChildPhotos";
     const familyPhotoStoreKey = "choreAppFamilyPhoto";
     const sessionStoreKey = "teamworkChoresSession";
@@ -2852,6 +2893,7 @@
       { id: "brielle", name: "Brielle", initials: "B", role: "child", childId: "brielle", label: "Age 8", gmail: "" }
     ];
     let selectedChildId = validChildIds.includes(requestedChildId) ? requestedChildId : "thayne";
+    let activeWorkspace = requestedWorkspace;
     let activeView = "daily";
     let shuffleOffset = 0;
     let activeViewer = "Karmel";
@@ -5221,6 +5263,7 @@
       currentUser = account;
       applyRoleVisibilityClass();
       if (!account) {
+        activeWorkspace = "child";
         document.getElementById("loginOverlay").classList.add("show");
         document.getElementById("currentUserChip").textContent = "Not signed in";
         document.getElementById("loginSummary").textContent = "Choose a family login to continue.";
@@ -5229,9 +5272,16 @@
       selectedLoginId = account.id;
       activeViewer = account.role === "admin" ? account.name : account.role === "helper" ? "Vanessa" : "Child";
       if (account.childId) {
+        activeWorkspace = "child";
         selectedChildId = account.childId;
         const url = new URL(window.location.href);
         url.searchParams.set("child", selectedChildId);
+        url.searchParams.delete("view");
+        window.history.replaceState({}, "", url);
+      } else if (account.role !== "admin" && activeWorkspace === "admin") {
+        activeWorkspace = "child";
+        const url = new URL(window.location.href);
+        url.searchParams.delete("view");
         window.history.replaceState({}, "", url);
       }
       document.getElementById("loginOverlay").classList.remove("show");
@@ -5246,7 +5296,9 @@
       const appShell = document.getElementById("appShell");
       if (!appShell) return;
       appShell.classList.remove("role-admin", "role-child", "role-helper", "role-signed-out");
+      appShell.classList.remove("workspace-admin", "workspace-child");
       appShell.classList.add(currentUser?.role ? `role-${currentUser.role}` : "role-signed-out");
+      appShell.classList.add(activeWorkspace === "admin" && isAdmin() ? "workspace-admin" : "workspace-child");
     }
 
     function applySidebarCollapsed(collapsed) {
@@ -5353,6 +5405,10 @@
       return currentUser?.role === "admin";
     }
 
+    function isParentAdminWorkspace() {
+      return isAdmin() && activeWorkspace === "admin";
+    }
+
     function isHelperUser() {
       return currentUser?.role === "helper";
     }
@@ -5375,10 +5431,12 @@
 
     function enforceChildSessionScope() {
       if (currentUser?.role !== "child" || !currentUser.childId) return;
+      activeWorkspace = "child";
       if (selectedChildId === currentUser.childId) return;
       selectedChildId = currentUser.childId;
       const url = new URL(window.location.href);
       url.searchParams.set("child", selectedChildId);
+      url.searchParams.delete("view");
       window.history.replaceState({}, "", url);
     }
 
@@ -5408,14 +5466,14 @@
     }
 
     function renderRestrictedPanelVisibility() {
-      const parentHidden = !isAdmin();
+      const parentHidden = !isParentAdminWorkspace();
       document.querySelectorAll(".parent-admin-panel").forEach(panel => {
         panel.hidden = parentHidden;
         panel.classList.toggle("role-hidden", parentHidden);
         panel.setAttribute("aria-hidden", parentHidden ? "true" : "false");
         panel.style.setProperty("display", parentHidden ? "none" : "block", parentHidden ? "important" : "");
       });
-      const helperHidden = !canUseHelperWorkspace();
+      const helperHidden = !(isHelperUser() || isParentAdminWorkspace());
       document.querySelectorAll(".helper-access-panel").forEach(panel => {
         panel.hidden = helperHidden;
         panel.classList.toggle("role-hidden", helperHidden);
@@ -5831,6 +5889,36 @@
       return new Date().toLocaleDateString("en-US", { month: "short", year: "numeric" });
     }
 
+    function setActiveWorkspace(workspace) {
+      activeWorkspace = workspace === "admin" && isAdmin() ? "admin" : "child";
+      const url = new URL(window.location.href);
+      if (activeWorkspace === "admin") {
+        url.searchParams.set("view", "admin");
+      } else {
+        url.searchParams.delete("view");
+        url.searchParams.set("child", selectedChildId);
+      }
+      window.history.replaceState({}, "", url);
+      render();
+    }
+
+    function renderDashboardSwitch() {
+      const switcher = document.getElementById("dashboardSwitch");
+      if (!switcher) return;
+      const buttons = [
+        `<button class="workspace-button ${activeWorkspace !== "admin" ? "active" : ""}" type="button" data-workspace="child">Family Dashboards</button>`
+      ];
+      if (isAdmin()) {
+        buttons.push(`<button class="workspace-button ${activeWorkspace === "admin" ? "active" : ""}" type="button" data-workspace="admin">Parent Admin</button>`);
+      } else if (isHelperUser()) {
+        buttons.push(`<button class="workspace-button active" type="button" data-workspace="child">Vanessa Workspace</button>`);
+      }
+      switcher.innerHTML = buttons.join("");
+      switcher.querySelectorAll("[data-workspace]").forEach(button => {
+        button.addEventListener("click", () => setActiveWorkspace(button.dataset.workspace));
+      });
+    }
+
     function isCurrentBonusPeriodRecord(item) {
       if (item.period) return item.period === currentBonusPeriod();
       const currentMonth = new Date().toLocaleDateString("en-US", { month: "short" });
@@ -5863,9 +5951,11 @@
       list.querySelectorAll("button").forEach(button => {
         button.addEventListener("click", () => {
           if (currentUser?.role === "child" && currentUser.childId !== button.dataset.child) return;
+          activeWorkspace = "child";
           selectedChildId = button.dataset.child;
           const url = new URL(window.location.href);
           url.searchParams.set("child", selectedChildId);
+          url.searchParams.delete("view");
           window.history.replaceState({}, "", url);
           render();
         });
@@ -5907,9 +5997,11 @@
       document.querySelectorAll("[data-podium-child]").forEach(button => {
         button.addEventListener("click", () => {
           if (currentUser?.role === "child" && currentUser.childId !== button.dataset.podiumChild) return;
+          activeWorkspace = "child";
           selectedChildId = button.dataset.podiumChild;
           const url = new URL(window.location.href);
           url.searchParams.set("child", selectedChildId);
+          url.searchParams.delete("view");
           window.history.replaceState({}, "", url);
           render();
         });
@@ -5955,9 +6047,11 @@
       document.querySelectorAll("[data-points-child]").forEach(button => {
         button.addEventListener("click", () => {
           if (currentUser?.role === "child" && currentUser.childId !== button.dataset.pointsChild) return;
+          activeWorkspace = "child";
           selectedChildId = button.dataset.pointsChild;
           const url = new URL(window.location.href);
           url.searchParams.set("child", selectedChildId);
+          url.searchParams.delete("view");
           window.history.replaceState({}, "", url);
           render();
         });
@@ -8588,6 +8682,7 @@
       applyRoleVisibilityClass();
       const child = children.find(item => item.id === selectedChildId);
       renderFamilySettings();
+      renderDashboardSwitch();
       renderFamilyList();
       renderStreakPodium();
       renderPointsPodium();
