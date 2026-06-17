@@ -7955,6 +7955,7 @@
           }
           const chore = choreLibrary[Number(button.dataset.choreIndex)];
           const nextActive = chore.active === false;
+          let cloudWarning = "";
           try {
             const payload = await saveProductionChoreLibrary("toggle", {
               choreId: chore.backendChoreId || chore.id || "",
@@ -7964,15 +7965,14 @@
             });
             if (payload?.chore?.id) chore.backendChoreId = payload.chore.id;
           } catch (error) {
-            document.getElementById("adminStatus").textContent = `Cloud chore toggle failed: ${error.message}`;
-            return;
+            cloudWarning = ` Cloud sync pending: ${error.message}`;
           }
           chore.active = nextActive;
           chore.updatedBy = currentUser?.name || "Admin";
           chore.updatedAt = new Date().toISOString();
           shuffleOffset += 5;
           persistBetaData();
-          document.getElementById("adminStatus").textContent = `${chore.name} is now ${chore.active === false ? "out of" : "back in"} the rotation. Changed by ${chore.updatedBy}. ${activeCount} chores were active before this change.`;
+          document.getElementById("adminStatus").textContent = `${chore.name} is now ${chore.active === false ? "out of" : "back in"} the rotation. Changed by ${chore.updatedBy}. ${activeCount} chores were active before this change.${cloudWarning}`;
           render();
         });
       });
@@ -8061,6 +8061,7 @@
         return;
       }
       let backendChoreId = chore.backendChoreId || chore.id || "";
+      let cloudWarning = "";
       try {
         const payload = await saveProductionChoreLibrary("update", {
           choreId: backendChoreId,
@@ -8077,9 +8078,7 @@
         });
         backendChoreId = payload?.chore?.id || backendChoreId;
       } catch (error) {
-        document.getElementById("adminStatus").textContent = `Cloud chore edit failed: ${error.message}`;
-        if (autosave) setChoreAutosaveStatus(index, "Cloud fail", "warn");
-        return;
+        cloudWarning = ` Cloud sync pending: ${error.message}`;
       }
       Object.assign(chore, {
         backendChoreId,
@@ -8098,7 +8097,7 @@
       persistBetaData();
       if (!autosave) render();
       if (autosave) setChoreAutosaveStatus(index, "Saved", "saved");
-      document.getElementById("adminStatus").textContent = `${name} updated by ${chore.updatedBy}. Future rotations and fairness previews now use the new settings.`;
+      document.getElementById("adminStatus").textContent = `${name} updated by ${chore.updatedBy}. Future rotations and fairness previews now use the new settings.${cloudWarning}`;
     }
 
     async function deleteChore(index) {
@@ -8112,6 +8111,7 @@
         document.getElementById("adminStatus").textContent = "Delete cancelled.";
         return;
       }
+      let cloudWarning = "";
       try {
         await saveProductionChoreLibrary("delete", {
           choreId: chore.backendChoreId || chore.id || "",
@@ -8119,14 +8119,13 @@
           name: chore.name
         });
       } catch (error) {
-        document.getElementById("adminStatus").textContent = `Cloud chore delete failed: ${error.message}`;
-        return;
+        cloudWarning = ` Cloud sync pending: ${error.message}`;
       }
       choreLibrary.splice(index, 1);
       shuffleOffset += 9;
       persistBetaData();
       render();
-      document.getElementById("adminStatus").textContent = `${chore.name} was deleted from the master chore list by ${currentUser?.name || "Admin"}.`;
+      document.getElementById("adminStatus").textContent = `${chore.name} was deleted from the master chore list by ${currentUser?.name || "Admin"}.${cloudWarning}`;
     }
 
     function renderAvailabilityLedger() {
@@ -8831,6 +8830,7 @@
         return;
       }
       let backendChoreId = "";
+      let cloudWarning = "";
       try {
         const payload = await saveProductionChoreLibrary("add", {
           name,
@@ -8845,8 +8845,7 @@
         });
         backendChoreId = payload?.chore?.id || "";
       } catch (error) {
-        document.getElementById("adminStatus").textContent = `Cloud chore add failed: ${error.message}`;
-        return;
+        cloudWarning = ` Cloud sync pending: ${error.message}`;
       }
       choreLibrary.unshift({
         backendChoreId,
@@ -8865,7 +8864,7 @@
       shuffleOffset += 3;
       persistBetaData();
       clearNewChoreForm(source);
-      document.getElementById("adminStatus").textContent = `${name} added by ${currentUser?.name || "Admin"} as ${frequency.toLowerCase()} and set to ${notice.toLowerCase()}.`;
+      document.getElementById("adminStatus").textContent = `${name} added by ${currentUser?.name || "Admin"} as ${frequency.toLowerCase()} and set to ${notice.toLowerCase()}.${cloudWarning}`;
       render();
     }
 
